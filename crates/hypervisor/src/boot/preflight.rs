@@ -68,12 +68,9 @@ impl CpuidEvidence {
         if self.basic.eax < 1 || self.extended.eax < 0x8000000a {
             return Err(MissingLeaves);
         }
-        let (Some(one), Some(ext), Some(width), Some(svm)) = (
-            self.features,
-            self.extended_features,
-            self.address_width,
-            self.svm,
-        ) else {
+        let (Some(one), Some(ext), Some(width), Some(svm)) =
+            (self.features, self.extended_features, self.address_width, self.svm)
+        else {
             return Err(MissingLeaves);
         };
         if one.ecx & (1 << 31) != 0 {

@@ -87,7 +87,9 @@ impl Lvt {
             // Figure 16-8: 17 TMM, 16 M, 12 DS, 7:0 VEC. The timer-specific
             // figure, not the generic Figure 16-7, governs bits 11:8 (decision).
             // Bit 18 is reserved: no TSC-deadline mode exists.
-            apic::LVT_TIMER => Self { valid: 0x0003_10ff, read_only: LVT_DELIVERY_STATUS, messages: None },
+            apic::LVT_TIMER => {
+                Self { valid: 0x0003_10ff, read_only: LVT_DELIVERY_STATUS, messages: None }
+            }
             // Figure 16-12: 16 M, 15 TGM, 14 RIR, 12 DS, 10:8 MT, 7:0 VEC.
             // LINT has no Table 16-1 row; Figure 16-7's legal types apply.
             apic::LVT_LINT0 | apic::LVT_LINT1 => Self {
@@ -259,9 +261,8 @@ fn store(backing: &BackingPage, offset: u16, value: u32) {
 fn arbitration_priority(backing: &BackingPage) -> u32 {
     let tpr = load(backing, apic::TPR) & 0xff;
     let class = |vector: Option<u8>| vector.map_or(0, |vector| u32::from(vector) & 0xf0);
-    let priority = (tpr & 0xf0)
-        .max(class(backing.highest_in_service()))
-        .max(class(backing.highest_pending()));
+    let priority =
+        (tpr & 0xf0).max(class(backing.highest_in_service())).max(class(backing.highest_pending()));
     if priority == tpr & 0xf0 { tpr } else { priority }
 }
 
@@ -285,7 +286,8 @@ impl GuestX2Apic {
     /// A captured software-disabled APIC holds nothing: its never-entered
     /// backing page has no pending interrupt of its own.
     pub fn admit(apic_base: u64, policy: &AddressPolicy) -> Result<Self, Error> {
-        if apic_base & !(apic::APIC_BASE_BSP | apic::APIC_BASE_X2APIC) != apic::APIC_BASE_DEFAULT_ADDRESS
+        if apic_base & !(apic::APIC_BASE_BSP | apic::APIC_BASE_X2APIC)
+            != apic::APIC_BASE_DEFAULT_ADDRESS
             || apic_base & apic::APIC_BASE_X2APIC != apic::APIC_BASE_X2APIC
         {
             return Err(Error::UnsupportedApicBase);
@@ -321,7 +323,12 @@ impl GuestX2Apic {
         }
     }
 
-    fn read(&self, msr: u32, backing: &BackingPage, physical: &mut impl PhysicalX2Apic) -> Emulation {
+    fn read(
+        &self,
+        msr: u32,
+        backing: &BackingPage,
+        physical: &mut impl PhysicalX2Apic,
+    ) -> Emulation {
         match msr {
             // Every guest read returns the shadow; INIT leaves it unchanged
             // (16.10 p657: AE and EXTD; Figure 16-2 p630: ABA).
@@ -417,9 +424,13 @@ impl GuestX2Apic {
     ///   is stopped, so it cannot take them between the withdrawal and the
     ///   enable, and a real APIC would never have accepted them. A vector
     ///   pending at the disable stays pending even if it arrived again.
-    fn write_svr(&mut self, value: u64, backing: &BackingPage, irq: &PhysicalIrqLedger,
-        physical: &mut impl PhysicalX2Apic) -> Emulation
-    {
+    fn write_svr(
+        &mut self,
+        value: u64,
+        backing: &BackingPage,
+        irq: &PhysicalIrqLedger,
+        physical: &mut impl PhysicalX2Apic,
+    ) -> Emulation {
         if value & !SVR_VALID != 0 {
             return Emulation::GeneralProtection;
         }
@@ -451,9 +462,13 @@ impl GuestX2Apic {
     /// bits fault and refused values stop, both without effects. Unmasked NMI
     /// entries are mirrored; physical NMIs reach the guest in guest mode, and
     /// an NMI during a host GIF window remains terminal.
-    fn write_lvt(&self, offset: u16, value: u64, backing: &BackingPage,
-        physical: &mut impl PhysicalX2Apic) -> Emulation
-    {
+    fn write_lvt(
+        &self,
+        offset: u16,
+        value: u64,
+        backing: &BackingPage,
+        physical: &mut impl PhysicalX2Apic,
+    ) -> Emulation {
         let enabled = load(backing, apic::SVR) & SVR_SOFTWARE_ENABLE != 0;
         let Some(lvt) = Lvt::check(offset, value, enabled) else {
             return Emulation::GeneralProtection;
@@ -566,8 +581,14 @@ impl CapturedInterface {
             let msr = apic::msr(offset);
             let value = physical.read(msr);
             let lvt = match Lvt::check(offset, value, enabled) {
-                Some(lvt) if !matches!(lvt.refusal,
-                    Some(Refusal::UnsupportedMessageType | Refusal::ExceptionVector)) => lvt,
+                Some(lvt)
+                    if !matches!(
+                        lvt.refusal,
+                        Some(Refusal::UnsupportedMessageType | Refusal::ExceptionVector)
+                    ) =>
+                {
+                    lvt
+                }
                 _ => return Err(CaptureRefusal { msr, value }),
             };
             let current = value as u32 & Lvt::of(offset).writable();
@@ -653,9 +674,13 @@ pub fn commit_init(
     physical.write(LVT_TIMER, u64::from(LVT_MASKED));
     physical.write(INITIAL_COUNT, 0);
     physical.write(DIVIDE, 0);
-    for offset in [apic::LVT_THERMAL, apic::LVT_PERFORMANCE, apic::LVT_LINT0, apic::LVT_LINT1,
-        apic::LVT_ERROR]
-    {
+    for offset in [
+        apic::LVT_THERMAL,
+        apic::LVT_PERFORMANCE,
+        apic::LVT_LINT0,
+        apic::LVT_LINT1,
+        apic::LVT_ERROR,
+    ] {
         physical.write(apic::msr(offset), u64::from(LVT_MASKED));
     }
     irq::retire(irq, physical).map_err(InitError::Irq)?;

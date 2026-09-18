@@ -44,13 +44,7 @@ impl<'a> TransientTableReader<'a> {
         profile: ProbeProfile,
         extents: &'a [RamExtent],
     ) -> Self {
-        Self {
-            cpu,
-            profile,
-            extents,
-            reads: 0,
-            last_error: None,
-        }
+        Self { cpu, profile, extents, reads: 0, last_error: None }
     }
 
     pub fn last_error(&self) -> Option<ProbeError> {

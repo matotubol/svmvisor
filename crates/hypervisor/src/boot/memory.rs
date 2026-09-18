@@ -91,10 +91,7 @@ impl<'a> ValidatedMemoryMap<'a> {
             }
             previous_end = end;
         }
-        Ok(Self {
-            descriptors,
-            physical_end,
-        })
+        Ok(Self { descriptors, physical_end })
     }
     fn permit(&self, address: u64, bytes: usize) -> Result<PermittedRange, MemoryError> {
         self.permit_types(address, bytes, 6)
@@ -109,9 +106,7 @@ impl<'a> ValidatedMemoryMap<'a> {
         bytes: usize,
         monitor: crate::memory::address::PhysicalRange,
     ) -> Result<PermittedRange, MemoryError> {
-        let end = address
-            .checked_add(bytes as u64)
-            .ok_or(MemoryError::Overflow)?;
+        let end = address.checked_add(bytes as u64).ok_or(MemoryError::Overflow)?;
         if address <= monitor.last_byte() && monitor.base() < end {
             return Err(MemoryError::MonitorOverlap);
         }
@@ -155,10 +150,7 @@ impl<'a> ValidatedMemoryMap<'a> {
             }
             cursor = end.min(descriptor_end);
             if cursor == end {
-                return Ok(PermittedRange {
-                    physical_start: address,
-                    bytes,
-                });
+                return Ok(PermittedRange { physical_start: address, bytes });
             }
         }
         Err(UncoveredRange)
@@ -197,10 +189,6 @@ impl<'a> ValidatedMemoryMap<'a> {
         copy: impl FnOnce(PermittedRange, &mut [u8]) -> bool,
     ) -> Result<(), MemoryError> {
         let permit = self.permit_gdt_copy(address, output.len())?;
-        if copy(permit, output) {
-            Ok(())
-        } else {
-            Err(MemoryError::ReadFailed)
-        }
+        if copy(permit, output) { Ok(()) } else { Err(MemoryError::ReadFailed) }
     }
 }

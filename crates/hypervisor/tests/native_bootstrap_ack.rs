@@ -1,6 +1,6 @@
 use svmvisor_hypervisor::{
-    guest::continuation::{BootstrapAckError as E, NATIVE_BOOTSTRAP_ACK, NativeBootstrapAck},
     arch::x86_64::registers::GuestRegisters,
+    guest::continuation::{BootstrapAckError as E, NATIVE_BOOTSTRAP_ACK, NativeBootstrapAck},
     svm::vmcb::Vmcb,
 };
 
@@ -19,12 +19,7 @@ fn initial() -> (Vmcb, GuestRegisters) {
     put(&mut v, 0x578, 0x1000);
     put(&mut v, 0x5d8, 0x8f80);
     put(&mut v, 0x570, 2);
-    let r = GuestRegisters {
-        r14: 0x8fc0,
-        r15: 0x9580,
-        rcx: 0x1234,
-        ..Default::default()
-    };
+    let r = GuestRegisters { r14: 0x8fc0, r15: 0x9580, rcx: 0x1234, ..Default::default() };
     (v, r)
 }
 fn exited(v: &mut Vmcb) {

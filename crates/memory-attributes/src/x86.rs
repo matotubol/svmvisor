@@ -10,7 +10,7 @@
 //! refused: zero parents denote absence, even when physical table zero exists.
 
 use crate::{
-    Config, Error, Memory, ACCESS_MASK, EXECUTE_PROTECT, PAGE_SIZE, READ_ONLY, READ_PROTECT,
+    ACCESS_MASK, Config, EXECUTE_PROTECT, Error, Memory, PAGE_SIZE, READ_ONLY, READ_PROTECT,
 };
 
 /// Bound on reads, writes and allocations, shared by preflight and transaction.
@@ -103,14 +103,7 @@ struct Walk {
 
 impl Walk {
     fn root(table: u64, start: u64, end: u64) -> Self {
-        Self {
-            table,
-            level: 4,
-            table_base: 0,
-            start,
-            end,
-            inherited: 0,
-        }
+        Self { table, level: 4, table_base: 0, start, end, inherited: 0 }
     }
 
     fn child(self, table: u64, base: u64, inherited: u64) -> Self {
@@ -266,14 +259,7 @@ fn scan<M: Memory>(
     edit: Option<Edit>,
     result: &mut Scan,
 ) -> Result<(), Error> {
-    let Walk {
-        table,
-        level,
-        table_base,
-        start,
-        end,
-        inherited,
-    } = walk;
+    let Walk { table, level, table_base, start, end, inherited } = walk;
     let size = span(level);
     let first = (start - table_base) / size;
     let last = (end - 1 - table_base) / size;
@@ -282,12 +268,9 @@ fn scan<M: Memory>(
         let value = access.read(table + index * 8)?;
         let effective = inherited | attributes(value);
         match queried_entry(value, level, node_base, access.config)? {
-            Entry::Table(child) => scan(
-                access,
-                walk.child(child, node_base, effective),
-                edit,
-                result,
-            )?,
+            Entry::Table(child) => {
+                scan(access, walk.child(child, node_base, effective), edit, result)?
+            }
             Entry::Leaf(physical) => {
                 if physical != node_base {
                     return Err(Error::Unsupported);
@@ -316,18 +299,9 @@ pub fn get<M: Memory>(
     length: u64,
 ) -> Result<u64, Error> {
     let end = validate_get(base, length, config)?;
-    let mut access = Access {
-        memory,
-        config,
-        remaining: MAX_ENTRY_OPERATIONS,
-    };
+    let mut access = Access { memory, config, remaining: MAX_ENTRY_OPERATIONS };
     let mut result = Scan::default();
-    scan(
-        &mut access,
-        Walk::root(config.root, base, end),
-        None,
-        &mut result,
-    )?;
+    scan(&mut access, Walk::root(config.root, base, end), None, &mut result)?;
     if result.heterogeneous {
         Err(Error::NoMapping)
     } else {
@@ -350,11 +324,7 @@ fn split<M: Memory>(
         flags |= LARGE_OR_PAT;
     }
     if value & LARGE_PAT != 0 {
-        flags |= if child_level == 1 {
-            LARGE_OR_PAT
-        } else {
-            LARGE_PAT
-        };
+        flags |= if child_level == 1 { LARGE_OR_PAT } else { LARGE_PAT };
     }
     for index in 0..512 {
         access.write(table + index * 8, (physical + index * child_size) | flags)?;
@@ -392,14 +362,7 @@ fn push_restrictions<M: Memory>(
 }
 
 fn edit_table<M: Memory>(access: &mut Access<'_, M>, walk: Walk, edit: Edit) -> Result<(), Error> {
-    let Walk {
-        table,
-        level,
-        table_base,
-        start,
-        end,
-        inherited,
-    } = walk;
+    let Walk { table, level, table_base, start, end, inherited } = walk;
     let size = span(level);
     let first = (start - table_base) / size;
     let last = (end - 1 - table_base) / size;
@@ -478,18 +441,9 @@ fn update<M: Memory>(
     edit: Edit,
 ) -> Result<(), Error> {
     let end = validate_edit(base, length, edit, config)?;
-    let mut access = Access {
-        memory,
-        config,
-        remaining: MAX_ENTRY_OPERATIONS,
-    };
+    let mut access = Access { memory, config, remaining: MAX_ENTRY_OPERATIONS };
     let mut result = Scan::default();
-    scan(
-        &mut access,
-        Walk::root(config.root, base, end),
-        Some(edit),
-        &mut result,
-    )?;
+    scan(&mut access, Walk::root(config.root, base, end), Some(edit), &mut result)?;
     if !result.change_needed {
         return Ok(());
     }
@@ -515,16 +469,7 @@ pub fn set<M: Memory>(
     length: u64,
     attributes: u64,
 ) -> Result<(), Error> {
-    update(
-        memory,
-        config,
-        base,
-        length,
-        Edit {
-            attributes,
-            set: true,
-        },
-    )
+    update(memory, config, base, length, Edit { attributes, set: true })
 }
 
 /// Remove every requested access restriction while preserving the effective
@@ -536,14 +481,5 @@ pub fn clear<M: Memory>(
     length: u64,
     attributes: u64,
 ) -> Result<(), Error> {
-    update(
-        memory,
-        config,
-        base,
-        length,
-        Edit {
-            attributes,
-            set: false,
-        },
-    )
+    update(memory, config, base, length, Edit { attributes, set: false })
 }

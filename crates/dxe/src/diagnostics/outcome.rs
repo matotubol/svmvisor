@@ -30,9 +30,8 @@ pub fn classify(report: &Delivery) -> ReturningOutcome {
     if inner.rust_entered != 1 || inner.rust_completed != 1 || inner.cleanup_complete != 1 {
         return Failed;
     }
-    let single_entry = inner.outcome == 2
-        && inner.attempted_entries == 1
-        && inner.completed_exits == 1;
+    let single_entry =
+        inner.outcome == 2 && inner.attempted_entries == 1 && inner.completed_exits == 1;
     let multi_exit = inner.outcome == MULTI_EXIT_OUTCOME
         && inner.attempted_entries == MULTI_EXIT_ENTRIES
         && inner.completed_exits == MULTI_EXIT_ENTRIES;

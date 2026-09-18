@@ -3,8 +3,13 @@ use svmvisor_hypervisor::memory::mtrrs::{Mtrrs, Tom2Default, Tom2Error};
 const LAPIC: u64 = 0xfee0_0000;
 
 fn observation(default_type: u64) -> Mtrrs {
-    Mtrrs { default: 0x800 | default_type, count: 0,
-        variable: [(0, 0); 16], physical_bits: 48, tom2_default: None }
+    Mtrrs {
+        default: 0x800 | default_type,
+        count: 0,
+        variable: [(0, 0); 16],
+        physical_bits: 48,
+        tom2_default: None,
+    }
 }
 
 fn range(mt: &mut Mtrrs, base: u64, bytes: u64, kind: u64) {
@@ -18,9 +23,11 @@ fn effective_uc_matches_every_pat_byte_and_architectural_mtrr_type() {
     for mtrr in [0, 1, 4, 5, 6] {
         let mt = observation(mtrr);
         for pat in 0..=255u8 {
-            assert_eq!(mt.page_is_uc(LAPIC, pat),
+            assert_eq!(
+                mt.page_is_uc(LAPIC, pat),
                 mtrr == 0 && matches!(pat, 0 | 4 | 5 | 6 | 7),
-                "MTRR={mtrr}, PAT={pat}");
+                "MTRR={mtrr}, PAT={pat}"
+            );
         }
         assert_eq!(mt.page_is_wb(LAPIC), mtrr == 6);
     }
@@ -111,7 +118,9 @@ fn tom2_requires_both_sys_cfg_enables_and_enabled_mtrrs() {
             }
             let mut mt = observation(0);
             mt.tom2_default = value.unwrap();
-            if !mtrr_enabled { mt.default &= !(1 << 11); }
+            if !mtrr_enabled {
+                mt.default &= !(1 << 11);
+            }
             assert_eq!(mt.page_is_wb(FOUR_GIB), enables == 3 && mtrr_enabled);
             // Disabled MTRRs remain outside the existing classifier's profile.
             assert_eq!(mt.page_is_uc(FOUR_GIB, 6), enables != 3 && mtrr_enabled);
@@ -126,23 +135,31 @@ fn tom2_requires_both_sys_cfg_enables_and_enabled_mtrrs() {
 fn tom2_rejects_other_targets_widths_reserved_bits_and_encryption() {
     for signature in [0, SIGNATURE - 1, SIGNATURE + 1] {
         assert!(!Tom2Default::supported_profile(signature, 48));
-        assert_eq!(Tom2Default::new(signature, 48, TOM2_ENABLED_WB, TOM2),
-            Err(Tom2Error::UnsupportedProfile));
+        assert_eq!(
+            Tom2Default::new(signature, 48, TOM2_ENABLED_WB, TOM2),
+            Err(Tom2Error::UnsupportedProfile)
+        );
     }
     for width in [0, 32, 47, 49, 52, 64] {
         assert!(!Tom2Default::supported_profile(SIGNATURE, width));
-        assert_eq!(Tom2Default::new(SIGNATURE, width, TOM2_ENABLED_WB, TOM2),
-            Err(Tom2Error::UnsupportedProfile));
+        assert_eq!(
+            Tom2Default::new(SIGNATURE, width, TOM2_ENABLED_WB, TOM2),
+            Err(Tom2Error::UnsupportedProfile)
+        );
     }
     for bit in 0..64 {
         if !(18..=26).contains(&bit) {
-            assert_eq!(Tom2Default::new(SIGNATURE, 48, TOM2_ENABLED_WB | 1 << bit, TOM2),
-                Err(Tom2Error::ReservedControlBits));
+            assert_eq!(
+                Tom2Default::new(SIGNATURE, 48, TOM2_ENABLED_WB | 1 << bit, TOM2),
+                Err(Tom2Error::ReservedControlBits)
+            );
         }
     }
     for bit in 23..=26 {
-        assert_eq!(Tom2Default::new(SIGNATURE, 48, TOM2_ENABLED_WB | 1 << bit, TOM2),
-            Err(Tom2Error::ActiveEncryptionUnsupported));
+        assert_eq!(
+            Tom2Default::new(SIGNATURE, 48, TOM2_ENABLED_WB | 1 << bit, TOM2),
+            Err(Tom2Error::ActiveEncryptionUnsupported)
+        );
     }
 }
 
@@ -150,13 +167,17 @@ fn tom2_rejects_other_targets_widths_reserved_bits_and_encryption() {
 fn tom2_validates_every_reserved_address_bit_and_range_boundary() {
     for bit in 0..64 {
         if !(23..48).contains(&bit) {
-            assert_eq!(Tom2Default::new(SIGNATURE, 48, TOM2_ENABLED_WB, TOM2 | 1 << bit),
-                Err(Tom2Error::InvalidTopOfMemory));
+            assert_eq!(
+                Tom2Default::new(SIGNATURE, 48, TOM2_ENABLED_WB, TOM2 | 1 << bit),
+                Err(Tom2Error::InvalidTopOfMemory)
+            );
         }
     }
     for end in [0, FOUR_GIB - (1 << 23), FOUR_GIB] {
-        assert_eq!(Tom2Default::new(SIGNATURE, 48, TOM2_ENABLED_WB, end),
-            Err(Tom2Error::InvalidTopOfMemory));
+        assert_eq!(
+            Tom2Default::new(SIGNATURE, 48, TOM2_ENABLED_WB, end),
+            Err(Tom2Error::InvalidTopOfMemory)
+        );
     }
     for end in [FOUR_GIB + (1 << 23), 0x0000_ffff_ff80_0000] {
         let mut mt = observation(0);

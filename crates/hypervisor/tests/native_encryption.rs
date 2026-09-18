@@ -17,17 +17,9 @@ fn advertised_sme_requires_controls_but_does_not_reduce_disabled_width() {
         let plan = ryzen(0x20_0001, reduction);
         assert_eq!(plan.sys_cfg_msr(), Some(SYS_CFG));
         assert_eq!(plan.sev_status_msr(), None);
-        assert_eq!(
-            plan.validate(None, None),
-            Err(EncryptionError::MissingControlEvidence)
-        );
+        assert_eq!(plan.validate(None, None), Err(EncryptionError::MissingControlEvidence));
         let encryption = plan.validate(Some(0x74_0000), None).unwrap();
-        assert_eq!(
-            encryption,
-            EncryptionState::Unencrypted {
-                encryption_bit: Some(51)
-            }
-        );
+        assert_eq!(encryption, EncryptionState::Unencrypted { encryption_bit: Some(51) });
         let policy = AddressPolicy::new(48, encryption).unwrap();
         // Reducing by the advertised count while disabled would reject this.
         assert!(policy.validate(1 << 47, 4096, 4096).is_ok());
@@ -45,26 +37,17 @@ fn every_enabled_memory_mode_and_reserved_control_refuses() {
         );
     }
     for bit in [0, 17, 27, 63] {
-        assert_eq!(
-            plan.validate(Some(1 << bit), None),
-            Err(EncryptionError::ReservedControlBits)
-        );
+        assert_eq!(plan.validate(Some(1 << bit), None), Err(EncryptionError::ReservedControlBits));
     }
 }
 
 #[test]
 fn sev_status_is_read_only_when_enumerated_and_never_defaulted() {
     let sme = ryzen(1, 5);
-    assert_eq!(
-        sme.validate(Some(0), Some(0)),
-        Err(EncryptionError::UnexpectedControlEvidence)
-    );
+    assert_eq!(sme.validate(Some(0), Some(0)), Err(EncryptionError::UnexpectedControlEvidence));
     let sev = ryzen(3, 5);
     assert_eq!(sev.sev_status_msr(), Some(SEV_STATUS));
-    assert_eq!(
-        sev.validate(Some(0), None),
-        Err(EncryptionError::MissingControlEvidence)
-    );
+    assert_eq!(sev.validate(Some(0), None), Err(EncryptionError::MissingControlEvidence));
     assert!(sev.validate(Some(0), Some(0)).is_ok());
     for bit in 0..64 {
         assert_eq!(
@@ -82,14 +65,9 @@ fn absent_legacy_leaf_needs_no_speculative_msrs() {
         assert_eq!(plan.sev_status_msr(), None);
         assert_eq!(
             plan.validate(None, None),
-            Ok(EncryptionState::Unencrypted {
-                encryption_bit: None
-            })
+            Ok(EncryptionState::Unencrypted { encryption_bit: None })
         );
-        assert_eq!(
-            plan.validate(Some(0), None),
-            Err(EncryptionError::UnexpectedControlEvidence)
-        );
+        assert_eq!(plan.validate(Some(0), None), Err(EncryptionError::UnexpectedControlEvidence));
         assert_eq!(
             NativeEncryptionPlan::new(TARGET, 48, leaf),
             Err(EncryptionError::UnsupportedProfile)

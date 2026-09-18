@@ -188,10 +188,7 @@ extern "efiapi" fn ap_observation(argument: *mut c_void) {
     }
     let record = unsafe { &*slot.records.add(number) };
     if record.information.status_flag & ENABLED == 0
-        || record
-            .completed
-            .compare_exchange(0, 1, Ordering::AcqRel, Ordering::Acquire)
-            .is_err()
+        || record.completed.compare_exchange(0, 1, Ordering::AcqRel, Ordering::Acquire).is_err()
     {
         slot.invalid.store(true, Ordering::Release);
         return;
@@ -234,10 +231,7 @@ impl PreparedCpus<'_> {
     /// containing pages are borrowed mappings, not exclusively owned pages.
     pub fn storage_range(&self) -> Result<(u64, usize), CpuError> {
         let pool = self.pool.ok_or(CpuError::Released)?;
-        Ok((
-            pool.as_ptr().addr() as u64,
-            self.report.total_processors * size_of::<Record>(),
-        ))
+        Ok((pool.as_ptr().addr() as u64, self.report.total_processors * size_of::<Record>()))
     }
 
     pub fn release(&mut self) -> Result<(), Status> {
@@ -299,9 +293,7 @@ impl PreparedCpus<'_> {
         }
         self.report.completed_ap_callbacks = 0;
         self.rendezvous = NEXT_RENDEZVOUS
-            .fetch_update(Ordering::Relaxed, Ordering::Relaxed, |value| {
-                value.checked_add(1)
-            })
+            .fetch_update(Ordering::Relaxed, Ordering::Relaxed, |value| value.checked_add(1))
             .map_err(|_| CpuError::Bounds)?;
         let slot = Dispatch {
             protocol: self.protocol,
@@ -431,10 +423,7 @@ impl PreparedCpus<'_> {
             return Err(PreparedScopeError::Cpu(CpuError::EntryTpl));
         }
         let previous = unsafe { (self.services.raise_tpl)(Tpl::NOTIFY) };
-        let notify = TplScope {
-            services: self.services,
-            previous,
-        };
+        let notify = TplScope { services: self.services, previous };
         if previous != Tpl::APPLICATION {
             return Err(PreparedScopeError::Cpu(CpuError::EntryTpl));
         }
@@ -508,12 +497,8 @@ impl PreparedCpus<'_> {
         if previous != Tpl::NOTIFY {
             Err(CpuError::EntryTpl)
         } else {
-            let guard = QuiescentBsp {
-                report,
-                rendezvous,
-                scope: PhantomData,
-                not_send_sync: PhantomData,
-            };
+            let guard =
+                QuiescentBsp { report, rendezvous, scope: PhantomData, not_send_sync: PhantomData };
             Ok(operation(&guard, prepared))
         }
     }
@@ -676,10 +661,7 @@ unsafe fn initialize(owned: &mut PreparedCpus<'_>) -> Result<(), CpuError> {
             }
         }
         unsafe {
-            pool.as_ptr().add(number).write(Record {
-                information,
-                completed: AtomicUsize::new(0),
-            });
+            pool.as_ptr().add(number).write(Record { information, completed: AtomicUsize::new(0) });
         }
     }
     if enabled != owned.report.enabled_processors {

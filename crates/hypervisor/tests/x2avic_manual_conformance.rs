@@ -29,8 +29,8 @@ use svmvisor_hypervisor::{
         permission_maps::{MsrAccess, Msrpm, Permission},
         vmcb::Vmcb,
         x2avic::{
-            AvicExit, BackingPage, NativeX2AvicProfile, PhysicalIdTable, X2AvicCapabilities,
-            ENABLE_BITS, GUEST_APIC_VERSION, MAX_ID, NATIVE_CONTROL,
+            AvicExit, BackingPage, ENABLE_BITS, GUEST_APIC_VERSION, MAX_ID, NATIVE_CONTROL,
+            NativeX2AvicProfile, PhysicalIdTable, X2AvicCapabilities,
             ipi::{FanOutError, IpiAction, IpiDrop, IpiRefusal},
             irq::{self, Capture, IrqError, PhysicalIrqLedger},
             registers::{self, CaptureRefusal, CapturedInterface, Emulation, GuestX2Apic, Refusal},
@@ -96,9 +96,8 @@ const INITIAL_COUNT_MSR: u32 = 0x838;
 const CURRENT_COUNT_MSR: u32 = 0x839;
 const DIVIDE_MSR: u32 = 0x83e;
 const SELF_IPI_MSR: u32 = 0x83f;
-const LVT_MSRS: [u32; 6] = [
-    LVT_TIMER_MSR, LVT_THERMAL_MSR, LVT_PERF_MSR, LVT_LINT0_MSR, LVT_LINT1_MSR, LVT_ERROR_MSR,
-];
+const LVT_MSRS: [u32; 6] =
+    [LVT_TIMER_MSR, LVT_THERMAL_MSR, LVT_PERF_MSR, LVT_LINT0_MSR, LVT_LINT1_MSR, LVT_ERROR_MSR];
 
 /// LVT mask bit 16 (APM2 Figure 16-7 p635); every LVT resets to exactly this
 /// value (Table 16-2 p631).
@@ -112,18 +111,30 @@ fn range(high: u32, low: u32) -> u64 {
     ones << low
 }
 /// Timer LVT: 31:18, 15:13, 11:8 (Figure 16-8 p636) plus 63:32.
-fn timer_reserved() -> u64 { range(63, 18) | range(15, 13) | range(11, 8) }
+fn timer_reserved() -> u64 {
+    range(63, 18) | range(15, 13) | range(11, 8)
+}
 /// Thermal, perf and error LVTs: 31:17, 15:13, 11 (Figures 16-13 p638,
 /// 16-14 and 16-15 p639) plus 63:32.
-fn thermal_reserved() -> u64 { range(63, 17) | range(15, 13) | range(11, 11) }
+fn thermal_reserved() -> u64 {
+    range(63, 17) | range(15, 13) | range(11, 11)
+}
 /// LINT0/LINT1 LVTs: 31:17, 13, 11 (Figure 16-12 p638) plus 63:32.
-fn lint_reserved() -> u64 { range(63, 17) | range(13, 13) | range(11, 11) }
+fn lint_reserved() -> u64 {
+    range(63, 17) | range(13, 13) | range(11, 11)
+}
 /// SVR: 31:10 (Figure 16-17 p641) plus 63:32.
-fn svr_reserved() -> u64 { range(63, 10) }
+fn svr_reserved() -> u64 {
+    range(63, 10)
+}
 /// Divide configuration: 31:4 and 2 (Figure 16-11 p637) plus 63:32.
-fn divide_reserved() -> u64 { range(63, 4) | range(2, 2) }
+fn divide_reserved() -> u64 {
+    range(63, 4) | range(2, 2)
+}
 /// Initial count: 31:0 is the count (Figure 16-10 p637); 63:32 reserved.
-fn initial_count_reserved() -> u64 { range(63, 32) }
+fn initial_count_reserved() -> u64 {
+    range(63, 32)
+}
 /// Read-only LVT bits a guest write may carry but that are never stored:
 /// DS bit 12 on every LVT, RIR bit 14 on LINT (Figure 16-7 p635; D2/U14).
 const DS: u64 = 1 << 12;
@@ -138,8 +149,8 @@ fn logical_id(id: u32) -> u32 {
 /// Enabled x2APIC IDs of the captured MADT in table order (ACPI 6.6 5.2.12.2;
 /// madt-decoded.txt entries 0-23): primary threads, then second threads.
 const MADT_IDS: [u32; 24] = [
-    0x00, 0x02, 0x04, 0x06, 0x08, 0x0a, 0x10, 0x12, 0x14, 0x16, 0x18, 0x1a,
-    0x01, 0x03, 0x05, 0x07, 0x09, 0x0b, 0x11, 0x13, 0x15, 0x17, 0x19, 0x1b,
+    0x00, 0x02, 0x04, 0x06, 0x08, 0x0a, 0x10, 0x12, 0x14, 0x16, 0x18, 0x1a, 0x01, 0x03, 0x05, 0x07,
+    0x09, 0x0b, 0x11, 0x13, 0x15, 0x17, 0x19, 0x1b,
 ];
 
 fn policy(bits: u8) -> AddressPolicy {
@@ -194,9 +205,7 @@ impl Lapic {
     }
 
     fn in_service(&self) -> Vec<u8> {
-        (0..=255u8)
-            .filter(|v| self.get(0x810 + u32::from(v / 32)) & (1 << (v % 32)) != 0)
-            .collect()
+        (0..=255u8).filter(|v| self.get(0x810 + u32::from(v / 32)) & (1 << (v % 32)) != 0).collect()
     }
 
     fn eoi_count(&self) -> usize {
@@ -208,7 +217,11 @@ impl Lapic {
     }
 
     fn assert_legal(&self) {
-        assert!(self.violations.is_empty(), "illegal physical x2APIC accesses: {:?}", self.violations);
+        assert!(
+            self.violations.is_empty(),
+            "illegal physical x2APIC accesses: {:?}",
+            self.violations
+        );
     }
 }
 
@@ -496,8 +509,14 @@ fn eoi_write_interception_tracks_held_level_sources() {
     assert!(map.update_x2apic_eoi_intercept(&vcpu.irq), "held source: map changes");
     assert!(map_bit(&map, EOI_MSR, true), "EOI write intercepted");
     assert!(!map.update_x2apic_eoi_intercept(&vcpu.irq), "idempotent");
-    let changed: Vec<usize> = map.bytes().iter().zip(&before)
-        .enumerate().filter(|(_, (a, b))| a != b).map(|(i, _)| i).collect();
+    let changed: Vec<usize> = map
+        .bytes()
+        .iter()
+        .zip(&before)
+        .enumerate()
+        .filter(|(_, (a, b))| a != b)
+        .map(|(i, _)| i)
+        .collect();
     let eoi_write_bit = 2 * EOI_MSR as usize + 1;
     assert_eq!(changed, vec![eoi_write_bit / 8], "only the EOI write bit moves");
     assert_eq!(map.bytes()[changed[0]] ^ before[changed[0]], 1 << (eoi_write_bit % 8));
@@ -825,13 +844,28 @@ fn msr_numbers_follow_the_16_11_1_formula() {
     // Self-check: 16.11.1 p657, "x2APIC MSR address = 800h + ((APIC MMIO
     // offset) >> 4)", against the Table 16-6 p658 rows used in this file.
     let pairs = [
-        (off::ID, 0x802), (off::VERSION, 0x803), (off::TPR, 0x808), (off::APR, APR_MSR),
-        (off::PPR, 0x80a), (off::EOI, EOI_MSR), (off::LDR, 0x80d), (off::SVR, SVR_MSR),
-        (off::ISR, 0x810), (off::TMR, 0x818), (off::IRR, 0x820), (off::ESR, ESR_MSR),
-        (off::ICR_LOW, 0x830), (off::LVT_TIMER, LVT_TIMER_MSR), (off::LVT_THERMAL, LVT_THERMAL_MSR),
-        (off::LVT_PERF, LVT_PERF_MSR), (off::LVT_LINT0, LVT_LINT0_MSR), (off::LVT_LINT1, LVT_LINT1_MSR),
-        (off::LVT_ERROR, LVT_ERROR_MSR), (off::INITIAL_COUNT, INITIAL_COUNT_MSR),
-        (off::CURRENT_COUNT, CURRENT_COUNT_MSR), (off::DIVIDE, DIVIDE_MSR),
+        (off::ID, 0x802),
+        (off::VERSION, 0x803),
+        (off::TPR, 0x808),
+        (off::APR, APR_MSR),
+        (off::PPR, 0x80a),
+        (off::EOI, EOI_MSR),
+        (off::LDR, 0x80d),
+        (off::SVR, SVR_MSR),
+        (off::ISR, 0x810),
+        (off::TMR, 0x818),
+        (off::IRR, 0x820),
+        (off::ESR, ESR_MSR),
+        (off::ICR_LOW, 0x830),
+        (off::LVT_TIMER, LVT_TIMER_MSR),
+        (off::LVT_THERMAL, LVT_THERMAL_MSR),
+        (off::LVT_PERF, LVT_PERF_MSR),
+        (off::LVT_LINT0, LVT_LINT0_MSR),
+        (off::LVT_LINT1, LVT_LINT1_MSR),
+        (off::LVT_ERROR, LVT_ERROR_MSR),
+        (off::INITIAL_COUNT, INITIAL_COUNT_MSR),
+        (off::CURRENT_COUNT, CURRENT_COUNT_MSR),
+        (off::DIVIDE, DIVIDE_MSR),
     ];
     for (offset, msr) in pairs {
         assert_eq!(msr_of(offset), msr, "offset {offset:#x}");
@@ -1042,8 +1076,16 @@ fn all_eight_divide_encodings_are_accepted() {
     // 64, 128, 1, i.e. register values 0h-3h and 8h-Bh (bit 2 MBZ, Figure 16-11
     // p637).
     let mut vcpu = Vcpu::new();
-    for (encoding, divisor) in [(0b000u64, 2), (0b001, 4), (0b010, 8), (0b011, 16),
-        (0b100, 32), (0b101, 64), (0b110, 128), (0b111, 1)] {
+    for (encoding, divisor) in [
+        (0b000u64, 2),
+        (0b001, 4),
+        (0b010, 8),
+        (0b011, 16),
+        (0b100, 32),
+        (0b101, 64),
+        (0b110, 128),
+        (0b111, 1),
+    ] {
         let _: u32 = divisor;
         let value = ((encoding >> 2) << 3) | (encoding & 0b11);
         assert_eq!(vcpu.write(DIVIDE_MSR, value), WRITTEN, "encoding {encoding:03b}");
@@ -1052,7 +1094,9 @@ fn all_eight_divide_encodings_are_accepted() {
     }
     // The other eight 4-bit values set the reserved bit 2.
     for value in [0x4u64, 0x5, 0x6, 0x7, 0xc, 0xd, 0xe, 0xf] {
-        vcpu.unchanged("divide bit 2", |v| assert_eq!(v.write(DIVIDE_MSR, value), GP, "{value:#x}"));
+        vcpu.unchanged("divide bit 2", |v| {
+            assert_eq!(v.write(DIVIDE_MSR, value), GP, "{value:#x}")
+        });
     }
     vcpu.lapic.assert_legal();
 }
@@ -1282,7 +1326,11 @@ fn apic_base_relocation_is_a_documented_refusal() {
     // Figure 16-32 p656 has no x2APIC base-change transition and the manual
     // gives no rule (U7); decision D4: stopped unsupported refusal.
     for value in [0xfed0_0c00u64, 0x1_fee0_0c00, 0xfee0_1c00, 0x0000_1c00, 0xffff_f000_0c00] {
-        assert_eq!(base_write(AP_BASE, 48, value), refused(Refusal::ApicRelocation, value), "{value:#x}");
+        assert_eq!(
+            base_write(AP_BASE, 48, value),
+            refused(Refusal::ApicRelocation, value),
+            "{value:#x}"
+        );
     }
     assert_eq!(base_write(BSP_BASE, 48, 0x1d00), refused(Refusal::ApicRelocation, 0x1d00));
 }
@@ -1500,7 +1548,15 @@ struct Icr {
 
 impl Icr {
     fn fixed(dest: u32) -> Self {
-        Self { dest, shorthand: DSH_NONE, level_trigger: false, assert: false, logical: false, mt: MT_FIXED, vector: VECTOR }
+        Self {
+            dest,
+            shorthand: DSH_NONE,
+            level_trigger: false,
+            assert: false,
+            logical: false,
+            mt: MT_FIXED,
+            vector: VECTOR,
+        }
     }
     fn logical(dest: u32) -> Self {
         Self { logical: true, ..Self::fixed(dest) }
@@ -1549,7 +1605,12 @@ fn incomplete_ipi_id0_routes_by_message_type() {
         for logical in [false, true] {
             for icr in [init, sipi] {
                 let icr = Icr { logical, ..icr.shorthand(shorthand) };
-                assert_eq!(classify(&owner, icr.value(), 0), Ok(IpiAction::Startup), "{:#x}", icr.value());
+                assert_eq!(
+                    classify(&owner, icr.value(), 0),
+                    Ok(IpiAction::Startup),
+                    "{:#x}",
+                    icr.value()
+                );
             }
         }
         let level_init = Icr { level_trigger: true, assert: true, ..init.shorthand(shorthand) };
@@ -1563,21 +1624,36 @@ fn incomplete_ipi_id0_routes_by_message_type() {
         let edge = Icr { assert, ..Icr::fixed(0x1b) };
         assert!(is_fixed(classify(&owner, edge.value(), 0)), "fixed edge, L={assert}");
         let level = Icr { level_trigger: true, ..edge };
-        assert_eq!(classify(&owner, level.value(), 0), Err(IpiRefusal::LevelTriggered), "L={assert}");
+        assert_eq!(
+            classify(&owner, level.value(), 0),
+            Err(IpiRefusal::LevelTriggered),
+            "L={assert}"
+        );
     }
     assert_eq!(classify(&owner, Icr::fixed(0x1b).mt(MT_SMI, 0).value(), 0), Err(IpiRefusal::Smi));
     // NMI IPIs are delivered (Table 16-4 p644): a physical destination and the
     // all-excluding-self shorthand both resolve to V_NMI targets.
-    assert_eq!(nmi_targets(classify(&owner, Icr::fixed(0x1b).mt(MT_NMI, 0).value(), 0)),
-        madt_mask([0x1b]));
     assert_eq!(
-        nmi_targets(classify(&owner, Icr::fixed(0x1b).mt(MT_NMI, 0).shorthand(DSH_OTHERS).value(), 0)),
-        madt_mask(MADT_IDS.into_iter().filter(|id| *id != SOURCE)));
+        nmi_targets(classify(&owner, Icr::fixed(0x1b).mt(MT_NMI, 0).value(), 0)),
+        madt_mask([0x1b])
+    );
+    assert_eq!(
+        nmi_targets(classify(
+            &owner,
+            Icr::fixed(0x1b).mt(MT_NMI, 0).shorthand(DSH_OTHERS).value(),
+            0
+        )),
+        madt_mask(MADT_IDS.into_iter().filter(|id| *id != SOURCE))
+    );
     // Self and all-including-self shorthands are not admitted for NMI.
-    assert_eq!(classify(&owner, Icr::fixed(0).mt(MT_NMI, 0).shorthand(DSH_SELF).value(), 0),
-        Err(IpiRefusal::Nmi));
-    assert_eq!(classify(&owner, Icr::fixed(0).mt(MT_NMI, 0).shorthand(DSH_ALL).value(), 0),
-        Err(IpiRefusal::Nmi));
+    assert_eq!(
+        classify(&owner, Icr::fixed(0).mt(MT_NMI, 0).shorthand(DSH_SELF).value(), 0),
+        Err(IpiRefusal::Nmi)
+    );
+    assert_eq!(
+        classify(&owner, Icr::fixed(0).mt(MT_NMI, 0).shorthand(DSH_ALL).value(), 0),
+        Err(IpiRefusal::Nmi)
+    );
 }
 
 /// Target mask of a delivered NMI IPI classification.
@@ -1598,7 +1674,11 @@ fn eliminated_icr_message_types_stop() {
         for mt in [1, 3, 7] {
             for icr in [Icr::fixed(0x1b), Icr::logical(1).shorthand(DSH_OTHERS)] {
                 let value = icr.mt(mt, VECTOR).value();
-                assert_eq!(classify(&owner, value, reason), Err(IpiRefusal::ReservedMessageType), "{value:#x}");
+                assert_eq!(
+                    classify(&owner, value, reason),
+                    Err(IpiRefusal::ReservedMessageType),
+                    "{value:#x}"
+                );
             }
         }
     }
@@ -1614,7 +1694,11 @@ fn reserved_icr_bits_stop() {
         for bit in (20..=31).chain([16, 17, 13]) {
             for icr in [Icr::fixed(0x1b), Icr::fixed(0x1b).mt(MT_INIT, 0)] {
                 let value = icr.value() | (1u64 << bit);
-                assert_eq!(classify(&owner, value, reason), Err(IpiRefusal::ReservedBits), "bit {bit}");
+                assert_eq!(
+                    classify(&owner, value, reason),
+                    Err(IpiRefusal::ReservedBits),
+                    "bit {bit}"
+                );
             }
         }
     }
@@ -1629,7 +1713,11 @@ fn icr_delivery_status_bit_stops() {
     for reason in [0, 2] {
         for icr in [Icr::fixed(0x1b), Icr::fixed(0x1b).mt(MT_INIT, 0)] {
             let value = icr.value() | (1 << 12);
-            assert_eq!(classify(&owner, value, reason), Err(IpiRefusal::ReservedBits), "{value:#x}");
+            assert_eq!(
+                classify(&owner, value, reason),
+                Err(IpiRefusal::ReservedBits),
+                "{value:#x}"
+            );
         }
     }
 }
@@ -1642,11 +1730,21 @@ fn incomplete_ipi_id1_never_redelivers() {
     // VMRUN (15.29.8.3 p579), so the exit resumes and publishes nothing.
     let owner = madt_owner();
     for icr in [Icr::fixed(0x1b), Icr::logical(u32::MAX), Icr::fixed(0).shorthand(DSH_ALL)] {
-        assert_eq!(classify(&owner, icr.value(), 1), Ok(IpiAction::Published), "{:#x}", icr.value());
+        assert_eq!(
+            classify(&owner, icr.value(), 1),
+            Ok(IpiAction::Published),
+            "{:#x}",
+            icr.value()
+        );
     }
     // Step 5 is reached only by a fixed IPI: any other ID 1 exit is refused.
     for icr in [Icr::fixed(0x1b).mt(MT_INIT, 0), Icr::fixed(0x1b).mt(MT_NMI, 0)] {
-        assert_eq!(classify(&owner, icr.value(), 1), Err(IpiRefusal::TargetNotRunning), "{:#x}", icr.value());
+        assert_eq!(
+            classify(&owner, icr.value(), 1),
+            Err(IpiRefusal::TargetNotRunning),
+            "{:#x}",
+            icr.value()
+        );
     }
 }
 
@@ -1657,10 +1755,18 @@ fn incomplete_ipi_id2_is_delivered_in_software() {
     // software handling by message type.
     let owner = madt_owner();
     assert!(is_fixed(classify(&owner, Icr::fixed(0x1b).value(), 2)));
-    assert_eq!(classify(&owner, Icr::fixed(0x1b).mt(MT_INIT, 0).value(), 2), Ok(IpiAction::Startup));
-    assert_eq!(classify(&owner, Icr::fixed(0x1b).mt(MT_STARTUP, 0x9a).value(), 2), Ok(IpiAction::Startup));
-    assert_eq!(nmi_targets(classify(&owner, Icr::fixed(0x1b).mt(MT_NMI, 0).value(), 2)),
-        madt_mask([0x1b]));
+    assert_eq!(
+        classify(&owner, Icr::fixed(0x1b).mt(MT_INIT, 0).value(), 2),
+        Ok(IpiAction::Startup)
+    );
+    assert_eq!(
+        classify(&owner, Icr::fixed(0x1b).mt(MT_STARTUP, 0x9a).value(), 2),
+        Ok(IpiAction::Startup)
+    );
+    assert_eq!(
+        nmi_targets(classify(&owner, Icr::fixed(0x1b).mt(MT_NMI, 0).value(), 2)),
+        madt_mask([0x1b])
+    );
     assert_eq!(classify(&owner, Icr::fixed(0x1b).mt(MT_SMI, 0).value(), 2), Err(IpiRefusal::Smi));
     let level = Icr { level_trigger: true, assert: true, ..Icr::fixed(0x1b) };
     assert_eq!(classify(&owner, level.value(), 2), Err(IpiRefusal::LevelTriggered));
@@ -1671,8 +1777,14 @@ fn incomplete_ipi_id3_stops() {
     // Table 15-27 p581 ID 3: invalid backing page pointer in the physical ID
     // table. D5: stopped refusal.
     let owner = madt_owner();
-    for icr in [Icr::fixed(0x1b), Icr::fixed(0).shorthand(DSH_ALL), Icr::fixed(0x1b).mt(MT_INIT, 0)] {
-        assert_eq!(classify(&owner, icr.value(), 3), Err(IpiRefusal::InvalidBackingPage), "{:#x}", icr.value());
+    for icr in [Icr::fixed(0x1b), Icr::fixed(0).shorthand(DSH_ALL), Icr::fixed(0x1b).mt(MT_INIT, 0)]
+    {
+        assert_eq!(
+            classify(&owner, icr.value(), 3),
+            Err(IpiRefusal::InvalidBackingPage),
+            "{:#x}",
+            icr.value()
+        );
     }
 }
 
@@ -1709,7 +1821,12 @@ fn incomplete_ipi_id4_drops_illegal_vectors() {
         Icr::fixed(0x1b).mt(MT_FIXED, 0xff),
         Icr::fixed(0x1b).mt(MT_NMI, 0),
     ] {
-        assert_eq!(classify(&owner, icr.value(), 4), Err(IpiRefusal::InconsistentVectorExit), "{:#x}", icr.value());
+        assert_eq!(
+            classify(&owner, icr.value(), 4),
+            Err(IpiRefusal::InconsistentVectorExit),
+            "{:#x}",
+            icr.value()
+        );
     }
 }
 
@@ -1735,7 +1852,11 @@ fn reserved_incomplete_ipi_ids_stop() {
     // Table 15-27 p581: ID 5 is Secure AVIC only; IDs above 5 are reserved.
     let owner = madt_owner();
     for reason in [5, 6, 7, 0x100, u32::MAX] {
-        assert_eq!(classify(&owner, Icr::fixed(0x1b).value(), reason), Err(IpiRefusal::UnknownReason), "ID {reason}");
+        assert_eq!(
+            classify(&owner, Icr::fixed(0x1b).value(), reason),
+            Err(IpiRefusal::UnknownReason),
+            "ID {reason}"
+        );
     }
 }
 
@@ -1744,9 +1865,7 @@ fn reserved_incomplete_ipi_ids_stop() {
 // ---------------------------------------------------------------------------
 
 fn slot_mask(ids: &[u32], wanted: impl IntoIterator<Item = u32>) -> u32 {
-    wanted
-        .into_iter()
-        .fold(0, |mask, id| mask | 1 << ids.iter().position(|x| *x == id).unwrap())
+    wanted.into_iter().fold(0, |mask, id| mask | 1 << ids.iter().position(|x| *x == id).unwrap())
 }
 
 fn madt_mask(wanted: impl IntoIterator<Item = u32>) -> u32 {
@@ -1823,7 +1942,11 @@ fn logical_destination_uses_cluster_and_logical_bits() {
         (0x0000_00ff, (0x00..=0x07).collect()),
     ];
     for (dest, ids) in cases {
-        assert_eq!(fan(&owner, Icr::logical(dest)), Ok(madt_mask(ids.iter().copied())), "dest {dest:#x}");
+        assert_eq!(
+            fan(&owner, Icr::logical(dest)),
+            Ok(madt_mask(ids.iter().copied())),
+            "dest {dest:#x}"
+        );
         for id in &ids {
             assert_eq!(logical_id(*id) >> 16, dest >> 16);
             assert_ne!(logical_id(*id) & dest & 0xffff, 0);
@@ -1861,8 +1984,16 @@ fn destination_shorthands_select_self_all_or_others() {
     let others = madt_mask(MADT_IDS.into_iter().filter(|id| *id != SOURCE));
     for dest in [0x1b, 0x00, u32::MAX, 0x0001_0800] {
         for base in [Icr::fixed(dest), Icr::logical(dest)] {
-            assert_eq!(fan(&owner, base.shorthand(DSH_SELF)), Ok(madt_mask([SOURCE])), "self {dest:#x}");
-            assert_eq!(fan(&owner, base.shorthand(DSH_ALL)), Ok(madt_mask(MADT_IDS)), "all {dest:#x}");
+            assert_eq!(
+                fan(&owner, base.shorthand(DSH_SELF)),
+                Ok(madt_mask([SOURCE])),
+                "self {dest:#x}"
+            );
+            assert_eq!(
+                fan(&owner, base.shorthand(DSH_ALL)),
+                Ok(madt_mask(MADT_IDS)),
+                "all {dest:#x}"
+            );
             assert_eq!(fan(&owner, base.shorthand(DSH_OTHERS)), Ok(others), "others {dest:#x}");
         }
     }
@@ -1903,9 +2034,11 @@ fn deliver(owner: &NativeIcr, pages: &[BackingPage], icr: Icr) -> Result<Vec<u32
         other => panic!("{:#x}: {other:?}", icr.value()),
     };
     let rung = RefCell::new(Vec::new());
-    owner
-        .inventory()
-        .deliver_fixed(ipi, |slot| &pages[slot], |target| rung.borrow_mut().push(target.apic_id()))?;
+    owner.inventory().deliver_fixed(
+        ipi,
+        |slot| &pages[slot],
+        |target| rung.borrow_mut().push(target.apic_id()),
+    )?;
     Ok(rung.into_inner())
 }
 
@@ -1959,9 +2092,23 @@ fn self_directed_and_logical_fan_out_touch_only_their_targets() {
     let pages = madt_pages(&MADT_IDS);
     let rung = deliver(&owner, &pages, Icr::logical(0x0001_0109)).unwrap();
     let mut expected = vec![0x10, 0x13, 0x18];
-    assert_eq!({ let mut p = pending(&pages, VECTOR); p.sort(); p }, expected);
+    assert_eq!(
+        {
+            let mut p = pending(&pages, VECTOR);
+            p.sort();
+            p
+        },
+        expected
+    );
     expected.retain(|id| *id != SOURCE);
-    assert_eq!({ let mut r = rung; r.sort(); r }, expected);
+    assert_eq!(
+        {
+            let mut r = rung;
+            r.sort();
+            r
+        },
+        expected
+    );
 
     let pages = madt_pages(&MADT_IDS);
     let rung = deliver(&owner, &pages, Icr::fixed(0).shorthand(DSH_OTHERS)).unwrap();
@@ -1983,7 +2130,11 @@ fn fixed_ipi_is_not_accepted_by_a_software_disabled_target() {
     set(&pages[disabled], off::SVR, 0xff);
     let _ = deliver(&owner, &pages, Icr::fixed(0).shorthand(DSH_ALL));
     assert!(!pages[disabled].is_pending(VECTOR), "software-disabled target accepted a fixed IPI");
-    assert_eq!(pending(&pages, VECTOR).len(), MADT_IDS.len() - 1, "enabled targets still receive it");
+    assert_eq!(
+        pending(&pages, VECTOR).len(),
+        MADT_IDS.len() - 1,
+        "enabled targets still receive it"
+    );
 }
 
 #[test]
@@ -1995,7 +2146,10 @@ fn device_interrupt_is_not_accepted_by_a_software_disabled_guest_apic() {
     set(&vcpu.page, off::SVR, 0xff);
     vcpu.lapic.accept(0x41, false);
     let _ = irq::capture(0x41, &vcpu.page, &mut vcpu.irq, &mut vcpu.lapic);
-    assert!(!vcpu.page.is_pending(0x41), "software-disabled guest APIC accepted a device interrupt");
+    assert!(
+        !vcpu.page.is_pending(0x41),
+        "software-disabled guest APIC accepted a device interrupt"
+    );
 }
 
 #[test]
@@ -2025,7 +2179,8 @@ fn fan_out_to_an_unringable_target_publishes_nothing() {
             other => panic!("{other:?}"),
         };
         let rung = RefCell::new(0);
-        let result = owner.inventory().deliver_fixed(ipi, |slot| &pages[slot], |_| *rung.borrow_mut() += 1);
+        let result =
+            owner.inventory().deliver_fixed(ipi, |slot| &pages[slot], |_| *rung.borrow_mut() += 1);
         assert_eq!(result, Err(FanOutError::DoorbellTarget { slot: 2, id: ids[2] }), "{ids:?}");
         assert!(pages.iter().all(|page| !page.is_pending(VECTOR)), "nothing published");
         assert_eq!(*rung.borrow(), 0, "nothing rung");
@@ -2033,7 +2188,8 @@ fn fan_out_to_an_unringable_target_publishes_nothing() {
 }
 
 fn madt_mailboxes() -> Vec<NativeStartupMailbox> {
-    let boxes: Vec<NativeStartupMailbox> = MADT_IDS.iter().map(|id| NativeStartupMailbox::new(*id)).collect();
+    let boxes: Vec<NativeStartupMailbox> =
+        MADT_IDS.iter().map(|id| NativeStartupMailbox::new(*id)).collect();
     for mailbox in &boxes {
         mailbox.mark_running();
     }
@@ -2088,7 +2244,8 @@ fn init_and_startup_with_self_or_all_including_self_are_not_delivered() {
     for icr in [Icr::fixed(0x1b).mt(MT_INIT, 0), Icr::fixed(0x1b).mt(MT_STARTUP, 0x9a)] {
         for shorthand in [DSH_SELF, DSH_ALL] {
             let value = icr.shorthand(shorthand).value();
-            let result = owner.route_x2avic_startup(value, &boxes, |_| panic!("kick for {value:#x}"));
+            let result =
+                owner.route_x2avic_startup(value, &boxes, |_| panic!("kick for {value:#x}"));
             assert!(result.is_err(), "{value:#x}");
             assert!(boxes.iter().all(|b| b.peek().is_none()), "{value:#x} published");
         }
@@ -2314,7 +2471,11 @@ fn apr_reads_follow_figure_16_22() {
             set_vector(&vcpu.page, off::IRR, *v);
         }
         let outcome = vcpu.unchanged("APR read", |v| v.read(APR_MSR));
-        assert_eq!(outcome, Emulation::Read(u64::from(expected)), "TPR {tpr:#x} ISR {isr:x?} IRR {irr:x?}");
+        assert_eq!(
+            outcome,
+            Emulation::Read(u64::from(expected)),
+            "TPR {tpr:#x} ISR {isr:x?} IRR {irr:x?}"
+        );
     }
 }
 
@@ -2322,7 +2483,8 @@ fn apr_reads_follow_figure_16_22() {
 fn apr_sweep_over_priority_classes() {
     // Figure 16-22 p647 over TPR values and single ISR/IRR vectors in every
     // 32-bit bank.
-    let vectors_under_test = [None, Some(0x10u8), Some(0x3f), Some(0x40), Some(0x72), Some(0xa5), Some(0xff)];
+    let vectors_under_test =
+        [None, Some(0x10u8), Some(0x3f), Some(0x40), Some(0x72), Some(0xa5), Some(0xff)];
     for tpr in [0x00u32, 0x0f, 0x35, 0x72, 0xa9, 0xf3] {
         for isr in vectors_under_test {
             for irr in vectors_under_test {
@@ -2443,7 +2605,11 @@ fn incomplete_ipi_exit_fields_follow_tables_15_25_to_15_27() {
             for index in [0u64, 0x1b, 0x7ff, 0xfff] {
                 assert_eq!(
                     AvicExit::decode(AVIC_INCOMPLETE_IPI, icr, (id << 32) | index),
-                    Ok(AvicExit::IncompleteIpi { icr, reason: id as u32, index: Some(index as u16) }),
+                    Ok(AvicExit::IncompleteIpi {
+                        icr,
+                        reason: id as u32,
+                        index: Some(index as u16)
+                    }),
                     "ICR {icr:#x} ID {id} index {index:#x}"
                 );
             }
@@ -2501,7 +2667,9 @@ fn noaccel_exit_fields_follow_tables_15_28_and_15_29() {
 fn noaccel_eoi_vector_is_bits_7_to_0_only() {
     // Figure 15-26 / Table 15-29 p582: EXITINFO2 63:8 are reserved. (Vectors
     // 15:0 cannot be in service, 16.6.3 p647, so only 16-255 are used here.)
-    for (info2, vector) in [(0xffff_ffff_ffff_ff62u64, 0x62u8), (0x1_0000_00ff, 0xff), (0x110, 0x10)] {
+    for (info2, vector) in
+        [(0xffff_ffff_ffff_ff62u64, 0x62u8), (0x1_0000_00ff, 0xff), (0x110, 0x10)]
+    {
         assert_eq!(
             AvicExit::decode(AVIC_NOACCEL, (1 << 32) | 0xb0, info2),
             Ok(AvicExit::NoAcceleration { offset: 0xb0, write: true, eoi_vector: Some(vector) }),
@@ -2529,7 +2697,8 @@ fn physical_spurious_interrupt_is_neither_published_nor_acknowledged() {
     // p641; the host SVR is 1FFh, D3); "The ISR is unaffected by the spurious
     // interrupt, so the interrupt handler completes without sending an EOI".
     let mut vcpu = Vcpu::new();
-    let result = vcpu.unchanged("spurious", |v| irq::capture(0xff, &v.page, &mut v.irq, &mut v.lapic));
+    let result =
+        vcpu.unchanged("spurious", |v| irq::capture(0xff, &v.page, &mut v.irq, &mut v.lapic));
     assert_eq!(result, Ok(None));
     vcpu.lapic.assert_legal();
 }
@@ -2541,7 +2710,10 @@ fn physical_edge_interrupt_is_published_then_acknowledged() {
     let mut vcpu = Vcpu::new();
     set_vector(&vcpu.page, off::TMR, 0x41); // stale bit of a completed level source
     vcpu.lapic.accept(0x41, false);
-    assert_eq!(irq::capture(0x41, &vcpu.page, &mut vcpu.irq, &mut vcpu.lapic), Ok(Some(Capture::Edge)));
+    assert_eq!(
+        irq::capture(0x41, &vcpu.page, &mut vcpu.irq, &mut vcpu.lapic),
+        Ok(Some(Capture::Edge))
+    );
     assert!(vcpu.page.is_pending(0x41));
     assert!(!vcpu.page.is_level(0x41));
     assert_eq!(vcpu.lapic.eoi_count(), 1);
@@ -2557,7 +2729,10 @@ fn physical_level_interrupt_is_published_with_tmr_and_held() {
     // until the guest EOI.
     let mut vcpu = Vcpu::new();
     vcpu.lapic.accept(0x62, true);
-    assert_eq!(irq::capture(0x62, &vcpu.page, &mut vcpu.irq, &mut vcpu.lapic), Ok(Some(Capture::Level)));
+    assert_eq!(
+        irq::capture(0x62, &vcpu.page, &mut vcpu.irq, &mut vcpu.lapic),
+        Ok(Some(Capture::Level))
+    );
     assert!(vcpu.page.is_pending(0x62));
     assert!(vcpu.page.is_level(0x62));
     assert!(vcpu.irq.holds(0x62));
@@ -2572,7 +2747,8 @@ fn accepted_vector_without_physical_in_service_state_is_refused() {
     // core" without ISR state, so a non-spurious vector with no physical ISR
     // bit cannot be owned by the bridge (IrqError::NotInService contract).
     let mut vcpu = Vcpu::new();
-    let result = vcpu.unchanged("no ISR bit", |v| irq::capture(0x41, &v.page, &mut v.irq, &mut v.lapic));
+    let result =
+        vcpu.unchanged("no ISR bit", |v| irq::capture(0x41, &v.page, &mut v.irq, &mut v.lapic));
     assert_eq!(result, Err(IrqError::NotInService(0x41)));
     vcpu.lapic.assert_legal();
 }
@@ -2664,7 +2840,11 @@ fn captured_values_with_reserved_bits_are_refused() {
     ] {
         let mut lapic = Lapic::host();
         lapic.reg.insert(msr, value);
-        assert_eq!(CapturedInterface::capture(&mut lapic, 0), Err(CaptureRefusal { msr, value }), "{msr:#x}");
+        assert_eq!(
+            CapturedInterface::capture(&mut lapic, 0),
+            Err(CaptureRefusal { msr, value }),
+            "{msr:#x}"
+        );
         assert!(lapic.writes.is_empty());
     }
 }
@@ -2827,7 +3007,11 @@ fn apic_base_bits_below_a_52_bit_width_are_base_bits() {
     // not a reserved-bit fault.
     for bit in 48..52 {
         let value = AP_BASE | (1u64 << bit);
-        assert_eq!(base_write(AP_BASE, 52, value), refused(Refusal::ApicRelocation, value), "bit {bit}");
+        assert_eq!(
+            base_write(AP_BASE, 52, value),
+            refused(Refusal::ApicRelocation, value),
+            "bit {bit}"
+        );
     }
 }
 
@@ -2898,7 +3082,9 @@ fn interrupt_bitmaps_have_no_vectors_below_16() {
         assert!(page.enqueue(vector, true).is_err(), "vector {vector}");
     }
     assert!(snapshot(&page).iter().all(|slot| *slot == 0));
-    for (vector, bank, bit) in [(16u8, 0u16, 16u32), (31, 0, 31), (32, 1, 0), (0x62, 3, 2), (255, 7, 31)] {
+    for (vector, bank, bit) in
+        [(16u8, 0u16, 16u32), (31, 0, 31), (32, 1, 0), (0x62, 3, 2), (255, 7, 31)]
+    {
         assert_eq!(page.enqueue(vector, true), Ok(true), "vector {vector:#x}");
         assert_eq!(page.enqueue(vector, true), Ok(false), "already pending {vector:#x}");
         assert_eq!(reg(&page, off::IRR + bank * 16), 1 << bit, "IRR bank of {vector:#x}");
@@ -2915,7 +3101,9 @@ fn highest_in_service_is_the_highest_isr_bit() {
     // highest in-service vector.
     let page = BackingPage::new();
     assert_eq!(page.highest_in_service(), None);
-    for (vector, highest) in [(0x21u8, 0x21u8), (0x80, 0x80), (0x7f, 0x80), (0xff, 0xff), (0x10, 0xff)] {
+    for (vector, highest) in
+        [(0x21u8, 0x21u8), (0x80, 0x80), (0x7f, 0x80), (0xff, 0xff), (0x10, 0xff)]
+    {
         set_vector(&page, off::ISR, vector);
         assert_eq!(page.highest_in_service(), Some(highest), "after {vector:#x}");
     }
@@ -2932,7 +3120,11 @@ fn doorbell_msr_is_c001_011b_and_hidden_from_the_guest() {
     map.configure_native_x2avic();
     let bit = 0x1000 * 8 + 2 * (0xc001_011b_usize - 0xc001_0000);
     assert_ne!(map.bytes()[bit / 8] & (1 << (bit % 8)), 0, "doorbell read intercepted");
-    assert_ne!(map.bytes()[(bit + 1) / 8] & (1 << ((bit + 1) % 8)), 0, "doorbell write intercepted");
+    assert_ne!(
+        map.bytes()[(bit + 1) / 8] & (1 << ((bit + 1) % 8)),
+        0,
+        "doorbell write intercepted"
+    );
 }
 
 // ---------------------------------------------------------------------------
@@ -3009,7 +3201,10 @@ fn expected_write(msr: u32, value: u64) -> Class {
     };
     if value & reserved != 0 {
         Class::Fault
-    } else if matches!(msr, LVT_THERMAL_MSR | LVT_PERF_MSR | LVT_ERROR_MSR | LVT_LINT0_MSR | LVT_LINT1_MSR) {
+    } else if matches!(
+        msr,
+        LVT_THERMAL_MSR | LVT_PERF_MSR | LVT_ERROR_MSR | LVT_LINT0_MSR | LVT_LINT1_MSR
+    ) {
         lvt_policy(msr, value)
     } else {
         Class::Completes
@@ -3028,7 +3223,11 @@ fn table_16_6_outcome_matrix_for_every_msr() {
         assert_eq!(class_of(got), expected_read(msr), "RDMSR {msr:#x}: {got:?}");
         for value in [0u64, 0x1_0030, 0x1ff, 0xb, 1 << 32, u64::MAX] {
             let got = vcpu.write(msr, value);
-            assert_eq!(class_of(got), expected_write(msr, value), "WRMSR {msr:#x} = {value:#x}: {got:?}");
+            assert_eq!(
+                class_of(got),
+                expected_write(msr, value),
+                "WRMSR {msr:#x} = {value:#x}: {got:?}"
+            );
         }
         rows += 1;
     }
@@ -3087,7 +3286,10 @@ fn guest_init_keeps_x2avic_enabled_and_resets_v_tpr() {
         state: &mut state,
         signature: 0x00b4_0f40,
     };
-    assert_eq!(target.apply_x2avic(NativeStartupCommand::Init, &profile), Ok(NativeStartupEffect::Init));
+    assert_eq!(
+        target.apply_x2avic(NativeStartupCommand::Init, &profile),
+        Ok(NativeStartupEffect::Init)
+    );
     let control = vmcb.virtual_interrupt_control();
     assert_eq!(control & 0xf, 0, "V_TPR after INIT");
     assert_eq!(control & (3 << 30), 3 << 30, "AVIC and x2AVIC stay enabled");
@@ -3103,8 +3305,14 @@ fn guest_init_keeps_x2avic_enabled_and_resets_v_tpr() {
         state: &mut state,
         signature: 0x00b4_0f40,
     };
-    assert_eq!(target.apply_x2avic(NativeStartupCommand::Sipi(0x9a), &profile), Ok(NativeStartupEffect::Started));
-    assert_eq!(target.apply_x2avic(NativeStartupCommand::Sipi(0x9b), &profile), Ok(NativeStartupEffect::Ignored));
+    assert_eq!(
+        target.apply_x2avic(NativeStartupCommand::Sipi(0x9a), &profile),
+        Ok(NativeStartupEffect::Started)
+    );
+    assert_eq!(
+        target.apply_x2avic(NativeStartupCommand::Sipi(0x9b), &profile),
+        Ok(NativeStartupEffect::Ignored)
+    );
     assert_eq!(state, NativeStartupState::Running);
     let control = vmcb.virtual_interrupt_control();
     assert_eq!(control & (3 << 30), 3 << 30, "x2AVIC still enabled after SIPI");

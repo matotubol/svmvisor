@@ -64,11 +64,7 @@ unsafe fn allocate(services: &BootServices) -> Result<Fixture<'_>, u64> {
     {
         return Err(3);
     }
-    let mut owned = Fixture {
-        services,
-        base,
-        owned: true,
-    };
+    let mut owned = Fixture { services, base, owned: true };
     // Pinned 256MiB OVMF RAM fixture only, never native accessibility evidence.
     if base < 0x100000 || base > 0x10000000 - (PAGES * 4096) as u64 || base & 4095 != 0 {
         owned.release()?;
@@ -153,15 +149,9 @@ pub unsafe fn run(
                 ("transition-progress", journal.progress),
                 ("transition-vmruns", journal.vmrun_attempts),
                 ("transition-exits", journal.completed_exits),
-                (
-                    "transition-events-released",
-                    journal.event_release_completed,
-                ),
+                ("transition-events-released", journal.event_release_completed),
                 ("transition-restored", journal.restoration_complete),
-                (
-                    "transition-gdt-accessed-restores",
-                    journal.gdt_accessed_restores,
-                ),
+                ("transition-gdt-accessed-restores", journal.gdt_accessed_restores),
                 ("transition-guest-exit", observation.guest_exit),
                 ("transition-guest-rip", observation.guest_rip),
                 ("transition-guest-rax", observation.guest_rax),
@@ -178,14 +168,8 @@ pub unsafe fn run(
                 ("transition-multi-nrip", observation.multi[4]),
                 ("transition-multi-phase", observation.multi[5]),
                 ("transition-multi-nrip-checked", observation.multi[6]),
-                (
-                    "transition-multi-completed-rounds",
-                    observation.multi_completion[0],
-                ),
-                (
-                    "transition-multi-completed-proof",
-                    observation.multi_completion[1],
-                ),
+                ("transition-multi-completed-rounds", observation.multi_completion[0]),
+                ("transition-multi-completed-proof", observation.multi_completion[1]),
             ] {
                 unsafe {
                     crate::native_entry::snapshot_line(table, field, value);
@@ -300,11 +284,7 @@ unsafe fn perform(
                 ] {
                     crate::native_entry::snapshot_line(table, field, value);
                 }
-                Ok::<_, u64>(Prepared {
-                    fixture,
-                    tables,
-                    guest,
-                })
+                Ok::<_, u64>(Prepared { fixture, tables, guest })
             },
             |guard, prepared| {
                 prepared.tables.revalidate(guard).map_err(|_| 22u64)?;
@@ -335,11 +315,7 @@ unsafe fn perform(
             |prepared| {
                 let tables = prepared.tables.release();
                 let fixture = prepared.fixture.release();
-                if tables.is_err() || fixture.is_err() {
-                    Err(23u64)
-                } else {
-                    Ok(())
-                }
+                if tables.is_err() || fixture.is_err() { Err(23u64) } else { Ok(()) }
             },
         )
     };

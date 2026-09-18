@@ -20,11 +20,7 @@ fn event(vector: u8, error: u32) -> u64 {
     (1 << 31)
         | (3 << 8)
         | vector as u64
-        | if vector == 6 {
-            0
-        } else {
-            (1 << 11) | ((error as u64) << 32)
-        }
+        | if vector == 6 { 0 } else { (1 << 11) | ((error as u64) << 32) }
 }
 
 fn stopped(prior: u8, current: u8) -> Vmcb {
@@ -66,11 +62,7 @@ fn all_sixteen_admitted_combinations_preserve_unrelated_state_and_pf_side_effect
                 _ => unreachable!(),
             };
             let outcome = if let Some(combined) = combined {
-                let error = if combined == ReflectedException::DoubleFault {
-                    0
-                } else {
-                    0x12
-                };
+                let error = if combined == ReflectedException::DoubleFault { 0 } else { 0x12 };
                 expected[0x0a8..0x0b0]
                     .copy_from_slice(&event(combined.vector(), error).to_le_bytes());
                 expected[0x0c0..0x0c4].fill(0);
@@ -119,12 +111,10 @@ fn prior_request_retirement_and_nested_resolution_are_distinct_actual_exit_bound
     let terminal = *v.bytes();
     assert_eq!(
         v.resolve_exception_delivery_after_exit(),
-        Ok(DeliveryOutcome::Shutdown(
-            GuestShutdown::ExceptionDelivery {
-                interrupted_vector: 8,
-                fault_vector: 11,
-            }
-        ))
+        Ok(DeliveryOutcome::Shutdown(GuestShutdown::ExceptionDelivery {
+            interrupted_vector: 8,
+            fault_vector: 11,
+        }))
     );
     assert_eq!(v.bytes(), &terminal);
 }
@@ -149,9 +139,9 @@ fn undefined_error_payload_and_hardware_cleared_injection_validity_are_ignored()
         write(&mut v, 0x0a8, injection);
         assert_eq!(
             v.resolve_exception_delivery_after_exit(),
-            Ok(DeliveryOutcome::Injected(
-                ReflectedException::SegmentNotPresent { error_code: 0x12 }
-            ))
+            Ok(DeliveryOutcome::Injected(ReflectedException::SegmentNotPresent {
+                error_code: 0x12
+            }))
         );
         assert_eq!(v.event_injection(), event(11, 0x12));
     }
@@ -161,60 +151,36 @@ fn undefined_error_payload_and_hardware_cleared_injection_validity_are_ignored()
 fn unsupported_and_malformed_nested_cases_are_byte_exact_refusals() {
     let cases = [
         (0x070, u64::MAX, ReflectionError::InvalidEntry),
-        (
-            0x070,
-            0x400,
-            ReflectionError::UnsupportedExit { code: 0x400 },
-        ),
+        (0x070, 0x400, ReflectionError::UnsupportedExit { code: 0x400 }),
         (0x070, 0x46, ReflectionError::UnsupportedExit { code: 0x46 }),
         (0x070, 0x48, ReflectionError::UnsupportedExit { code: 0x48 }),
-        (
-            0x070,
-            0x1_0000_004b,
-            ReflectionError::UnsupportedExit {
-                code: 0x1_0000_004b,
-            },
-        ),
+        (0x070, 0x1_0000_004b, ReflectionError::UnsupportedExit { code: 0x1_0000_004b }),
         (0x088, 0, ReflectionError::NoInterruptedDelivery),
         (
             0x088,
             event(6, 0) | 0x1000,
-            ReflectionError::InvalidInterruptedEvent {
-                event: event(6, 0) | 0x1000,
-            },
+            ReflectionError::InvalidInterruptedEvent { event: event(6, 0) | 0x1000 },
         ),
         (
             0x088,
             event(6, 0) | (1 << 11),
-            ReflectionError::InvalidInterruptedEvent {
-                event: event(6, 0) | (1 << 11),
-            },
+            ReflectionError::InvalidInterruptedEvent { event: event(6, 0) | (1 << 11) },
         ),
         (
             0x088,
             event(13, 0) & !(1 << 11),
-            ReflectionError::InvalidInterruptedEvent {
-                event: event(13, 0) & !(1 << 11),
-            },
+            ReflectionError::InvalidInterruptedEvent { event: event(13, 0) & !(1 << 11) },
         ),
-        (
-            0x088,
-            event(8, 1),
-            ReflectionError::InvalidInterruptedEvent { event: event(8, 1) },
-        ),
+        (0x088, event(8, 1), ReflectionError::InvalidInterruptedEvent { event: event(8, 1) }),
         (
             0x088,
             event(13, 0x10000),
-            ReflectionError::InvalidInterruptedEvent {
-                event: event(13, 0x10000),
-            },
+            ReflectionError::InvalidInterruptedEvent { event: event(13, 0x10000) },
         ),
         (
             0x088,
             event(14, 0x80),
-            ReflectionError::InvalidInterruptedEvent {
-                event: event(14, 0x80),
-            },
+            ReflectionError::InvalidInterruptedEvent { event: event(14, 0x80) },
         ),
         (0x0a8, event(13, 0), ReflectionError::PriorInjectionMismatch),
         (0x060, 1 << 8, ReflectionError::PendingVirtualInterrupt),
@@ -232,14 +198,7 @@ fn unsupported_and_malformed_nested_cases_are_byte_exact_refusals() {
                 control: 2,
             }),
         ),
-        (
-            0x078,
-            0x10000,
-            ReflectionError::InvalidSelectorError {
-                vector: 11,
-                error_code: 0x10000,
-            },
-        ),
+        (0x078, 0x10000, ReflectionError::InvalidSelectorError { vector: 11, error_code: 0x10000 }),
     ];
     for (offset, value, error) in cases {
         let mut v = stopped(6, 11);
@@ -275,25 +234,9 @@ fn unsupported_and_malformed_nested_cases_are_byte_exact_refusals() {
 #[test]
 fn malformed_secondary_fault_errors_preserve_cr2_and_pending_request() {
     for (current, error) in [
-        (
-            12,
-            ReflectionError::InvalidSelectorError {
-                vector: 12,
-                error_code: 1 << 32,
-            },
-        ),
-        (
-            13,
-            ReflectionError::InvalidGeneralProtectionError {
-                error_code: 1 << 32,
-            },
-        ),
-        (
-            14,
-            ReflectionError::UnsupportedPageFaultError {
-                error_code: 1 << 32,
-            },
-        ),
+        (12, ReflectionError::InvalidSelectorError { vector: 12, error_code: 1 << 32 }),
+        (13, ReflectionError::InvalidGeneralProtectionError { error_code: 1 << 32 }),
+        (14, ReflectionError::UnsupportedPageFaultError { error_code: 1 << 32 }),
     ] {
         let mut v = stopped(14, current);
         write(&mut v, 0x078, 1 << 32);
@@ -315,10 +258,7 @@ fn actual_shutdown_is_terminal_without_interpreting_undefined_saved_fields() {
         v.resolve_exception_delivery_after_exit(),
         Ok(DeliveryOutcome::Shutdown(GuestShutdown::Intercepted))
     );
-    assert_eq!(
-        v.clear_event_injection_after_exit(),
-        Err(ReflectionError::GuestShutdown)
-    );
+    assert_eq!(v.clear_event_injection_after_exit(), Err(ReflectionError::GuestShutdown));
     assert_eq!(v.reflect_exception(), Err(ReflectionError::GuestShutdown));
     assert_eq!(v.bytes(), &bytes);
 }

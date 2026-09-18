@@ -65,11 +65,7 @@ pub fn translate(
         return Err(NoncanonicalAddress);
     }
     let physical_mask = (1u64 << config.physical_bits) - 1;
-    let low_cr3 = if config.pcid {
-        0xfff
-    } else {
-        (1 << 3) | (1 << 4)
-    };
+    let low_cr3 = if config.pcid { 0xfff } else { (1 << 3) | (1 << 4) };
     if config.cr3 & !((physical_mask & ADDRESS) | low_cr3) != 0 {
         return Err(InvalidCr3);
     }

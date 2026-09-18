@@ -13,7 +13,9 @@ use svmvisor_dxe::native::admission::{
     boundary::NativeBoundary, cache_rendezvous::PreparedCacheRendezvous,
 };
 #[cfg(not(feature = "native-returning"))]
-use svmvisor_dxe::native::admission::{cache_rendezvous as native_cache_rendezvous, cpu as native_cpu};
+use svmvisor_dxe::native::admission::{
+    cache_rendezvous as native_cache_rendezvous, cpu as native_cpu,
+};
 #[cfg(not(feature = "native-returning"))]
 use uefi_raw::table::system::SystemTable;
 use uefi_raw::{
@@ -64,11 +66,7 @@ pub(crate) unsafe fn allocate_arena(services: &BootServices) -> Result<Arena<'_>
     {
         return Err(3);
     }
-    let mut arena = Arena {
-        services,
-        base,
-        owned: true,
-    };
+    let mut arena = Arena { services, base, owned: true };
     if base < 0x100000 || base & 4095 != 0 || base > (1u64 << 32) - ARENA_BYTES {
         arena.release().map_err(|_| 13u64)?;
         return Err(4);
@@ -88,20 +86,10 @@ pub(crate) struct Prepared<'a> {
 }
 impl Prepared<'_> {
     pub fn release(&mut self) -> Result<(), u64> {
-        let tables = self
-            .tables
-            .as_mut()
-            .map_or(Ok(()), |tables| tables.release().map_err(|_| ()));
-        let arena = self
-            .arena
-            .as_mut()
-            .map_or(Ok(()), |arena| arena.release().map_err(|_| ()));
+        let tables = self.tables.as_mut().map_or(Ok(()), |tables| tables.release().map_err(|_| ()));
+        let arena = self.arena.as_mut().map_or(Ok(()), |arena| arena.release().map_err(|_| ()));
         let cache = self.cache.release().map_err(|_| ());
-        if tables.is_err() || arena.is_err() || cache.is_err() {
-            Err(13)
-        } else {
-            Ok(())
-        }
+        if tables.is_err() || arena.is_err() || cache.is_err() { Err(13) } else { Ok(()) }
     }
 }
 
@@ -179,11 +167,7 @@ pub(crate) unsafe fn prepare<'a>(
                 bytes: cache_storage.1 as u64,
                 access: BorrowedAccess::ReadWrite,
             },
-            BorrowedSpan {
-                base: bottom,
-                bytes: top - bottom,
-                access: BorrowedAccess::ReadWrite,
-            },
+            BorrowedSpan { base: bottom, bytes: top - bottom, access: BorrowedAccess::ReadWrite },
             BorrowedSpan {
                 base: boundary.entry_rip,
                 bytes: 1,
@@ -204,10 +188,7 @@ pub(crate) unsafe fn prepare<'a>(
                     services,
                     physical_bits,
                     page1gb,
-                    &[OwnedRange {
-                        base: arena.base(),
-                        bytes: ARENA_BYTES,
-                    }],
+                    &[OwnedRange { base: arena.base(), bytes: ARENA_BYTES }],
                     spans.spans().map_err(|_| 8u64)?,
                 )
             }
@@ -243,13 +224,7 @@ unsafe fn perform(
     boundary: &NativeBoundary,
     physical_bits: u8,
     page1gb: bool,
-) -> Result<
-    (
-        native_cache_rendezvous::CacheConsistencyReport,
-        ResourceCacheReport,
-    ),
-    u64,
-> {
+) -> Result<(native_cache_rendezvous::CacheConsistencyReport, ResourceCacheReport), u64> {
     let services = unsafe { &*table.boot_services };
     let mut cpus = unsafe { native_cpu::prepare(services) }.map_err(|_| 1u64)?;
     let cpu_storage = cpus.storage_range().map_err(|_| 1u64)?;
@@ -262,25 +237,12 @@ unsafe fn perform(
     };
     let completed = unsafe {
         cpus.with_prepared_quiescent_bsp_and_ap_observation(
-            || {
-                prepare(
-                    services,
-                    image,
-                    boundary,
-                    physical_bits,
-                    page1gb,
-                    cpu_storage,
-                    cache,
-                )
-            },
+            || prepare(services, image, boundary, physical_bits, page1gb, cpu_storage, cache),
             |prepared| &prepared.cache,
             |guard, prepared| {
                 let tables = prepared.tables.as_ref().ok_or(9u64)?;
                 tables.revalidate(guard).map_err(|_| 10u64)?;
-                let report = prepared
-                    .cache
-                    .capture_bsp_and_compare(guard)
-                    .map_err(|_| 11u64)?;
+                let report = prepared.cache.capture_bsp_and_compare(guard).map_err(|_| 11u64)?;
                 let before = *prepared.cache.bsp_snapshot().map_err(|_| 11u64)?;
                 if prepared.cache.bsp_cr3().map_err(|_| 18u64)? != boundary.cr3 {
                     return Err(18);
@@ -288,10 +250,7 @@ unsafe fn perform(
                 let mappings =
                     native_resource_cache::qualify(&before, tables).map_err(|_| 12u64)?;
                 tables.revalidate(guard).map_err(|_| 10u64)?;
-                prepared
-                    .cache
-                    .capture_bsp_and_compare(guard)
-                    .map_err(|_| 11u64)?;
+                prepared.cache.capture_bsp_and_compare(guard).map_err(|_| 11u64)?;
                 if prepared.cache.bsp_cr3().map_err(|_| 18u64)? != boundary.cr3 {
                     return Err(18);
                 }
@@ -332,14 +291,8 @@ pub(crate) unsafe fn observe(
                 ("resources-owned-pages", resources.owned_pages as u64),
                 ("resources-borrowed-pages", resources.borrowed_pages as u64),
                 ("resources-gdt-pages", resources.gdt_pages as u64),
-                (
-                    "resources-table-aliases",
-                    resources.table_alias_pages as u64,
-                ),
-                (
-                    "resources-table-fetches",
-                    resources.table_fetch_encodings as u64,
-                ),
+                ("resources-table-aliases", resources.table_alias_pages as u64),
+                ("resources-table-fetches", resources.table_fetch_encodings as u64),
                 ("resources-cache-cpus", cpus.enabled_processors as u64),
                 ("resources-cache-aps", cpus.completed_ap_captures as u64),
                 ("resources-observed", 1),

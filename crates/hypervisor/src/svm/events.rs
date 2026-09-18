@@ -58,10 +58,7 @@ impl PendingExternalInterrupt {
         if vector < 32 {
             return Err(ExternalInterruptError::ReservedVector { vector });
         }
-        Ok(Self {
-            vector,
-            state: ExternalInterruptState::Queued,
-        })
+        Ok(Self { vector, state: ExternalInterruptState::Queued })
     }
 
     pub const fn vector(&self) -> u8 {
@@ -150,10 +147,7 @@ pub enum GuestShutdown {
     /// VMEXIT_SHUTDOWN; all other saved guest fields are architecturally undefined.
     Intercepted,
     /// Reflecting a checked fault during #DF delivery causes guest shutdown.
-    ExceptionDelivery {
-        interrupted_vector: u8,
-        fault_vector: u8,
-    },
+    ExceptionDelivery { interrupted_vector: u8, fault_vector: u8 },
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -206,22 +200,16 @@ pub(crate) fn prepare_interrupted_delivery(
                 error_code: info1,
             });
         }
-        0x4b => ReflectedException::SegmentNotPresent {
-            error_code: info1 as u32,
-        },
-        0x4c => ReflectedException::StackFault {
-            error_code: info1 as u32,
-        },
+        0x4b => ReflectedException::SegmentNotPresent { error_code: info1 as u32 },
+        0x4c => ReflectedException::StackFault { error_code: info1 as u32 },
         0x4d | 0x4e => prepare(code, info1, info2, 0, 0)?,
         _ => return Err(ReflectionError::UnsupportedExit { code }),
     };
     if prior == 8 {
-        return Ok(DeliveryOutcome::Shutdown(
-            GuestShutdown::ExceptionDelivery {
-                interrupted_vector: prior,
-                fault_vector: fault.vector(),
-            },
-        ));
+        return Ok(DeliveryOutcome::Shutdown(GuestShutdown::ExceptionDelivery {
+            interrupted_vector: prior,
+            fault_vector: fault.vector(),
+        }));
     }
     let combined = if prior == 14 || (prior == 13 && fault.vector() != 14) {
         ReflectedException::DoubleFault
@@ -255,16 +243,15 @@ pub(crate) fn prepare(
         // #UD has no error code; EXITINFO1/2 are undefined and must be ignored.
         0x46 => Ok(ReflectedException::InvalidOpcode),
         // APM 8.4.1: selector error codes occupy bits 15:0.
-        0x4d if info1 & !0xffff == 0 => Ok(ReflectedException::GeneralProtection {
-            error_code: info1 as u32,
-        }),
+        0x4d if info1 & !0xffff == 0 => {
+            Ok(ReflectedException::GeneralProtection { error_code: info1 as u32 })
+        }
         0x4d => Err(ReflectionError::InvalidGeneralProtectionError { error_code: info1 }),
         // APM 8.4.2: P, R/W, U/S, RSV, I/D, PK, SS. RMP faults require
         // a separate SNP policy and are excluded from this classic-SVM path.
-        0x4e if info1 & !0x7f == 0 => Ok(ReflectedException::PageFault {
-            error_code: info1 as u32,
-            address: info2,
-        }),
+        0x4e if info1 & !0x7f == 0 => {
+            Ok(ReflectedException::PageFault { error_code: info1 as u32, address: info2 })
+        }
         0x4e => Err(ReflectionError::UnsupportedPageFaultError { error_code: info1 }),
         _ => Err(ReflectionError::UnsupportedExit { code }),
     }

@@ -6,16 +6,8 @@ fn fixture() -> ([u8; 32], FirmwareSelectors, HostTablePointer) {
     bytes[24..32].copy_from_slice(&0x00cf_f300_0000_ffffu64.to_le_bytes());
     (
         bytes,
-        FirmwareSelectors {
-            cs: 8,
-            ss: 16,
-            ds: 16,
-            es: 16,
-        },
-        HostTablePointer {
-            base: 0x1000,
-            limit: 31,
-        },
+        FirmwareSelectors { cs: 8, ss: 16, ds: 16, es: 16 },
+        HostTablePointer { base: 0x1000, limit: 31 },
     )
 }
 #[test]
@@ -56,24 +48,10 @@ fn bounds_and_mapping_evidence_fail_closed() {
     let (bytes, selectors, mut table) = fixture();
     table.base = 0x1ff8;
     let parsed = parse_firmware_gdt(table, selectors, &bytes).unwrap();
-    assert_eq!(
-        parsed.required_mapping(),
-        GdtRange {
-            first: 0x1ff8,
-            last: 0x2017
-        }
-    );
+    assert_eq!(parsed.required_mapping(), GdtRange { first: 0x1ff8, last: 0x2017 });
     let mut pages = [
-        CapturedGdtPage {
-            linear_page: 0x1000,
-            present: true,
-            writable: true,
-        },
-        CapturedGdtPage {
-            linear_page: 0x2000,
-            present: true,
-            writable: true,
-        },
+        CapturedGdtPage { linear_page: 0x1000, present: true, writable: true },
+        CapturedGdtPage { linear_page: 0x2000, present: true, writable: true },
     ];
     assert_eq!(parsed.validate_mapping_capture(&pages), Ok(()));
     assert_eq!(
@@ -164,16 +142,8 @@ fn selector_tables_extents_and_privilege_are_validated() {
 fn malformed_descriptor_classes_are_rejected() {
     let (original, s, table) = fixture();
     for (offset, bit, error) in [
-        (
-            13,
-            0x80,
-            FirmwareDescriptorError::NotPresent(FirmwareSegment::Cs),
-        ),
-        (
-            13,
-            0x10,
-            FirmwareDescriptorError::SystemDescriptor(FirmwareSegment::Cs),
-        ),
+        (13, 0x80, FirmwareDescriptorError::NotPresent(FirmwareSegment::Cs)),
+        (13, 0x10, FirmwareDescriptorError::SystemDescriptor(FirmwareSegment::Cs)),
         (14, 0x20, FirmwareDescriptorError::InvalidCode),
         (14, 0x40, FirmwareDescriptorError::InvalidCode),
         (21, 0x02, FirmwareDescriptorError::InvalidStack),

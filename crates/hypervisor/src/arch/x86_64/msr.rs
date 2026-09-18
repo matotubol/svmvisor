@@ -23,9 +23,17 @@ pub const MTRR_FIX_16K_1: u32 = 0x259;
 pub const MTRR_FIX_4K_0: u32 = 0x268;
 /// Every fixed-range MTRR, in address order.
 pub const MTRR_FIXED: [u32; 11] = [
-    MTRR_FIX_64K, MTRR_FIX_16K_0, MTRR_FIX_16K_1, MTRR_FIX_4K_0, MTRR_FIX_4K_0 + 1,
-    MTRR_FIX_4K_0 + 2, MTRR_FIX_4K_0 + 3, MTRR_FIX_4K_0 + 4, MTRR_FIX_4K_0 + 5,
-    MTRR_FIX_4K_0 + 6, MTRR_FIX_4K_0 + 7,
+    MTRR_FIX_64K,
+    MTRR_FIX_16K_0,
+    MTRR_FIX_16K_1,
+    MTRR_FIX_4K_0,
+    MTRR_FIX_4K_0 + 1,
+    MTRR_FIX_4K_0 + 2,
+    MTRR_FIX_4K_0 + 3,
+    MTRR_FIX_4K_0 + 4,
+    MTRR_FIX_4K_0 + 5,
+    MTRR_FIX_4K_0 + 6,
+    MTRR_FIX_4K_0 + 7,
 ];
 pub const PAT: u32 = 0x277;
 pub const MTRR_DEF_TYPE: u32 = 0x2ff;

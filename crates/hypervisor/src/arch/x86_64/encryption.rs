@@ -5,7 +5,9 @@
 //! encryption leaves are admitted only for PPR 57896 rev. 3.00 (28 Aug 2024),
 //! Family 1Ah Model 44h B0 / CPUID 00B40F40: CPUID 8000001F pp.111-112 and
 //! SYS_CFG pp.202. Other product register profiles require their own review.
-use super::msr::{SYS_CFG, SYS_CFG_DEFINED, SYS_CFG_ENCRYPTION, TARGET_PHYSICAL_BITS, TARGET_SIGNATURE};
+use super::msr::{
+    SYS_CFG, SYS_CFG_DEFINED, SYS_CFG_ENCRYPTION, TARGET_PHYSICAL_BITS, TARGET_SIGNATURE,
+};
 use crate::memory::address::EncryptionState;
 
 pub const SEV_STATUS: u32 = 0xc001_0131;
@@ -46,10 +48,7 @@ impl NativeEncryptionPlan {
             if signature == TARGET_SIGNATURE {
                 return Err(EncryptionError::UnsupportedProfile);
             }
-            return Ok(Self {
-                encryption_bit: None,
-                sev_supported: false,
-            });
+            return Ok(Self { encryption_bit: None, sev_supported: false });
         }
         if signature != TARGET_SIGNATURE
             || physical_bits != TARGET_PHYSICAL_BITS
@@ -61,27 +60,16 @@ impl NativeEncryptionPlan {
         {
             return Err(EncryptionError::UnsupportedProfile);
         }
-        Ok(Self {
-            encryption_bit: Some(51),
-            sev_supported: eax & 2 != 0,
-        })
+        Ok(Self { encryption_bit: Some(51), sev_supported: eax & 2 != 0 })
     }
 
     pub const fn sys_cfg_msr(self) -> Option<u32> {
-        if self.encryption_bit.is_some() {
-            Some(SYS_CFG)
-        } else {
-            None
-        }
+        if self.encryption_bit.is_some() { Some(SYS_CFG) } else { None }
     }
 
     /// APM2 15.34.10: SEV_STATUS exists only when CPUID advertises SEV.
     pub const fn sev_status_msr(self) -> Option<u32> {
-        if self.sev_supported {
-            Some(SEV_STATUS)
-        } else {
-            None
-        }
+        if self.sev_supported { Some(SEV_STATUS) } else { None }
     }
 
     /// Accept only controls actually observed on the CPU being admitted.
@@ -113,8 +101,6 @@ impl NativeEncryptionPlan {
         if sev_status.is_some_and(|value| value != 0) {
             return Err(EncryptionError::ActiveEncryptionUnsupported);
         }
-        Ok(EncryptionState::Unencrypted {
-            encryption_bit: self.encryption_bit,
-        })
+        Ok(EncryptionState::Unencrypted { encryption_bit: self.encryption_bit })
     }
 }

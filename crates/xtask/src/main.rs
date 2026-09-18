@@ -30,7 +30,10 @@ fn run(args: &[String]) -> Result<(), String> {
             let mut rest = args[1..].iter();
             while let Some(arg) = rest.next() {
                 match arg.as_str() {
-                    "--output" => output = Some(PathBuf::from(rest.next().ok_or("--output needs a directory")?)),
+                    "--output" => {
+                        output =
+                            Some(PathBuf::from(rest.next().ok_or("--output needs a directory")?))
+                    }
                     "--low-runtime" => low_runtime = true,
                     // The only profile; accepted for existing command lines.
                     "--boot" => {}
@@ -57,7 +60,11 @@ fn run(args: &[String]) -> Result<(), String> {
                     "--any-runtime" => low_runtime = false,
                     // The only switch that reaches hardware; never implied.
                     "--flash" => flash = true,
-                    "--adapter-khz" => adapter_khz = card::parse_adapter_khz(rest.next().ok_or("--adapter-khz needs a number")?)?,
+                    "--adapter-khz" => {
+                        adapter_khz = card::parse_adapter_khz(
+                            rest.next().ok_or("--adapter-khz needs a number")?,
+                        )?
+                    }
                     other => match other.strip_prefix("--adapter-khz=") {
                         Some(khz) => adapter_khz = card::parse_adapter_khz(khz)?,
                         None => return Err(format!("unknown argument {other}\n{USAGE}")),

@@ -51,11 +51,7 @@ pub fn collect(mut cpuid: impl FnMut(u32) -> CpuidRegisters) -> Report {
     };
     let registers = |r: CpuidRegisters| [r.eax, r.ebx, r.ecx, r.edx];
     let brand = (0x80000004..=0xbfffffff).contains(&extended.eax).then(|| {
-        [
-            registers(cpuid(0x80000002)),
-            registers(cpuid(0x80000003)),
-            registers(cpuid(0x80000004)),
-        ]
+        [registers(cpuid(0x80000002)), registers(cpuid(0x80000003)), registers(cpuid(0x80000004))]
     });
     let identity = CpuIdentity::from_leaves(
         registers(basic),
@@ -64,9 +60,5 @@ pub fn collect(mut cpuid: impl FnMut(u32) -> CpuidRegisters) -> Report {
         evidence.extended_features.map(registers),
         brand,
     );
-    Report {
-        evidence,
-        outcome,
-        identity,
-    }
+    Report { evidence, outcome, identity }
 }

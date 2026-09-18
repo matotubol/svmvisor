@@ -29,9 +29,7 @@ impl<T> TryLock<T> {
 
     /// `None` means another owner currently holds the lock.
     pub fn try_lock(&self) -> Option<TryLockGuard<'_, T>> {
-        self.locked
-            .compare_exchange(false, true, Ordering::Acquire, Ordering::Relaxed)
-            .ok()?;
+        self.locked.compare_exchange(false, true, Ordering::Acquire, Ordering::Relaxed).ok()?;
         Some(TryLockGuard { lock: self })
     }
 
@@ -86,7 +84,13 @@ mod tests {
         assert!(lock.try_lock().is_none());
         assert_eq!(lock.with(|_| panic!("ran while held")), None::<()>);
         drop(guard);
-        assert_eq!(lock.with(|value| { *value += 1; *value }), Some(3));
+        assert_eq!(
+            lock.with(|value| {
+                *value += 1;
+                *value
+            }),
+            Some(3)
+        );
         assert_eq!(*lock.try_lock().unwrap(), 3);
     }
 

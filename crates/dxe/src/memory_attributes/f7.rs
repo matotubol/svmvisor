@@ -300,10 +300,8 @@ mod native {
             let result = x86::get(self, self.config, base, length);
             // Do not let an apparently successful read conceal context drift.
             self.check_context()?;
-            result.map_err(|error| {
-                self.last_failure
-                    .unwrap_or_else(|| F7Failure::from_error(error))
-            })
+            result
+                .map_err(|error| self.last_failure.unwrap_or_else(|| F7Failure::from_error(error)))
         }
 
         /// No registration or allocation needs cleanup. This checks that the
@@ -427,10 +425,7 @@ mod native {
             multi_key: [multi.eax, multi.ebx, multi.ecx, multi.edx],
         };
         validate_capabilities_detailed(cpu)?;
-        let mut state = CpuObservation {
-            cpu,
-            ..CpuObservation::default()
-        };
+        let mut state = CpuObservation { cpu, ..CpuObservation::default() };
         let low: u32;
         let high: u32;
         unsafe {

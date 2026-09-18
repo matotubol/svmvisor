@@ -1,20 +1,15 @@
 use svmvisor_hypervisor::{
+    arch::x86_64::registers::GuestRegisters,
+    guest::state::GuestStateRequest,
     memory::address::{AddressPolicy, EncryptionState},
     svm::dispatch::{DispatchError, DispatchOutcome, StopReason, handle_exit_with_instruction},
     svm::exit::{ExitAction, ExitSnapshot, ResumeError},
-    guest::state::GuestStateRequest,
-    arch::x86_64::registers::GuestRegisters,
     svm::vmcb::Vmcb,
 };
 
 fn state(rip: u64, rax: u64) -> (Vmcb, GuestRegisters) {
-    let policy = AddressPolicy::new(
-        48,
-        EncryptionState::Unencrypted {
-            encryption_bit: None,
-        },
-    )
-    .unwrap();
+    let policy =
+        AddressPolicy::new(48, EncryptionState::Unencrypted { encryption_bit: None }).unwrap();
     let mut vmcb = Vmcb::new();
     vmcb.set_synthetic_state(
         &GuestStateRequest {
@@ -43,13 +38,7 @@ fn state(rip: u64, rax: u64) -> (Vmcb, GuestRegisters) {
 }
 
 fn snapshot(code: u64, rip: u64) -> ExitSnapshot {
-    ExitSnapshot {
-        code,
-        rip,
-        info1: 0,
-        info2: 0,
-        nrip: 0,
-    }
+    ExitSnapshot { code, rip, info1: 0, info2: 0, nrip: 0 }
 }
 
 #[test]
@@ -59,9 +48,7 @@ fn shutdown_precedes_undefined_saved_rip_and_instruction_validation() {
     let registers = frame;
     assert_eq!(
         handle_exit_with_instruction(snapshot(0x7f, u64::MAX), &mut vmcb, &mut frame, &[]),
-        Ok(DispatchOutcome::Stop(StopReason::Exit(
-            ExitAction::Shutdown
-        )))
+        Ok(DispatchOutcome::Stop(StopReason::Exit(ExitAction::Shutdown)))
     );
     assert_eq!(vmcb.bytes(), &bytes);
     assert_eq!(frame, registers);
@@ -115,9 +102,7 @@ fn wrong_opcode_prefix_truncation_and_trailing_bytes_preserve_all_state() {
         let before_frame = frame;
         assert_eq!(
             handle_exit_with_instruction(snapshot(code, 0x1000), &mut vmcb, &mut frame, bytes),
-            Err(DispatchError::Resume(
-                ResumeError::UnsupportedInstructionBytes
-            ))
+            Err(DispatchError::Resume(ResumeError::UnsupportedInstructionBytes))
         );
         assert_eq!(vmcb.bytes(), &before_vmcb);
         assert_eq!(frame, before_frame);
@@ -128,16 +113,8 @@ fn wrong_opcode_prefix_truncation_and_trailing_bytes_preserve_all_state() {
 fn stale_snapshot_and_address_boundary_fail_transactionally() {
     for (rip, snapshot_rip, error) in [
         (0x1000, 0x1001, DispatchError::SnapshotRipMismatch),
-        (
-            u64::MAX - 1,
-            u64::MAX - 1,
-            DispatchError::Resume(ResumeError::InvalidInstructionLength),
-        ),
-        (
-            0x7fff_ffff_ffff,
-            0x7fff_ffff_ffff,
-            DispatchError::Resume(ResumeError::NonCanonicalNrip),
-        ),
+        (u64::MAX - 1, u64::MAX - 1, DispatchError::Resume(ResumeError::InvalidInstructionLength)),
+        (0x7fff_ffff_ffff, 0x7fff_ffff_ffff, DispatchError::Resume(ResumeError::NonCanonicalNrip)),
     ] {
         let (mut vmcb, mut frame) = state(rip, 0);
         let before_vmcb = *vmcb.bytes();

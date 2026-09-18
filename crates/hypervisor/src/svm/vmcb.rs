@@ -10,11 +10,11 @@ use super::events::{
     self, DeliveryOutcome, ExternalInterruptError, ExternalInterruptState, GuestShutdown,
     PendingExternalInterrupt, ReflectedException, ReflectionError,
 };
-use crate::memory::address::{AddressError, AddressPolicy};
 use crate::arch::x86_64::capabilities::{CapabilityError, ValidatedCapabilities};
 use crate::arch::x86_64::descriptors::{SegmentState, ValidatedGuestDescriptors};
-use crate::svm::exit::{ExitSnapshot, ResumeCandidate};
 use crate::guest::state::ValidatedGuestState;
+use crate::memory::address::{AddressError, AddressPolicy};
+use crate::svm::exit::{ExitSnapshot, ResumeCandidate};
 use crate::svm::permission_maps::{IOPM_BYTES, MSRPM_BYTES};
 
 pub const VMCB_BYTES: usize = 4096;
@@ -309,9 +309,7 @@ impl Vmcb {
     }
 
     pub const fn new() -> Self {
-        Self {
-            bytes: [0; VMCB_BYTES],
-        }
+        Self { bytes: [0; VMCB_BYTES] }
     }
 
     pub const fn bytes(&self) -> &[u8; VMCB_BYTES] {
@@ -411,9 +409,7 @@ impl Vmcb {
         {
             return Err(E::DestinationEventState);
         }
-        policy
-            .validate(self.nested_root(), 4096, 4096)
-            .map_err(E::Address)?;
+        policy.validate(self.nested_root(), 4096, 4096).map_err(E::Address)?;
         self.write_u64::<0x090>(1);
         self.request_full_tlb_flush();
         Ok(())
@@ -538,7 +534,9 @@ impl Vmcb {
     }
 
     /// Stopped guest page-table root from the architectural state-save area.
-    pub fn guest_cr3(&self) -> u64 { self.read_u64::<GUEST_CR3>() }
+    pub fn guest_cr3(&self) -> u64 {
+        self.read_u64::<GUEST_CR3>()
+    }
 
     pub fn guest_cr2(&self) -> u64 {
         self.read_u64::<0x640>()
@@ -738,8 +736,7 @@ impl Vmcb {
         if code == u64::MAX {
             return Err(ReflectionError::InvalidEntry);
         }
-        self.validate_virtual_interrupt_controls()
-            .map_err(ReflectionError::Control)?;
+        self.validate_virtual_interrupt_controls().map_err(ReflectionError::Control)?;
         if self.virtual_interrupt_control() & V_IRQ != 0 {
             return Err(ReflectionError::PendingVirtualInterrupt);
         }
@@ -777,7 +774,8 @@ impl Vmcb {
     }
 
     pub(crate) fn queue_validated_msr_general_protection(
-        &mut self, instruction: super::exit::MsrInstruction<'_>,
+        &mut self,
+        instruction: super::exit::MsrInstruction<'_>,
     ) -> Result<(), events::MsrFaultError> {
         use events::MsrFaultError;
         instruction.validate(self.exit_snapshot()).map_err(MsrFaultError::Instruction)?;
@@ -788,9 +786,7 @@ impl Vmcb {
     /// stopped exit and established the architectural fault condition. This
     /// does not validate an opcode or invent a fault for unsupported policy.
     /// APM2 15.20: fault injection preserves the faulting RIP and all GPRs.
-    pub(crate) fn queue_native_general_protection(
-        &mut self,
-    ) -> Result<(), ExternalInterruptError> {
+    pub(crate) fn queue_native_general_protection(&mut self) -> Result<(), ExternalInterruptError> {
         self.validate_external_interrupt_conflicts()?;
         if self.virtual_interrupt_control() & super::x2avic::ENABLE_BITS != 0 {
             // Under AVIC a written-back V_IRQ is hardware's IRR evaluation,
@@ -938,12 +934,7 @@ impl Vmcb {
             limit: u32::from(r.idtr.limit),
             base: r.idtr.base,
         });
-        for (start, end) in [
-            (0x440, 0x460),
-            (0x470, 0x480),
-            (0x490, 0x4a0),
-            (0x600, 0x640),
-        ] {
+        for (start, end) in [(0x440, 0x460), (0x470, 0x480), (0x490, 0x4a0), (0x600, 0x640)] {
             self.bytes[start..end].copy_from_slice(&r.auxiliary.bytes()[start..end]);
         }
         self.bytes[0x4cb] = 0;
@@ -979,9 +970,11 @@ impl Vmcb {
     /// authorize an already active shadow-stack continuation. U_CET, PLn_SSP
     /// and XSS remain live on the same physical CPU, unused by the monitor.
     /// The caller must have enumerated CET_SS before reading these MSRs.
-    pub fn initialize_native_cet_msrs(&mut self, s_cet: u64, isst_addr: u64)
-        -> Result<(), crate::guest::continuation::NativeContinuationError>
-    {
+    pub fn initialize_native_cet_msrs(
+        &mut self,
+        s_cet: u64,
+        isst_addr: u64,
+    ) -> Result<(), crate::guest::continuation::NativeContinuationError> {
         use crate::guest::continuation::NativeContinuationError as E;
         if self.read_u64::<GUEST_CR4>() & (1 << 23) != 0 || s_cet & !3 != 0 {
             return Err(E::UnsupportedCr4);
@@ -1001,12 +994,7 @@ impl Vmcb {
     /// MTRRs and other INIT-retained resources stay with the caller.
     /// This does not implement LAPIC initialization or permit guest entry.
     pub(crate) fn initialize_ap_after_init(&mut self) {
-        let data = SegmentState {
-            selector: 0,
-            attributes: 0x92,
-            limit: 0xffff,
-            base: 0,
-        };
+        let data = SegmentState { selector: 0, attributes: 0x92, limit: 0xffff, base: 0 };
         self.write_segment::<0x400>(data);
         self.write_segment::<0x420>(data);
         self.write_segment::<0x430>(data);
@@ -1018,22 +1006,10 @@ impl Vmcb {
             limit: 0xffff,
             base: 0xffff_0000,
         });
-        self.write_segment::<0x460>(SegmentState {
-            attributes: 0,
-            ..data
-        });
-        self.write_segment::<0x480>(SegmentState {
-            attributes: 0,
-            ..data
-        });
-        self.write_segment::<0x470>(SegmentState {
-            attributes: 0x82,
-            ..data
-        });
-        self.write_segment::<0x490>(SegmentState {
-            attributes: 0x83,
-            ..data
-        });
+        self.write_segment::<0x460>(SegmentState { attributes: 0, ..data });
+        self.write_segment::<0x480>(SegmentState { attributes: 0, ..data });
+        self.write_segment::<0x470>(SegmentState { attributes: 0x82, ..data });
+        self.write_segment::<0x490>(SegmentState { attributes: 0x83, ..data });
         self.bytes[0x4cb] = 0;
         self.write_u64::<GUEST_EFER>(0x1000);
         self.write_u64::<GUEST_CR0>((self.read_u64::<GUEST_CR0>() & 0x6000_0000) | 0x10);
@@ -1107,12 +1083,7 @@ impl Vmcb {
         self.write_segment::<0x450>(descriptors.data());
         self.write_segment::<0x410>(descriptors.cs());
         self.write_segment::<0x460>(descriptors.gdtr());
-        self.write_segment::<0x470>(SegmentState {
-            selector: 0,
-            attributes: 0,
-            limit: 0,
-            base: 0,
-        });
+        self.write_segment::<0x470>(SegmentState { selector: 0, attributes: 0, limit: 0, base: 0 });
         self.write_segment::<0x490>(descriptors.tr());
         self.bytes[0x4cb] = 0; // CPL, independent of descriptor DPL.
         self.invalidate_all();
@@ -1181,11 +1152,7 @@ impl Vmcb {
 
     fn update_intercept<const OFFSET: usize>(&mut self, mask: u32, enabled: bool) {
         let previous = self.read_u32::<OFFSET>();
-        self.write_u32::<OFFSET>(if enabled {
-            previous | mask
-        } else {
-            previous & !mask
-        });
+        self.write_u32::<OFFSET>(if enabled { previous | mask } else { previous & !mask });
     }
 }
 
@@ -1220,34 +1187,50 @@ mod tlb_lifecycle_tests {
             vmcb.write_u64::<0x070>(invalid);
             let before = vmcb.bytes;
             // Synthetic model of the assembly's post-entry call, not hardware proof.
-            unsafe { vmcb.consume_tlb_flush_after_exit(); }
+            unsafe {
+                vmcb.consume_tlb_flush_after_exit();
+            }
             assert_eq!(vmcb.bytes, before);
         }
         vmcb.write_u64::<0x070>(0x72);
-        unsafe { vmcb.consume_tlb_flush_after_exit(); }
+        unsafe {
+            vmcb.consume_tlb_flush_after_exit();
+        }
         assert_eq!(vmcb.bytes[0x05c], 0);
         vmcb.set_guest_rax(42);
-        unsafe { vmcb.consume_tlb_flush_after_exit(); }
+        unsafe {
+            vmcb.consume_tlb_flush_after_exit();
+        }
         assert_eq!(vmcb.bytes[0x05c], 0);
         vmcb.commit_native_efer(0xd01);
         assert_eq!(vmcb.bytes[0x05c], 1);
-        unsafe { vmcb.consume_tlb_flush_after_exit(); }
+        unsafe {
+            vmcb.consume_tlb_flush_after_exit();
+        }
         vmcb.initialize_ap_after_init();
         assert_eq!(vmcb.bytes[0x05c], 1);
         vmcb.start_ap_from_sipi(8);
         assert_eq!(vmcb.bytes[0x05c], 1);
-        unsafe { vmcb.consume_tlb_flush_after_exit(); }
+        unsafe {
+            vmcb.consume_tlb_flush_after_exit();
+        }
         assert_eq!(vmcb.bytes[0x05c], 0);
     }
 
     #[test]
     fn nested_root_change_requests_flush_but_rejected_root_keeps_state() {
-        let policy = AddressPolicy::new(48, crate::memory::address::EncryptionState::Unencrypted { encryption_bit: None }).unwrap();
+        let policy = AddressPolicy::new(
+            48,
+            crate::memory::address::EncryptionState::Unencrypted { encryption_bit: None },
+        )
+        .unwrap();
         let mut vmcb = Vmcb::new();
         vmcb.set_nested_root(0x1000, &policy).unwrap();
         assert_eq!(vmcb.bytes[0x05c], 1);
         vmcb.write_u64::<0x070>(0x400);
-        unsafe { vmcb.consume_tlb_flush_after_exit(); }
+        unsafe {
+            vmcb.consume_tlb_flush_after_exit();
+        }
         let before = vmcb.bytes;
         assert!(vmcb.set_nested_root(0x2001, &policy).is_err());
         assert_eq!(vmcb.bytes, before);
@@ -1274,19 +1257,25 @@ mod reinjection_tests {
     fn interrupted_intr_nmi_and_exception_are_copied_verbatim_to_eventinj() {
         // TYPE 0 external interrupt vector 51h, no error code.
         let mut vmcb = vmcb_with(0x400, 0x8000_0051, 0);
-        assert_eq!(vmcb.reinject_interrupted_delivery(),
-            ReinjectOutcome::Reinjected { kind: 0, vector: 0x51 });
+        assert_eq!(
+            vmcb.reinject_interrupted_delivery(),
+            ReinjectOutcome::Reinjected { kind: 0, vector: 0x51 }
+        );
         assert_eq!(vmcb.event_injection(), 0x8000_0051);
         assert_eq!(vmcb.bytes[CLEAN_BITS..CLEAN_BITS + 4], [0; 4]);
         // TYPE 2 NMI: vector field ignored, no error code.
         let mut vmcb = vmcb_with(0x400, 0x8000_0202, 0);
-        assert_eq!(vmcb.reinject_interrupted_delivery(),
-            ReinjectOutcome::Reinjected { kind: 2, vector: 0x02 });
+        assert_eq!(
+            vmcb.reinject_interrupted_delivery(),
+            ReinjectOutcome::Reinjected { kind: 2, vector: 0x02 }
+        );
         assert_eq!(vmcb.event_injection(), 0x8000_0202);
         // TYPE 3 exception with an error code (both halves kept).
         let mut vmcb = vmcb_with(0x400, 0x0000_0030_8000_0b0d, 0);
-        assert_eq!(vmcb.reinject_interrupted_delivery(),
-            ReinjectOutcome::Reinjected { kind: 3, vector: 0x0d });
+        assert_eq!(
+            vmcb.reinject_interrupted_delivery(),
+            ReinjectOutcome::Reinjected { kind: 3, vector: 0x0d }
+        );
         assert_eq!(vmcb.event_injection(), 0x0000_0030_8000_0b0d);
     }
 
@@ -1295,8 +1284,10 @@ mod reinjection_tests {
         // EV=0 but garbage in reserved (30:12) and the error-code half: the
         // rebuilt EVENTINJ keeps only V, TYPE and vector (15.7.2 p510).
         let mut vmcb = vmcb_with(0x400, 0xdead_beef_8000_7040, 0);
-        assert_eq!(vmcb.reinject_interrupted_delivery(),
-            ReinjectOutcome::Reinjected { kind: 0, vector: 0x40 });
+        assert_eq!(
+            vmcb.reinject_interrupted_delivery(),
+            ReinjectOutcome::Reinjected { kind: 0, vector: 0x40 }
+        );
         assert_eq!(vmcb.event_injection(), 0x8000_0040);
     }
 
@@ -1304,12 +1295,17 @@ mod reinjection_tests {
     fn software_interrupt_reserved_type_and_conflicts_stay_terminal() {
         // TYPE 4 (INTn) is not re-injectable here.
         let mut vmcb = vmcb_with(0x400, 0x8000_0451, 0);
-        assert_eq!(vmcb.reinject_interrupted_delivery(),
-            ReinjectOutcome::Unsupported { interrupted: 0x8000_0451 });
+        assert_eq!(
+            vmcb.reinject_interrupted_delivery(),
+            ReinjectOutcome::Unsupported { interrupted: 0x8000_0451 }
+        );
         assert_eq!(vmcb.event_injection(), 0);
         // A reserved TYPE (5).
         let mut vmcb = vmcb_with(0x400, 0x8000_0551, 0);
-        assert!(matches!(vmcb.reinject_interrupted_delivery(), ReinjectOutcome::Unsupported { .. }));
+        assert!(matches!(
+            vmcb.reinject_interrupted_delivery(),
+            ReinjectOutcome::Unsupported { .. }
+        ));
         // A different event already queued in EVENTINJ.
         let mut vmcb = vmcb_with(0x400, 0x8000_0051, (1 << 31) | (3 << 8) | 13);
         assert_eq!(vmcb.reinject_interrupted_delivery(), ReinjectOutcome::Conflict);

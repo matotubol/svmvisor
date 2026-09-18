@@ -30,11 +30,8 @@ pub const GUEST_GPRS: [u64; 14] = [
 ];
 // The event-test feature is rejected in combination with native-returning by
 // the package feature guard. Production uses only the finite VMMCALL sequence.
-pub const VMMCALL_RIP: u64 = if cfg!(feature = "native-transition-event-test") {
-    0x10be
-} else {
-    0x1096
-};
+pub const VMMCALL_RIP: u64 =
+    if cfg!(feature = "native-transition-event-test") { 0x10be } else { 0x1096 };
 
 // Exact, bounded integer-only program. tests/fixtures/native_transition_multi/guest.S
 // independently assembles these bytes and the five fixed lookup arrays. No
@@ -44,9 +41,8 @@ pub const MULTI_CPUID_RIP: u64 = 0x1086;
 pub const MULTI_QUERY_RIP: u64 = 0x10bf;
 pub const MULTI_STOP_RIP: u64 = 0x10ff;
 pub const MULTI_FAIL_RIP: u64 = 0x1102;
-pub const MULTI_CPUID_LEAVES: [u32; 8] = [
-    0, 1, 0x40000000, 0x40000001, 0x80000000, 0x80000001, 0xdeadbeef, 0x40000002,
-];
+pub const MULTI_CPUID_LEAVES: [u32; 8] =
+    [0, 1, 0x40000000, 0x40000001, 0x80000000, 0x80000001, 0xdeadbeef, 0x40000002];
 pub const MULTI_CPUID_OUTPUTS: [[u64; 4]; 8] = [
     [1, 0x566d7653, 0x74736554, 0x726f7369],
     [0, 0, 0x80000000, 0x60],
@@ -188,14 +184,10 @@ fn validate_inputs(
     // address encryption through the retained live snapshot before any SVM use.
     let policy = AddressPolicy::new(
         inputs.physical_bits,
-        EncryptionState::Unencrypted {
-            encryption_bit: None,
-        },
+        EncryptionState::Unencrypted { encryption_bit: None },
     )
     .map_err(|_| 6u64)?;
-    policy
-        .validate(pa, ARENA_BYTES as u64, 4096)
-        .map_err(|_| 6u64)?;
+    policy.validate(pa, ARENA_BYTES as u64, 4096).map_err(|_| 6u64)?;
     if inputs.physical_bits < 32 {
         return Err(6);
     }
@@ -249,10 +241,7 @@ unsafe fn initialize_inner(
         return Err(12);
     }
     let policy = validate_inputs(arena_va, arena_pa, boundary, inputs)?;
-    let arena = ArenaView {
-        va: arena_va,
-        pa: arena_pa,
-    };
+    let arena = ArenaView { va: arena_va, pa: arena_pa };
     unsafe { ptr::write_bytes(arena_va, 0, ARENA_BYTES) };
     let page = |index| arena.va(index);
     let pa = |index| arena.pa(index);
@@ -308,10 +297,7 @@ unsafe fn initialize_inner(
             *dst = byte;
         }
     }
-    for (dst, byte) in code
-        .iter_mut()
-        .skip((VMMCALL_RIP - 0x1000) as usize)
-        .zip([0x0f, 0x01, 0xd9])
+    for (dst, byte) in code.iter_mut().skip((VMMCALL_RIP - 0x1000) as usize).zip([0x0f, 0x01, 0xd9])
     {
         *dst = byte;
     }
@@ -337,37 +323,21 @@ unsafe fn initialize_inner(
             ptr::copy_nonoverlapping(code.as_ptr(), page(7), code.len());
         }
     }
-    let descriptors = GuestDescriptorRequest {
-        gdt_base: 0x4000,
-        tss_base: 0x5000,
-        rsp0: 0x9000,
-        ist1: 0xb000,
-    }
-    .validate()
-    .map_err(|_| 7u64)?;
+    let descriptors =
+        GuestDescriptorRequest { gdt_base: 0x4000, tss_base: 0x5000, rsp0: 0x9000, ist1: 0xb000 }
+            .validate()
+            .map_err(|_| 7u64)?;
     unsafe {
-        ptr::copy_nonoverlapping(
-            descriptors.gdt().as_ptr(),
-            page(10),
-            descriptors.gdt().len(),
-        );
-        ptr::copy_nonoverlapping(
-            descriptors.tss().as_ptr(),
-            page(11),
-            descriptors.tss().len(),
-        );
+        ptr::copy_nonoverlapping(descriptors.gdt().as_ptr(), page(10), descriptors.gdt().len());
+        ptr::copy_nonoverlapping(descriptors.tss().as_ptr(), page(11), descriptors.tss().len());
     }
     let guest_cr3 = {
         let mut guest =
             GuestPages::new(unsafe { &mut *page(12).cast::<GTables>() }, 0x10000, policy)
                 .map_err(|_| 8u64)?;
-        guest
-            .map_page(0x1000, 0x1000, GPerm::ReadOnly)
-            .map_err(|_| 8u64)?;
+        guest.map_page(0x1000, 0x1000, GPerm::ReadOnly).map_err(|_| 8u64)?;
         for address in [0x4000, 0x5000, 0x8000, 0xa000] {
-            guest
-                .map_page(address, address, GPerm::ReadWrite)
-                .map_err(|_| 8u64)?;
+            guest.map_page(address, address, GPerm::ReadWrite).map_err(|_| 8u64)?;
         }
         guest.root_address()
     };
@@ -384,13 +354,9 @@ unsafe fn initialize_inner(
             },
         )
         .map_err(|_| 9u64)?;
-        nested
-            .map_page(0x1000, pa(7), NPerm::ReadExecute)
-            .map_err(|_| 9u64)?;
+        nested.map_page(0x1000, pa(7), NPerm::ReadExecute).map_err(|_| 9u64)?;
         for (gpa, index) in [(0x4000, 10), (0x5000, 11), (0x8000, 8), (0xa000, 9)] {
-            nested
-                .map_page(gpa, pa(index), NPerm::ReadWrite)
-                .map_err(|_| 9u64)?;
+            nested.map_page(gpa, pa(index), NPerm::ReadWrite).map_err(|_| 9u64)?;
         }
         for i in 0..4 {
             nested
@@ -403,10 +369,8 @@ unsafe fn initialize_inner(
         ptr::write_bytes(page(25), 0xff, 5 * 4096);
     }
     let vmcb = unsafe { &mut *page(0).cast::<Vmcb>() };
-    vmcb.set_nested_root(nested_root, &policy)
-        .map_err(|_| 10u64)?;
-    vmcb.set_permission_maps(pa(25), pa(28), &policy)
-        .map_err(|_| 10u64)?;
+    vmcb.set_nested_root(nested_root, &policy).map_err(|_| 10u64)?;
+    vmcb.set_permission_maps(pa(25), pa(28), &policy).map_err(|_| 10u64)?;
     vmcb.set_synthetic_state(
         &GuestStateRequest {
             rip: 0x1000,
@@ -440,11 +404,7 @@ unsafe fn initialize_inner(
         field(page(0), 0x668, 0x0007040600070406u64.to_le_bytes());
     }
 
-    Ok(InitializedGuest {
-        arena,
-        boundary,
-        multi_exit,
-    })
+    Ok(InitializedGuest { arena, boundary, multi_exit })
 }
 
 impl InitializedGuest {
@@ -512,11 +472,7 @@ impl InitializedGuest {
             guest_xstate_va: page(6) as u64,
             xstate_profile: boundary.profile,
             xstate_bytes: boundary.xstate_size,
-            expected_vmmcall_rip: if self.multi_exit {
-                MULTI_STOP_RIP
-            } else {
-                VMMCALL_RIP
-            },
+            expected_vmmcall_rip: if self.multi_exit { MULTI_STOP_RIP } else { VMMCALL_RIP },
             expected_vmmcall_rax: if self.multi_exit { 1 } else { COOKIE },
             expected_bsp_apic_id: u64::from(boundary.leaf1_ebx >> 24),
             expected_state_va: expected as *const ScalarState as u64,
@@ -525,10 +481,7 @@ impl InitializedGuest {
             mode,
         };
 
-        Ok(BoundGuest {
-            arena: self.arena,
-            multi_exit: self.multi_exit,
-        })
+        Ok(BoundGuest { arena: self.arena, multi_exit: self.multi_exit })
     }
 }
 
@@ -611,11 +564,8 @@ unsafe fn verify_observations(
     {
         return Err(31);
     }
-    let fsw = original
-        .get(2..4)
-        .and_then(|bytes| bytes.first_chunk::<2>())
-        .copied()
-        .ok_or(31u64)?;
+    let fsw =
+        original.get(2..4).and_then(|bytes| bytes.first_chunk::<2>()).copied().ok_or(31u64)?;
     let top = (u16::from_le_bytes(fsw) >> 11) & 7;
     if u16::from_le_bytes(fsw) & (1 << 7) != 0 && original.get(6..24) != restored.get(6..24) {
         return Err(32);
@@ -634,13 +584,7 @@ unsafe fn verify_observations(
     }
     let extra_original = unsafe { core::slice::from_raw_parts(fixture.arena.va(1), 4096) };
     let extra_restored = unsafe { core::slice::from_raw_parts(fixture.arena.va(2), 4096) };
-    for (offset, size) in [
-        (0x440, 16),
-        (0x450, 16),
-        (0x470, 16),
-        (0x490, 16),
-        (0x600, 64),
-    ] {
+    for (offset, size) in [(0x440, 16), (0x450, 16), (0x470, 16), (0x490, 16), (0x600, 64)] {
         if extra_original.get(offset..offset + size) != extra_restored.get(offset..offset + size) {
             return Err(34);
         }
@@ -685,11 +629,7 @@ unsafe fn verify_observations(
     }
     #[cfg(feature = "native-transition-event-test")]
     if context.inputs.mode == 0 && matches!(context.journal.outcome, outcome::NMI | outcome::INIT) {
-        let expected_exit = if context.journal.outcome == outcome::NMI {
-            0x61
-        } else {
-            0x63
-        };
+        let expected_exit = if context.journal.outcome == outcome::NMI { 0x61 } else { 0x63 };
         if context.guest.exit_code != expected_exit
             || !matches!(context.guest.rip, 0x10b4 | 0x10bc)
             || context.guest.rax != COOKIE

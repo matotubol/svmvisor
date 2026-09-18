@@ -2,7 +2,7 @@
 #![cfg(any(feature = "native-transition-test", feature = "native-returning"))]
 
 use svmvisor_dxe::native::transition::state::{
-    self as native_transition, mode, multi, outcome, GuestObservation, NativeTransition,
+    self as native_transition, GuestObservation, NativeTransition, mode, multi, outcome,
 };
 use svmvisor_hypervisor::svm::emulation::{self, HypercallAction};
 
@@ -15,22 +15,14 @@ fn all_fixed_cpuid_cases_match_core_semantics_and_zero_extend() {
         assert_ne!(multi::CPUID_INPUT_RCX >> 32, 0);
         let actual = emulation::cpuid(poisoned_rax as u32, multi::CPUID_INPUT_RCX as u32);
         assert_eq!(actual.map(u64::from), multi::CPUID_OUTPUTS[case]);
-        assert!(multi::CPUID_OUTPUTS[case]
-            .into_iter()
-            .all(|value| value >> 32 == 0));
+        assert!(multi::CPUID_OUTPUTS[case].into_iter().all(|value| value >> 32 == 0));
     }
     assert_eq!(emulation::HYPERCALL_QUERY, 0);
-    assert_eq!(
-        emulation::hypercall(0),
-        HypercallAction::Query { abi_version: 1 }
-    );
+    assert_eq!(emulation::hypercall(0), HypercallAction::Query { abi_version: 1 });
     assert_eq!(emulation::HYPERCALL_STOP, 1);
     assert_eq!(emulation::hypercall(1), HypercallAction::Stop);
     for bit in 32..64 {
-        assert!(matches!(
-            emulation::hypercall(1u64 << bit),
-            HypercallAction::Unsupported { .. }
-        ));
+        assert!(matches!(emulation::hypercall(1u64 << bit), HypercallAction::Unsupported { .. }));
         assert!(matches!(
             emulation::hypercall((1u64 << bit) | 1),
             HypercallAction::Unsupported { .. }
@@ -40,14 +32,8 @@ fn all_fixed_cpuid_cases_match_core_semantics_and_zero_extend() {
 
 #[test]
 fn new_profile_keeps_old_mode_outcome_and_context_layout_meanings() {
-    assert_eq!(
-        (mode::ONE_ENTRY, mode::BIND_ONLY, mode::MULTI_EXIT),
-        (0, 1, 2)
-    );
-    assert_eq!(
-        (outcome::VMMCALL, outcome::ROUND_TRIP, outcome::MULTI_EXIT),
-        (2, 9, 12)
-    );
+    assert_eq!((mode::ONE_ENTRY, mode::BIND_ONLY, mode::MULTI_EXIT), (0, 1, 2));
+    assert_eq!((outcome::VMMCALL, outcome::ROUND_TRIP, outcome::MULTI_EXIT), (2, 9, 12));
     assert_eq!(native_transition::ABI_VERSION, 1);
     assert_eq!(core::mem::size_of::<NativeTransition>(), 1088);
     assert_eq!(core::mem::offset_of!(NativeTransition, guest), 704);
@@ -68,7 +54,5 @@ fn new_profile_keeps_old_mode_outcome_and_context_layout_meanings() {
     );
     assert_eq!(multi::EXPECTED_EXITS, 65);
     assert_eq!(multi::EXPECTED_EXITS, 2 * multi::ROUNDS + 1);
-    assert!(multi::GPR_SENTINELS
-        .into_iter()
-        .all(|value| value >> 32 != 0));
+    assert!(multi::GPR_SENTINELS.into_iter().all(|value| value >> 32 != 0));
 }

@@ -31,11 +31,7 @@ fn stopped(write: bool, input: u64) -> (NativeEfer, Vmcb, GuestRegisters) {
     put(&mut vmcb, 0x558, 0x8000_0001);
     put(&mut vmcb, 0x578, 0x2000);
     put(&mut vmcb, 0x570, 0x202);
-    put(
-        &mut vmcb,
-        0x5f8,
-        0xface_0000_0000_0000 | input as u32 as u64,
-    );
+    put(&mut vmcb, 0x5f8, 0xface_0000_0000_0000 | input as u32 as u64);
     put(&mut vmcb, 0xc8, u64::MAX); // Never consume an unadmitted/stale nRIP.
     let frame = GuestRegisters {
         rcx: 0xfeed_0000_c000_0080,
@@ -129,9 +125,13 @@ fn native_efer_features_follow_each_cpu_feature_and_roundtrip_through_backing() 
             | (if combination & 8 != 0 { 1 << 18 } else { 0 })
             | (if combination & 16 != 0 { 1 << 20 } else { 0 });
         let ecx = if combination & 2 != 0 { 1 << 17 } else { 0 };
-        let edx = (1 << 29) | (1 << 11) | (1 << 20) | if combination & 1 != 0 { 1 << 25 } else { 0 };
+        let edx =
+            (1 << 29) | (1 << 11) | (1 << 20) | if combination & 1 != 0 { 1 << 25 } else { 0 };
         let leaf8 = if combination & 8 != 0 { 1 << 13 } else { 0 };
-        let leaf21 = Some((if combination & 4 != 0 { 1 << 8 } else { 0 }) | (if combination & 16 != 0 { 1 << 7 } else { 0 }));
+        let leaf21 = Some(
+            (if combination & 4 != 0 { 1 << 8 } else { 0 })
+                | (if combination & 16 != 0 { 1 << 7 } else { 0 }),
+        );
         let (mut owner, mut vmcb, mut frame) = stopped(true, 0xd01 | feature_bits);
         owner = NativeEfer::admit_native(owner.logical(), ecx, edx, leaf8, leaf21).unwrap();
         let before_frame = frame;
@@ -157,15 +157,33 @@ fn processor_absent_efer_features_fault_without_completing_instruction() {
         for leaf21 in [None, Some(0), Some(1 << 24)] {
             let value = 0x500 | (1 << bit);
             let (mut owner, mut vmcb, mut frame) = stopped(true, value);
-            owner = NativeEfer::admit_native(owner.logical(), 0, (1 << 29) | (1 << 11) | (1 << 20), 1 << 20, leaf21).unwrap();
+            owner = NativeEfer::admit_native(
+                owner.logical(),
+                0,
+                (1 << 29) | (1 << 11) | (1 << 20),
+                1 << 20,
+                leaf21,
+            )
+            .unwrap();
             let saved = (owner, *vmcb.bytes(), frame);
-            assert_eq!(handle_native_efer(&mut owner, &mut vmcb, &mut frame, &[0x0f, 0x30]),
-                Ok(NativeMsrOutcome::GeneralProtectionPrepared));
+            assert_eq!(
+                handle_native_efer(&mut owner, &mut vmcb, &mut frame, &[0x0f, 0x30]),
+                Ok(NativeMsrOutcome::GeneralProtectionPrepared)
+            );
             assert_eq!((owner, frame), (saved.0, saved.2));
             assert_eq!(vmcb.guest_rip(), 0x2000);
             assert_eq!(get(&vmcb, 0x4d0), 0x1500);
             assert_eq!(vmcb.event_injection(), 0x8000_0b0d);
-            assert!(NativeEfer::admit_native(value, 0, (1 << 29) | (1 << 11) | (1 << 20), 1 << 20, leaf21).is_err());
+            assert!(
+                NativeEfer::admit_native(
+                    value,
+                    0,
+                    (1 << 29) | (1 << 11) | (1 << 20),
+                    1 << 20,
+                    leaf21
+                )
+                .is_err()
+            );
         }
     }
     assert!(NativeEfer::admit_native(0xd01, 0, 0, 0, None).is_err());
@@ -175,15 +193,24 @@ fn processor_absent_efer_features_fault_without_completing_instruction() {
 fn fast_fxsave_enable_is_preserved_until_target_owned_init() {
     let (mut owner, mut vmcb, mut frame) = stopped(true, 0x4500);
     put(&mut vmcb, 0x410, 0x29b << 16); // CS.L=1 for the startup-aware owner.
-    owner = NativeEfer::admit_native(owner.logical(), 1 << 17, (1 << 29) | (1 << 11) | (1 << 20) | (1 << 25), 1 << 20, Some(1 << 8)).unwrap();
+    owner = NativeEfer::admit_native(
+        owner.logical(),
+        1 << 17,
+        (1 << 29) | (1 << 11) | (1 << 20) | (1 << 25),
+        1 << 20,
+        Some(1 << 8),
+    )
+    .unwrap();
     owner.enable_guest_startup();
     handle_native_efer(&mut owner, &mut vmcb, &mut frame, &[0x0f, 0x30]).unwrap();
     // Idempotent FFXSR preservation remains accepted.
     handle_native_efer(&mut owner, &mut vmcb, &mut frame, &[0x0f, 0x30]).unwrap();
     put(&mut vmcb, 0x5f8, 0x500);
     let saved = (owner, *vmcb.bytes(), frame);
-    assert_eq!(handle_native_efer(&mut owner, &mut vmcb, &mut frame, &[0x0f, 0x30]),
-        Err(NativeEferError::UnsupportedValue { value: 0x500 }));
+    assert_eq!(
+        handle_native_efer(&mut owner, &mut vmcb, &mut frame, &[0x0f, 0x30]),
+        Err(NativeEferError::UnsupportedValue { value: 0x500 })
+    );
     assert_eq!((owner, *vmcb.bytes(), frame), saved);
     // This method is used only after the target owner commits VMCB INIT.
     owner.reset_after_init().unwrap();
@@ -194,17 +221,25 @@ fn fast_fxsave_enable_is_preserved_until_target_owned_init() {
 fn native_features_do_not_admit_unowned_efer_controls_or_change_fault_rules() {
     for value in [0x20500, 0x502] {
         let (mut owner, mut vmcb, mut frame) = stopped(true, value);
-        owner = NativeEfer::admit_native(owner.logical(), u32::MAX, u32::MAX, u32::MAX, Some(u32::MAX)).unwrap();
+        owner =
+            NativeEfer::admit_native(owner.logical(), u32::MAX, u32::MAX, u32::MAX, Some(u32::MAX))
+                .unwrap();
         let saved = (owner, *vmcb.bytes(), frame);
-        assert_eq!(handle_native_efer(&mut owner, &mut vmcb, &mut frame, &[0x0f, 0x30]),
-            Err(NativeEferError::UnsupportedValue { value }));
+        assert_eq!(
+            handle_native_efer(&mut owner, &mut vmcb, &mut frame, &[0x0f, 0x30]),
+            Err(NativeEferError::UnsupportedValue { value })
+        );
         assert_eq!((owner, *vmcb.bytes(), frame), saved);
     }
     for value in [0x100, 0x400, 0x1500, 0x2500, 0x8000_0000_0000_0500] {
         let (mut owner, mut vmcb, mut frame) = stopped(true, value);
-        owner = NativeEfer::admit_native(owner.logical(), u32::MAX, u32::MAX, u32::MAX, Some(u32::MAX)).unwrap();
-        assert_eq!(handle_native_efer(&mut owner, &mut vmcb, &mut frame, &[0x0f, 0x30]),
-            Ok(NativeMsrOutcome::GeneralProtectionPrepared));
+        owner =
+            NativeEfer::admit_native(owner.logical(), u32::MAX, u32::MAX, u32::MAX, Some(u32::MAX))
+                .unwrap();
+        assert_eq!(
+            handle_native_efer(&mut owner, &mut vmcb, &mut frame, &[0x0f, 0x30]),
+            Ok(NativeMsrOutcome::GeneralProtectionPrepared)
+        );
         assert_eq!(owner.logical(), 0x500);
         assert_eq!(get(&vmcb, 0x4d0), 0x1500);
         assert_eq!(vmcb.guest_rip(), 0x2000);
@@ -218,9 +253,14 @@ fn target_efer_all_bit_positions_have_explicit_completion_fault_or_reserved_poli
     for bit in 0..64 {
         let value = 0x500 | (1u64 << bit);
         let (mut owner, mut vmcb, mut frame) = stopped(true, value);
-        owner = NativeEfer::admit_native(owner.logical(), 1 << 17,
+        owner = NativeEfer::admit_native(
+            owner.logical(),
+            1 << 17,
             (1 << 11) | (1 << 20) | (1 << 25) | (1 << 29),
-            (1 << 13) | (1 << 20), Some((1 << 7) | (1 << 8))).unwrap();
+            (1 << 13) | (1 << 20),
+            Some((1 << 7) | (1 << 8)),
+        )
+        .unwrap();
         let saved_owner = owner;
         let saved_frame = frame;
         let result = handle_native_efer(&mut owner, &mut vmcb, &mut frame, &[0x0f, 0x30]);
@@ -271,13 +311,7 @@ fn stopped_state_and_instruction_refusals_are_transactional() {
 #[test]
 fn msrpm_passes_apic_and_native_msrs_but_protects_monitor_controls() {
     let map = Msrpm::native_boot();
-    for (index, base) in [
-        (0x1b, 0),
-        (0x808, 0),
-        (0x830, 0),
-        (0x81, 0x800),
-        (0x101, 0x800),
-    ] {
+    for (index, base) in [(0x1b, 0), (0x808, 0), (0x830, 0), (0x81, 0x800), (0x101, 0x800)] {
         let bit = index * 2;
         assert_eq!(map.bytes()[base + bit / 8] & (3 << (bit % 8)), 0);
     }
@@ -289,12 +323,15 @@ fn msrpm_passes_apic_and_native_msrs_but_protects_monitor_controls() {
     for index in 0xc001_0100u32..=0xc001_01ff {
         let bit = ((index - 0xc001_0000) * 2) as usize;
         let accesses = (map.bytes()[0x1000 + bit / 8] >> (bit % 8)) & 3;
-        assert_eq!(accesses, if matches!(index, 0xc001_0140 | 0xc001_0141) { 0 } else { 3 }, "MSR {index:08x}");
+        assert_eq!(
+            accesses,
+            if matches!(index, 0xc001_0140 | 0xc001_0141) { 0 } else { 3 },
+            "MSR {index:08x}"
+        );
     }
     // Advertised native OSVW now has hardware access, not a terminal handler.
-    let response = svmvisor_hypervisor::svm::cpu_model::native_boot_cpuid(
-        0x8000_0001, [0, 0, 1 << 9, 0], 0,
-    );
+    let response =
+        svmvisor_hypervisor::svm::cpu_model::native_boot_cpuid(0x8000_0001, [0, 0, 1 << 9, 0], 0);
     assert_eq!(response[2] & (1 << 9), 1 << 9);
     assert!(map.bytes()[0x1800..].iter().all(|&b| b == 0xff));
 }
@@ -311,10 +348,7 @@ fn native_sys_cfg_writes_stop_without_hardware_access_or_guest_completion() {
         let original_frame = frame;
         assert_eq!(
             handle_native_efer(&mut owner, &mut vmcb, &mut frame, &[0x0f, 0x30]),
-            Err(NativeEferError::UnsupportedMsr {
-                index: SYS_CFG,
-                write: true
-            })
+            Err(NativeEferError::UnsupportedMsr { index: SYS_CFG, write: true })
         );
         assert_eq!(*vmcb.bytes(), original);
         assert_eq!(frame, original_frame);
@@ -365,10 +399,7 @@ fn native_cpuid_preserves_native_topology_and_follows_guest_osxsave() {
     let native = [0x1234, 0x0101_0800, u32::MAX, 0xfeed];
     assert_eq!(native_boot_cpuid(1, native, 0)[2] & (1 << 27), 0);
     assert_eq!(native_boot_cpuid(1, native, 1 << 18), native);
-    assert_eq!(
-        native_boot_cpuid(0x8000_0001, native, 0)[2] & ((1 << 2) | (1 << 12)),
-        0
-    );
+    assert_eq!(native_boot_cpuid(0x8000_0001, native, 0)[2] & ((1 << 2) | (1 << 12)), 0);
     for leaf in [0x8000_000a, 0x8000_001f, 0x8000_0023] {
         assert_eq!(native_boot_cpuid(leaf, native, 0), [0; 4]);
     }
@@ -387,13 +418,8 @@ fn native_cpuid_preserves_native_topology_and_follows_guest_osxsave() {
 #[test]
 fn native_nested_paging_requires_prepared_root_asid_and_clean_control() {
     use svmvisor_hypervisor::memory::address::{AddressPolicy, EncryptionState};
-    let policy = AddressPolicy::new(
-        48,
-        EncryptionState::Unencrypted {
-            encryption_bit: None,
-        },
-    )
-    .unwrap();
+    let policy =
+        AddressPolicy::new(48, EncryptionState::Unencrypted { encryption_bit: None }).unwrap();
     let mut vmcb = Vmcb::new();
     let original = *vmcb.bytes();
     assert!(vmcb.enable_native_nested_paging(&policy).is_err());

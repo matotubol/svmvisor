@@ -40,7 +40,12 @@ fn utc_stamp(seconds: u64) -> String {
     let day = doy - (153 * mp + 2) / 5 + 1;
     let month = if mp < 10 { mp + 3 } else { mp - 9 };
     let year = yoe + era * 400 + i64::from(month <= 2);
-    format!("{year:04}{month:02}{day:02}T{:02}{:02}{:02}Z", rest / 3600, rest % 3600 / 60, rest % 60)
+    format!(
+        "{year:04}{month:02}{day:02}T{:02}{:02}{:02}Z",
+        rest / 3600,
+        rest % 3600 / 60,
+        rest % 60
+    )
 }
 
 /// `<utc>-<8 hex>`: sortable, and unique across quick successive runs.
@@ -55,8 +60,14 @@ fn fresh_name() -> String {
 
 pub fn parse_adapter_khz(text: &str) -> Result<u32, String> {
     match text.parse::<u32>() {
-        Ok(khz) if (100..=30000).contains(&khz) && text.bytes().all(|byte| byte.is_ascii_digit()) => Ok(khz),
-        _ => Err(format!("--adapter-khz must be a decimal integer within 100..30000, not {text:?}")),
+        Ok(khz)
+            if (100..=30000).contains(&khz) && text.bytes().all(|byte| byte.is_ascii_digit()) =>
+        {
+            Ok(khz)
+        }
+        _ => {
+            Err(format!("--adapter-khz must be a decimal integer within 100..30000, not {text:?}"))
+        }
     }
 }
 
@@ -75,11 +86,17 @@ fn parse_header(header: &[u8]) -> Result<Header, String> {
         return Err("pe-header.bin is not a 128-byte SVMBPE01 envelope".into());
     }
     let payload_bytes = word(16);
-    if word(24) != SLOT_BYTES || word(32) != HEADER_BYTES as u64 || word(40) != 4
-        || !(512..=SLOT_BYTES - HEADER_BYTES as u64).contains(&payload_bytes) {
+    if word(24) != SLOT_BYTES
+        || word(32) != HEADER_BYTES as u64
+        || word(40) != 4
+        || !(512..=SLOT_BYTES - HEADER_BYTES as u64).contains(&payload_bytes)
+    {
         return Err("pe-header.bin does not describe a resident payload slot".into());
     }
-    Ok(Header { payload_bytes, digest: header[48..80].iter().map(|byte| format!("{byte:02x}")).collect() })
+    Ok(Header {
+        payload_bytes,
+        digest: header[48..80].iter().map(|byte| format!("{byte:02x}")).collect(),
+    })
 }
 
 /// First and last 64 KiB flash sector holding header + child.
@@ -92,17 +109,39 @@ fn covering_sectors(payload_bytes: u64) -> (u64, u64) {
 fn run(root: &Path, program: &OsStr, args: &[&OsStr], what: &str) -> Result<(), String> {
     let name = program.to_string_lossy();
     let executable = resident::which(&name).ok_or(format!("missing tool {name}"))?;
-    let status = Command::new(&executable).args(args).current_dir(root).stdin(Stdio::null()).status()
+    let status = Command::new(&executable)
+        .args(args)
+        .current_dir(root)
+        .stdin(Stdio::null())
+        .status()
         .map_err(|error| format!("{what}: cannot run {}: {error}", executable.display()))?;
-    if status.success() { Ok(()) } else { Err(format!("{what} failed ({})", status.code().map_or("signal".into(), |code| code.to_string()))) }
+    if status.success() {
+        Ok(())
+    } else {
+        Err(format!(
+            "{what} failed ({})",
+            status.code().map_or("signal".into(), |code| code.to_string())
+        ))
+    }
 }
 
 /// Like `run`, but the tool's merged output goes to `log` (shown on failure).
-fn run_logged(root: &Path, program: &str, args: &[&OsStr], what: &str, log: &Path) -> Result<(), String> {
+fn run_logged(
+    root: &Path,
+    program: &str,
+    args: &[&OsStr],
+    what: &str,
+    log: &Path,
+) -> Result<(), String> {
     let executable = resident::which(program).ok_or(format!("missing tool {program}"))?;
     let sink = io(fs::File::create(log), "create", log)?;
-    let status = Command::new(&executable).args(args).current_dir(root).stdin(Stdio::null())
-        .stdout(io(sink.try_clone(), "create", log)?).stderr(sink).status()
+    let status = Command::new(&executable)
+        .args(args)
+        .current_dir(root)
+        .stdin(Stdio::null())
+        .stdout(io(sink.try_clone(), "create", log)?)
+        .stderr(sink)
+        .status()
         .map_err(|error| format!("{what}: cannot run {}: {error}", executable.display()))?;
     if status.success() {
         return Ok(());
@@ -115,8 +154,13 @@ fn run_logged(root: &Path, program: &str, args: &[&OsStr], what: &str, log: &Pat
 fn flash_card(root: &Path, arguments: &[&OsStr], what: &str) -> Result<(), String> {
     let host = if resident::which("pwsh").is_some() { "pwsh" } else { "powershell" };
     let script = root.join("firmware/card/flash-card.ps1");
-    let mut args: Vec<&OsStr> = vec!["-NoProfile".as_ref(), "-ExecutionPolicy".as_ref(), "Bypass".as_ref(),
-        "-File".as_ref(), script.as_os_str()];
+    let mut args: Vec<&OsStr> = vec![
+        "-NoProfile".as_ref(),
+        "-ExecutionPolicy".as_ref(),
+        "Bypass".as_ref(),
+        "-File".as_ref(),
+        script.as_os_str(),
+    ];
     args.extend_from_slice(arguments);
     run(root, host.as_ref(), &args, what)
 }
@@ -135,32 +179,64 @@ pub fn dev(low_runtime: bool, flash: bool, adapter_khz: u32) -> Result<(), Strin
     let (resident_dir, payload_dir) = (out.join("resident"), out.join("payload"));
     println!("card-dev: {}", out.display());
 
-    println!("[1/4] cargo xtask resident{} -> resident/", if low_runtime { " --low-runtime" } else { "" });
+    println!(
+        "[1/4] cargo xtask resident{} -> resident/",
+        if low_runtime { " --low-runtime" } else { "" }
+    );
     resident::build(&resident_dir, low_runtime)?;
 
     println!("[2/4] package-payload.py --resident -> payload/");
     let card = root.join("firmware/card");
     let driver = resident_dir.join("driver.efi");
-    run_logged(&root, "python", &["-B".as_ref(), card.join("package-payload.py").as_os_str(), "--resident".as_ref(),
-        "--payload".as_ref(), driver.as_os_str(), "--output".as_ref(), payload_dir.as_os_str()],
-        "payload packaging", &out.join("package-payload.log"))?;
+    run_logged(
+        &root,
+        "python",
+        &[
+            "-B".as_ref(),
+            card.join("package-payload.py").as_os_str(),
+            "--resident".as_ref(),
+            "--payload".as_ref(),
+            driver.as_os_str(),
+            "--output".as_ref(),
+            payload_dir.as_os_str(),
+        ],
+        "payload packaging",
+        &out.join("package-payload.log"),
+    )?;
 
     println!("[3/4] verify-resident-build.py");
     // resident::build has just proven the working tree equals its source
     // snapshot, so the verifier's `cargo xtask sources` round trip is skipped.
     let child = payload_dir.join("native-child.efi");
-    run_logged(&root, "python", &["-B".as_ref(), card.join("verify-resident-build.py").as_os_str(),
-        "--evidence".as_ref(), resident_dir.as_os_str(), "--image".as_ref(), child.as_os_str(),
-        "--no-current-source-check".as_ref()], "resident build verification", &out.join("verify-resident-build.log"))?;
+    run_logged(
+        &root,
+        "python",
+        &[
+            "-B".as_ref(),
+            card.join("verify-resident-build.py").as_os_str(),
+            "--evidence".as_ref(),
+            resident_dir.as_os_str(),
+            "--image".as_ref(),
+            child.as_os_str(),
+            "--no-current-source-check".as_ref(),
+        ],
+        "resident build verification",
+        &out.join("verify-resident-build.log"),
+    )?;
 
     println!("[4/4] flash-card.ps1 -Action CheckPayload (offline)");
-    flash_card(&root, &["-Action".as_ref(), "CheckPayload".as_ref(), "-BuildPath".as_ref(), out.as_os_str()],
-        "offline payload check")?;
+    flash_card(
+        &root,
+        &["-Action".as_ref(), "CheckPayload".as_ref(), "-BuildPath".as_ref(), out.as_os_str()],
+        "offline payload check",
+    )?;
 
     let header_path = payload_dir.join("pe-header.bin");
     let header = parse_header(&io(fs::read(&header_path), "read", &header_path)?)?;
     let child_sha = resident::sha(&child)?;
-    if child_sha != header.digest || io(fs::metadata(&child), "inspect", &child)?.len() != header.payload_bytes {
+    if child_sha != header.digest
+        || io(fs::metadata(&child), "inspect", &child)?.len() != header.payload_bytes
+    {
         return Err("packaged header does not describe the packaged child".into());
     }
     let slot_sha = resident::sha(&payload_dir.join("payload-slot.bin"))?;
@@ -183,20 +259,37 @@ pub fn dev(low_runtime: bool, flash: bool, adapter_khz: u32) -> Result<(), Strin
 
     println!();
     println!("header digest (child sha256): {}", header.digest);
-    println!("child: {} bytes; header+child: {} bytes; slot sectors {first}..{last} of 64..79",
-        header.payload_bytes, header.payload_bytes + HEADER_BYTES as u64);
+    println!(
+        "child: {} bytes; header+child: {} bytes; slot sectors {first}..{last} of 64..79",
+        header.payload_bytes,
+        header.payload_bytes + HEADER_BYTES as u64
+    );
     println!("slot sha256: {slot_sha}");
     println!("latest -> {}", out.display());
     let khz = adapter_khz.to_string();
-    println!("flash (touches hardware):\n  powershell -NoProfile -ExecutionPolicy Bypass -File firmware\\card\\flash-card.ps1 \
-        -Action ProgramPayload -BuildPath \"{}\" -AdapterKhz {khz} -ConfirmFlash", out.display());
+    println!(
+        "flash (touches hardware):\n  powershell -NoProfile -ExecutionPolicy Bypass -File firmware\\card\\flash-card.ps1 \
+        -Action ProgramPayload -BuildPath \"{}\" -AdapterKhz {khz} -ConfirmFlash",
+        out.display()
+    );
     if !flash {
         println!("not flashed: pass --flash to program the payload slot.");
         return Ok(());
     }
     println!("--flash: programming the payload slot at {khz} kHz");
-    flash_card(&root, &["-Action".as_ref(), "ProgramPayload".as_ref(), "-BuildPath".as_ref(), out.as_os_str(),
-        "-AdapterKhz".as_ref(), khz.as_ref(), "-ConfirmFlash".as_ref()], "payload programming")?;
+    flash_card(
+        &root,
+        &[
+            "-Action".as_ref(),
+            "ProgramPayload".as_ref(),
+            "-BuildPath".as_ref(),
+            out.as_os_str(),
+            "-AdapterKhz".as_ref(),
+            khz.as_ref(),
+            "-ConfirmFlash".as_ref(),
+        ],
+        "payload programming",
+    )?;
     println!("power-cycle the target, then: cargo xtask card-snapshot");
     Ok(())
 }
@@ -205,7 +298,10 @@ pub fn dev(low_runtime: bool, flash: bool, adapter_khz: u32) -> Result<(), Strin
 /// `--input` log is named.
 pub fn snapshot(passthrough: &[String]) -> Result<(), String> {
     let root = resident::root();
-    if passthrough.iter().any(|arg| arg == "--output-dir" || arg.starts_with("--output-dir=") || arg == "--summary") {
+    if passthrough
+        .iter()
+        .any(|arg| arg == "--output-dir" || arg.starts_with("--output-dir=") || arg == "--summary")
+    {
         return Err("card-snapshot chooses --output-dir and --summary itself".into());
     }
     let out = root.join("target").join("card-snapshots").join(fresh_name());
@@ -213,7 +309,10 @@ pub fn snapshot(passthrough: &[String]) -> Result<(), String> {
     io(fs::create_dir_all(parent), "create", parent)?;
     let reader = root.join("firmware/card/read_snapshot.py");
     let mut args: Vec<&OsStr> = vec!["-B".as_ref(), reader.as_os_str()];
-    if !passthrough.iter().any(|arg| arg == "--input" || arg.starts_with("--input=") || arg == "--live") {
+    if !passthrough
+        .iter()
+        .any(|arg| arg == "--input" || arg.starts_with("--input=") || arg == "--live")
+    {
         args.push("--live".as_ref());
     }
     args.extend(passthrough.iter().map(|arg| OsStr::new(arg.as_str())));
@@ -236,19 +335,63 @@ pub fn loader_dev() -> Result<(), String> {
     let manifest = root.join("Cargo.toml");
     let (loader_target, rompack_target) = (out.join("loader-cargo"), out.join("rompack-cargo"));
     println!("card-loader-dev: {}", out.display());
-    run(&root, "cargo".as_ref(), &["build".as_ref(), "--locked".as_ref(), "--manifest-path".as_ref(), manifest.as_os_str(),
-        "--package".as_ref(), "svmvisor-dxe".as_ref(), "--profile".as_ref(), "dxe".as_ref(),
-        "--features".as_ref(), "card-resident-dev-loader".as_ref(), "--target".as_ref(), "x86_64-unknown-uefi".as_ref(),
-        "--target-dir".as_ref(), loader_target.as_os_str()], "development loader build")?;
-    let (efi, rom, memory) = (out.join("svmvisor-dxe.efi"), out.join("svmvisor-dxe.rom"), out.join("svmvisor-dxe.mem"));
+    run(
+        &root,
+        "cargo".as_ref(),
+        &[
+            "build".as_ref(),
+            "--locked".as_ref(),
+            "--manifest-path".as_ref(),
+            manifest.as_os_str(),
+            "--package".as_ref(),
+            "svmvisor-dxe".as_ref(),
+            "--profile".as_ref(),
+            "dxe".as_ref(),
+            "--features".as_ref(),
+            "card-resident-dev-loader".as_ref(),
+            "--target".as_ref(),
+            "x86_64-unknown-uefi".as_ref(),
+            "--target-dir".as_ref(),
+            loader_target.as_os_str(),
+        ],
+        "development loader build",
+    )?;
+    let (efi, rom, memory) =
+        (out.join("svmvisor-dxe.efi"), out.join("svmvisor-dxe.rom"), out.join("svmvisor-dxe.mem"));
     let built = loader_target.join("x86_64-unknown-uefi/dxe/svmvisor-dxe.efi");
     io(fs::copy(&built, &efi).map(drop), "copy", &built)?;
-    run(&root, "cargo".as_ref(), &["run".as_ref(), "--locked".as_ref(), "--quiet".as_ref(), "--release".as_ref(),
-        "--manifest-path".as_ref(), manifest.as_os_str(), "--package".as_ref(), "svmvisor-rompack".as_ref(),
-        "--target-dir".as_ref(), rompack_target.as_os_str(), "--".as_ref(), "--input".as_ref(), efi.as_os_str(),
-        "--output".as_ref(), rom.as_os_str(), "--memory-output".as_ref(), memory.as_os_str(),
-        "--memory-size".as_ref(), "32768".as_ref(), "--vendor".as_ref(), "0x10ee".as_ref(),
-        "--device".as_ref(), "0x0666".as_ref(), "--class".as_ref(), "0xff0000".as_ref()], "32 KiB ROM packaging")?;
+    run(
+        &root,
+        "cargo".as_ref(),
+        &[
+            "run".as_ref(),
+            "--locked".as_ref(),
+            "--quiet".as_ref(),
+            "--release".as_ref(),
+            "--manifest-path".as_ref(),
+            manifest.as_os_str(),
+            "--package".as_ref(),
+            "svmvisor-rompack".as_ref(),
+            "--target-dir".as_ref(),
+            rompack_target.as_os_str(),
+            "--".as_ref(),
+            "--input".as_ref(),
+            efi.as_os_str(),
+            "--output".as_ref(),
+            rom.as_os_str(),
+            "--memory-output".as_ref(),
+            memory.as_os_str(),
+            "--memory-size".as_ref(),
+            "32768".as_ref(),
+            "--vendor".as_ref(),
+            "0x10ee".as_ref(),
+            "--device".as_ref(),
+            "0x0666".as_ref(),
+            "--class".as_ref(),
+            "0xff0000".as_ref(),
+        ],
+        "32 KiB ROM packaging",
+    )?;
     let (loader_sha, rom_sha) = (resident::sha(&efi)?, resident::sha(&rom)?);
     let record = Value::Map(vec![
         ("schema_version".into(), Value::Int(1)),
@@ -257,7 +400,10 @@ pub fn loader_dev() -> Result<(), String> {
         ("loader_bytes".into(), Value::Int(io(fs::metadata(&efi), "inspect", &efi)?.len() as i64)),
         ("loader_sha256".into(), Value::str(&loader_sha)),
         ("rom_bytes".into(), Value::Int(32768)),
-        ("rom_bytes_used".into(), Value::Int(io(fs::metadata(&rom), "inspect", &rom)?.len() as i64)),
+        (
+            "rom_bytes_used".into(),
+            Value::Int(io(fs::metadata(&rom), "inspect", &rom)?.len() as i64),
+        ),
         ("rom_sha256".into(), Value::str(&rom_sha)),
         ("hardware_accessed".into(), Value::Bool(false)),
     ]);
@@ -266,9 +412,13 @@ pub fn loader_dev() -> Result<(), String> {
     write_pointer(&base, "latest", &out)?;
     println!("development loader: {loader_sha}  {}", efi.display());
     println!("32 KiB option ROM : {rom_sha}  {}", rom.display());
-    println!("one-time slow step (Vivado, ~1 h), which rebuilds this same loader and must report the same loader_sha256:");
-    println!("  firmware\\card\\build-card.ps1 -PayloadPath <driver.efi> -PayloadSha256 <sha256> -PayloadEvidencePath <summary.json> \
-        -ResidentBuildPath <resident dir> -DevLoader -BuildFpga");
+    println!(
+        "one-time slow step (Vivado, ~1 h), which rebuilds this same loader and must report the same loader_sha256:"
+    );
+    println!(
+        "  firmware\\card\\build-card.ps1 -PayloadPath <driver.efi> -PayloadSha256 <sha256> -PayloadEvidencePath <summary.json> \
+        -ResidentBuildPath <resident dir> -DevLoader -BuildFpga"
+    );
     Ok(())
 }
 
@@ -313,7 +463,10 @@ mod tests {
 
     #[test]
     fn header_report_refuses_other_envelopes() {
-        assert_eq!(parse_header(&header(153088)), Ok(Header { payload_bytes: 153088, digest: "ab".repeat(32) }));
+        assert_eq!(
+            parse_header(&header(153088)),
+            Ok(Header { payload_bytes: 153088, digest: "ab".repeat(32) })
+        );
         let mut returning = header(153088);
         returning[..8].copy_from_slice(b"SVMPE001");
         assert!(parse_header(&returning).is_err());

@@ -26,10 +26,7 @@ fn python_card_artifact_relocates_without_execution() {
     let memory_bytes = word(bytes, 32) as usize;
     let entry = word(bytes, 40);
     let count = word(bytes, 48) as usize;
-    assert!(
-        count > 100,
-        "integration input must contain the real runtime relocations"
-    );
+    assert!(count > 100, "integration input must contain the real runtime relocations");
     for base in [0x300000_u64, 0x4000000] {
         let mut arena = vec![0xa5_u8; 0x100000];
         payload.load(&mut arena, base).unwrap();
@@ -48,22 +45,12 @@ fn python_card_artifact_relocates_without_execution() {
             expected[offset..offset + width].copy_from_slice(&relocated.to_le_bytes()[..width]);
         }
         expected[0xff000..0xff008].copy_from_slice(b"SVMUEFI2");
-        for (i, value) in [
-            base,
-            0x100000,
-            image_bytes as u64,
-            memory_bytes as u64,
-            entry,
-        ]
-        .iter()
-        .enumerate()
+        for (i, value) in
+            [base, 0x100000, image_bytes as u64, memory_bytes as u64, entry].iter().enumerate()
         {
             expected[0xff008 + i * 8..0xff010 + i * 8].copy_from_slice(&value.to_le_bytes());
         }
-        assert_eq!(
-            arena, expected,
-            "all relocated bytes, BSS, padding, and header"
-        );
+        assert_eq!(arena, expected, "all relocated bytes, BSS, padding, and header");
     }
     println!(
         "PASS actual-card-package bytes={} relocations={count} bases=3MiB,64MiB execution=none",

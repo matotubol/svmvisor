@@ -1,17 +1,11 @@
-use svmvisor_hypervisor::memory::address::{AddressError, AddressPolicy, EncryptionState};
 use svmvisor_hypervisor::arch::x86_64::capabilities::EvidenceFlag;
+use svmvisor_hypervisor::memory::address::{AddressError, AddressPolicy, EncryptionState};
 use svmvisor_hypervisor::memory::npt::{
-    Npt, NptError as E, NptEvidence, PagePermissions as P, TableStorage, TABLE_COUNT,
+    Npt, NptError as E, NptEvidence, PagePermissions as P, TABLE_COUNT, TableStorage,
 };
 
 fn policy() -> AddressPolicy {
-    AddressPolicy::new(
-        48,
-        EncryptionState::Unencrypted {
-            encryption_bit: Some(47),
-        },
-    )
-    .unwrap()
+    AddressPolicy::new(48, EncryptionState::Unencrypted { encryption_bit: Some(47) }).unwrap()
 }
 fn evidence() -> NptEvidence {
     NptEvidence {
@@ -41,16 +35,9 @@ fn exported_walk_permissions_and_default_absence() {
     assert!(npt.table(0).unwrap().bytes.iter().all(|&b| b == 0));
     assert!(npt.table(1).is_none());
     assert_eq!(npt.translate(0), Ok(None));
-    for (index, permissions) in [P::ReadExecute, P::ReadWrite, P::ReadOnly]
-        .into_iter()
-        .enumerate()
+    for (index, permissions) in [P::ReadExecute, P::ReadWrite, P::ReadOnly].into_iter().enumerate()
     {
-        npt.map_page(
-            index as u64 * 4096,
-            0x200000 + index as u64 * 4096,
-            permissions,
-        )
-        .unwrap();
+        npt.map_page(index as u64 * 4096, 0x200000 + index as u64 * 4096, permissions).unwrap();
         let result = npt.translate(index as u64 * 4096 + 4095).unwrap().unwrap();
         assert_eq!(result.host_address, 0x200fff + index as u64 * 4096);
         assert_eq!(result.permissions, permissions);
@@ -85,21 +72,9 @@ fn duplicate_alias_overlap_and_address_failures_leave_no_mutation() {
         (0x1001, 0x300000, E::GuestAddressMisaligned),
         (1 << 48, 0x300000, E::GuestAddressOutsideWidth),
         (0x1000, 0x300001, E::Address(AddressError::Misaligned)),
-        (
-            0x1000,
-            1 << 48,
-            E::Address(AddressError::OutsidePhysicalWidth),
-        ),
-        (
-            0x1000,
-            1 << 47,
-            E::Address(AddressError::EncryptionBitEncoded),
-        ),
-        (
-            0x1000,
-            !4095,
-            E::Address(AddressError::OutsidePhysicalWidth),
-        ),
+        (0x1000, 1 << 48, E::Address(AddressError::OutsidePhysicalWidth)),
+        (0x1000, 1 << 47, E::Address(AddressError::EncryptionBitEncoded)),
+        (0x1000, !4095, E::Address(AddressError::OutsidePhysicalWidth)),
     ] {
         assert_eq!(npt.map_page(gpa, hpa, P::ReadExecute), Err(error));
         assert_eq!(snapshot(&npt), before);
@@ -117,36 +92,23 @@ fn sparse_capacity_preflight_is_atomic_and_shared_paths_still_work() {
     assert_eq!(npt.used_tables(), TABLE_COUNT - 1);
     let before = snapshot(&npt);
     // Two further tables needed; only one remains. No parent link may leak.
-    assert_eq!(
-        npt.map_page(1 << 30, 0x202000, P::ReadOnly),
-        Err(E::TablesExhausted)
-    );
+    assert_eq!(npt.map_page(1 << 30, 0x202000, P::ReadOnly), Err(E::TablesExhausted));
     assert_eq!(snapshot(&npt), before);
     assert_eq!(npt.translate(1 << 30), Ok(None));
     npt.map_page(1 << 21, 0x202000, P::ReadOnly).unwrap();
     assert_eq!(npt.used_tables(), TABLE_COUNT);
-    npt.map_page((1 << 21) + 4096, 0x203000, P::ReadOnly)
-        .unwrap();
+    npt.map_page((1 << 21) + 4096, 0x203000, P::ReadOnly).unwrap();
     assert_eq!(npt.used_tables(), TABLE_COUNT);
 }
 
 #[test]
 fn exact_guest_limit_and_full_table_arena_boundaries() {
-    let p = AddressPolicy::new(
-        48,
-        EncryptionState::Unencrypted {
-            encryption_bit: None,
-        },
-    )
-    .unwrap();
+    let p = AddressPolicy::new(48, EncryptionState::Unencrypted { encryption_bit: None }).unwrap();
     let mut storage = TableStorage([[0; 4096]; TABLE_COUNT]);
-    let mut npt = Npt::new(&mut storage, (1 << 48) - (TABLE_COUNT * 4096) as u64, p, 48, evidence()).unwrap();
-    npt.map_page((1 << 48) - 4096, 0x200000, P::ReadExecute)
-        .unwrap();
-    assert_eq!(
-        npt.translate((1 << 48) - 1).unwrap().unwrap().host_address,
-        0x200fff
-    );
+    let mut npt =
+        Npt::new(&mut storage, (1 << 48) - (TABLE_COUNT * 4096) as u64, p, 48, evidence()).unwrap();
+    npt.map_page((1 << 48) - 4096, 0x200000, P::ReadExecute).unwrap();
+    assert_eq!(npt.translate((1 << 48) - 1).unwrap().unwrap().host_address, 0x200fff);
     assert_eq!(npt.translate(1 << 48), Err(E::GuestAddressOutsideWidth));
     assert!(matches!(
         Npt::new(&mut storage, (1 << 48) - ((TABLE_COUNT - 1) * 4096) as u64, p, 48, evidence()),
@@ -163,18 +125,9 @@ fn mode_unknowns_and_constructor_errors_preserve_storage() {
     let mut storage = TableStorage([[0xa5; 4096]; TABLE_COUNT]);
     for flag in [EvidenceFlag::Unknown, EvidenceFlag::Clear] {
         for e in [
-            NptEvidence {
-                nx_supported: flag,
-                ..evidence()
-            },
-            NptEvidence {
-                host_nxe: flag,
-                ..evidence()
-            },
-            NptEvidence {
-                host_four_level: flag,
-                ..evidence()
-            },
+            NptEvidence { nx_supported: flag, ..evidence() },
+            NptEvidence { host_nxe: flag, ..evidence() },
+            NptEvidence { host_four_level: flag, ..evidence() },
         ] {
             assert!(matches!(
                 Npt::new(&mut storage, 0x100000, policy(), 48, e),

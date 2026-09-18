@@ -7,8 +7,8 @@
 //! or that a raw payload is exempt from loaded-image virtual-address fixups.
 //! Those facts and effective WB caching remain the firmware adapter's duties.
 use svmvisor_hypervisor::{
-    boot::memory::{MemoryDescriptor, MemoryError, ValidatedMemoryMap},
     arch::x86_64::capabilities::EvidenceFlag,
+    boot::memory::{MemoryDescriptor, MemoryError, ValidatedMemoryMap},
     memory::{
         address::{AddressPolicy, PhysicalRange},
         npt::{IdentityNpt, IdentityNptError, NptEvidence, TableStorage},
@@ -80,14 +80,6 @@ pub fn prepare_identity_npt<'a>(
 ) -> Result<IdentityNpt<'a>, ResidentMemoryError> {
     use ResidentMemoryError as E;
     validate_runtime_coverage(monitor, descriptors, policy.physical_bits())?;
-    IdentityNpt::new(
-        storage,
-        table_base,
-        policy,
-        monitor,
-        evidence,
-        one_gib_pages,
-        source_pat,
-    )
-    .map_err(E::Npt)
+    IdentityNpt::new(storage, table_base, policy, monitor, evidence, one_gib_pages, source_pat)
+        .map_err(E::Npt)
 }

@@ -62,7 +62,8 @@ pub const TIMER_DIVIDE: u16 = 0x3e0;
 /// First AMD extended register (Extended APIC Feature).
 pub const EXTENDED: u16 = 0x400;
 /// The six standard LVT entries, in offset order.
-pub const LVTS: [u16; 6] = [LVT_TIMER, LVT_THERMAL, LVT_PERFORMANCE, LVT_LINT0, LVT_LINT1, LVT_ERROR];
+pub const LVTS: [u16; 6] =
+    [LVT_TIMER, LVT_THERMAL, LVT_PERFORMANCE, LVT_LINT0, LVT_LINT1, LVT_ERROR];
 
 /// SVR APIC software enable (ASE, bit 8; Figure 16-17 p641).
 pub const SVR_SOFTWARE_ENABLE: u32 = 1 << 8;
@@ -197,7 +198,9 @@ impl PhysicalX2Apic for HostX2Apic {
 #[cfg(target_arch = "x86_64")]
 unsafe fn read_physical_msr(msr: u32) -> u64 {
     let (low, high): (u32, u32);
-    unsafe { core::arch::asm!("rdmsr", in("ecx") msr, out("eax") low, out("edx") high, options(nostack)); }
+    unsafe {
+        core::arch::asm!("rdmsr", in("ecx") msr, out("eax") low, out("edx") high, options(nostack));
+    }
     u64::from(low) | (u64::from(high) << 32)
 }
 

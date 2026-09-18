@@ -122,10 +122,7 @@ pub(crate) unsafe fn prepare() -> Result<PreparedSmp, Status> {
             }
         }
         let bsp = identity(0);
-        let capture = ApCapture {
-            identity: UnsafeCell::new(bsp),
-            completed: AtomicU32::new(0),
-        };
+        let capture = ApCapture { identity: UnsafeCell::new(bsp), completed: AtomicU32::new(0) };
         mp.startup_this_ap(
             1,
             capture_ap,
@@ -140,11 +137,8 @@ pub(crate) unsafe fn prepare() -> Result<PreparedSmp, Status> {
         [bsp, capture.identity.into_inner()]
     };
     crate::debug("uefi-smp-mp-callbacks-returned=1\n");
-    let allocation_type = if explicit {
-        AllocateType::Address(requested)
-    } else {
-        AllocateType::MaxAddress(0xfffff)
-    };
+    let allocation_type =
+        if explicit { AllocateType::Address(requested) } else { AllocateType::MaxAddress(0xfffff) };
     let page = boot::allocate_pages(allocation_type, MemoryType::LOADER_CODE, 1).map_err(|e| {
         crate::debug("REFUSE uefi-smp-low-page-allocation\n");
         e.status()
@@ -161,14 +155,10 @@ pub(crate) unsafe fn prepare() -> Result<PreparedSmp, Status> {
         }
         let policy = AddressPolicy::new(
             __cpuid(0x80000008).eax as u8,
-            EncryptionState::Unencrypted {
-                encryption_bit: None,
-            },
+            EncryptionState::Unencrypted { encryption_bit: None },
         )
         .map_err(|_| Status::UNSUPPORTED)?;
-        let range = policy
-            .validate(base, 4096, 4096)
-            .map_err(|_| Status::UNSUPPORTED)?;
+        let range = policy.validate(base, 4096, 4096).map_err(|_| Status::UNSUPPORTED)?;
         SmpResources::new(range, cpus, 1).map_err(|_| Status::UNSUPPORTED)
     })();
     let resources = match admitted {

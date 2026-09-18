@@ -68,28 +68,29 @@ mod card_boot;
 #[path = "physical_boot.rs"]
 mod physical;
 // Shared qualification helpers also serve profiles without MP admission.
-fn admission_hint(predicate:u32,item:u64,observed:u64,expected:u64){
-    #[cfg(feature="native-resident-smp-activate")]
-    physical::admission_hint(predicate,item,observed,expected);
-    #[cfg(not(feature="native-resident-smp-activate"))]
-    let _=(predicate,item,observed,expected);
+fn admission_hint(predicate: u32, item: u64, observed: u64, expected: u64) {
+    #[cfg(feature = "native-resident-smp-activate")]
+    physical::admission_hint(predicate, item, observed, expected);
+    #[cfg(not(feature = "native-resident-smp-activate"))]
+    let _ = (predicate, item, observed, expected);
 }
-fn admission_walk(error:paging::WalkError,cfg:PagingConfig,address:u64,last:Option<(u64,u64)>){
-    #[cfg(feature="native-resident-smp-activate")]
-    physical::admission_walk(error,cfg,address,last);
-    #[cfg(not(feature="native-resident-smp-activate"))]
-    let _=(error,cfg,address,last);
+fn admission_walk(
+    error: paging::WalkError,
+    cfg: PagingConfig,
+    address: u64,
+    last: Option<(u64, u64)>,
+) {
+    #[cfg(feature = "native-resident-smp-activate")]
+    physical::admission_walk(error, cfg, address, last);
+    #[cfg(not(feature = "native-resident-smp-activate"))]
+    let _ = (error, cfg, address, last);
 }
 include!(concat!(env!("OUT_DIR"), "/resident-entry.rs"));
 static PACKAGE: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/resident-payload.bin"));
 static INSTALLED: AtomicBool = AtomicBool::new(false);
 static READY: AtomicBool = AtomicBool::new(false);
-const EMPTY: MemoryDescriptor = MemoryDescriptor {
-    memory_type: 0,
-    physical_start: 0,
-    page_count: 0,
-    attributes: 0,
-};
+const EMPTY: MemoryDescriptor =
+    MemoryDescriptor { memory_type: 0, physical_start: 0, page_count: 0, attributes: 0 };
 static mut MAP: [MemoryDescriptor; 4096] = [EMPTY; 4096];
 static mut MAP_COUNT: usize = 0;
 static mut DIRECTORIES: [ResidentDirectory; abi::MAX_RESIDENT_CPUS] = [ResidentDirectory {
@@ -149,11 +150,7 @@ fn trace_error(code: u64) {
     trace(b'!');
     for shift in [4, 0] {
         let nibble = ((code >> shift) & 15) as u8;
-        trace(if nibble < 10 {
-            b'0' + nibble
-        } else {
-            b'a' + nibble - 10
-        });
+        trace(if nibble < 10 { b'0' + nibble } else { b'a' + nibble - 10 });
     }
 }
 
@@ -211,21 +208,35 @@ unsafe fn cpu() -> Result<Cpu, u64> {
         || basic.ecx != 0x444d4163
         || extended.eax < 0x8000000a
     {
-        let(item,observed,expected):(u64,u32,u32)=if basic.eax<1{(0,basic.eax,1)}else if basic.ebx!=0x68747541{(1,basic.ebx,0x68747541)}
-            else if basic.edx!=0x69746e65{(2,basic.edx,0x69746e65)}else if basic.ecx!=0x444d4163{(3,basic.ecx,0x444d4163)}else{(4,extended.eax,0x8000000a)};
-        admission_hint(101,item,observed as u64,expected as u64);
+        let (item, observed, expected): (u64, u32, u32) = if basic.eax < 1 {
+            (0, basic.eax, 1)
+        } else if basic.ebx != 0x68747541 {
+            (1, basic.ebx, 0x68747541)
+        } else if basic.edx != 0x69746e65 {
+            (2, basic.edx, 0x69746e65)
+        } else if basic.ecx != 0x444d4163 {
+            (3, basic.ecx, 0x444d4163)
+        } else {
+            (4, extended.eax, 0x8000000a)
+        };
+        admission_hint(101, item, observed as u64, expected as u64);
         return Err(1);
     }
     let one = __cpuid_count(1, 0);
-    #[cfg(feature="native-resident-smp-activate")]
-    physical::admission_cpu_id(one.ebx>>24);
+    #[cfg(feature = "native-resident-smp-activate")]
+    physical::admission_cpu_id(one.ebx >> 24);
     let ext = __cpuid_count(0x80000001, 0);
     let svm = __cpuid_count(0x8000000a, 0);
     if svmvisor_hypervisor::svm::x2avic::X2AvicCapabilities::admit(one.ecx, svm.edx).is_err() {
         if one.ecx & (1 << 21) == 0 {
             admission_hint(157, 1, one.ecx as u64, 1 << 21);
         } else {
-            admission_hint(157, 0x8000000a, svm.edx as u64, (1 | (1 << 13) | (1 << 18) | (1 << 25)) as u64);
+            admission_hint(
+                157,
+                0x8000000a,
+                svm.edx as u64,
+                (1 | (1 << 13) | (1 << 18) | (1 << 25)) as u64,
+            );
         }
         return Err(2);
     }
@@ -244,13 +255,23 @@ unsafe fn cpu() -> Result<Cpu, u64> {
         || svm.ebx < 2
         || svm.eax != 1
     {
-        trace_detail(&(
-            "cpuid", one.edx, one.ecx, ext.ecx, ext.edx, svm.eax, svm.ebx, svm.edx,
-        ));
-        let(item,observed,expected)=if one.ecx&(1<<31)!=0{(0,one.ecx,0)}else if one.edx&0x07011020!=0x07011020{(1,one.edx,0x07011020)}
-            else if ext.ecx&4==0{(2,ext.ecx,4)}else if ext.edx&0x24100000!=0x24100000{(3,ext.edx,0x24100000)}
-            else if svm.edx&1!=1{(4,svm.edx,1)}else if svm.ebx<2{(5,svm.ebx,2)}else{(6,svm.eax,1)};
-        admission_hint(102,item,observed as u64,expected as u64);
+        trace_detail(&("cpuid", one.edx, one.ecx, ext.ecx, ext.edx, svm.eax, svm.ebx, svm.edx));
+        let (item, observed, expected) = if one.ecx & (1 << 31) != 0 {
+            (0, one.ecx, 0)
+        } else if one.edx & 0x07011020 != 0x07011020 {
+            (1, one.edx, 0x07011020)
+        } else if ext.ecx & 4 == 0 {
+            (2, ext.ecx, 4)
+        } else if ext.edx & 0x24100000 != 0x24100000 {
+            (3, ext.edx, 0x24100000)
+        } else if svm.edx & 1 != 1 {
+            (4, svm.edx, 1)
+        } else if svm.ebx < 2 {
+            (5, svm.ebx, 2)
+        } else {
+            (6, svm.eax, 1)
+        };
+        admission_hint(102, item, observed as u64, expected as u64);
         return Err(2);
     }
     let width = __cpuid_count(0x80000008, 0).eax as u8;
@@ -263,62 +284,90 @@ unsafe fn cpu() -> Result<Cpu, u64> {
     )
     .map_err(|error| {
         trace_detail(&("encryption", error));
-        if !(32..=52).contains(&width){admission_hint(104,0x80000008,width as u64,32|(52u64<<32));}
-        else if one.eax==TARGET_SIGNATURE && width!=TARGET_PHYSICAL_BITS && leaf.is_some_and(|v|v.iter().any(|&x|x!=0)){
-            admission_hint(156,0x80000008,width as u64,TARGET_PHYSICAL_BITS as u64);}
-        else{let values=leaf.unwrap_or([0;4]);admission_hint(103,one.eax as u64,
-            values[0] as u64|((values[1] as u64)<<32),values[2] as u64|((values[3] as u64)<<32));}
+        if !(32..=52).contains(&width) {
+            admission_hint(104, 0x80000008, width as u64, 32 | (52u64 << 32));
+        } else if one.eax == TARGET_SIGNATURE
+            && width != TARGET_PHYSICAL_BITS
+            && leaf.is_some_and(|v| v.iter().any(|&x| x != 0))
+        {
+            admission_hint(156, 0x80000008, width as u64, TARGET_PHYSICAL_BITS as u64);
+        } else {
+            let values = leaf.unwrap_or([0; 4]);
+            admission_hint(
+                103,
+                one.eax as u64,
+                values[0] as u64 | ((values[1] as u64) << 32),
+                values[2] as u64 | ((values[3] as u64) << 32),
+            );
+        }
         3u64
     })?;
-    let sys_cfg=plan.sys_cfg_msr().map(|msr|unsafe{rdmsr(msr)});
-    let sev_status=plan.sev_status_msr().map(|msr|unsafe{rdmsr(msr)});
-    let encryption = plan
-        .validate(sys_cfg,sev_status)
-        .map_err(|error| {
-            trace_detail(&("encryption", error));
-            let allowed=SYS_CFG_DEFINED&!SYS_CFG_ENCRYPTION;
-            if sys_cfg.is_some_and(|v|v&!allowed!=0){admission_hint(153,SYS_CFG as u64,sys_cfg.unwrap(),allowed);}
-            else{admission_hint(154,0xc0010131,sev_status.unwrap_or(0),0);}
-            3u64
-        })?;
-    if !(32..=52).contains(&width){admission_hint(104,0x80000008,width as u64,32|(52u64<<32));return Err(4);}
-    let vm_cr=unsafe{rdmsr(VM_CR)};
-    if vm_cr&VM_CR_SVMDIS!=0{admission_hint(151,VM_CR as u64,vm_cr,VM_CR_SVMDIS);return Err(4);}
-    let efer=unsafe{rdmsr(EFER)};
-    if efer&(1<<12)!=0{admission_hint(152,EFER as u64,efer,1<<12);return Err(4);}
-    Ok(Cpu {
-        physical_bits: width,
-        apic_id: one.ebx >> 24,
-        encryption,
-    })
+    let sys_cfg = plan.sys_cfg_msr().map(|msr| unsafe { rdmsr(msr) });
+    let sev_status = plan.sev_status_msr().map(|msr| unsafe { rdmsr(msr) });
+    let encryption = plan.validate(sys_cfg, sev_status).map_err(|error| {
+        trace_detail(&("encryption", error));
+        let allowed = SYS_CFG_DEFINED & !SYS_CFG_ENCRYPTION;
+        if sys_cfg.is_some_and(|v| v & !allowed != 0) {
+            admission_hint(153, SYS_CFG as u64, sys_cfg.unwrap(), allowed);
+        } else {
+            admission_hint(154, 0xc0010131, sev_status.unwrap_or(0), 0);
+        }
+        3u64
+    })?;
+    if !(32..=52).contains(&width) {
+        admission_hint(104, 0x80000008, width as u64, 32 | (52u64 << 32));
+        return Err(4);
+    }
+    let vm_cr = unsafe { rdmsr(VM_CR) };
+    if vm_cr & VM_CR_SVMDIS != 0 {
+        admission_hint(151, VM_CR as u64, vm_cr, VM_CR_SVMDIS);
+        return Err(4);
+    }
+    let efer = unsafe { rdmsr(EFER) };
+    if efer & (1 << 12) != 0 {
+        admission_hint(152, EFER as u64, efer, 1 << 12);
+        return Err(4);
+    }
+    Ok(Cpu { physical_bits: width, apic_id: one.ebx >> 24, encryption })
 }
 
 /// CPU/encryption admission precedes this capture. Other admitted profiles
 /// retain architectural default behavior.
 unsafe fn mtrrs(physical_bits: u8) -> Result<Mtrrs, u64> {
     use svmvisor_hypervisor::memory::mtrrs::{MAX_VARIABLE, MtrrReadError};
-    Mtrrs::read(physical_bits, __cpuid_count(1, 0).eax, |index| unsafe { rdmsr(index) })
-        .map_err(|error| {
+    Mtrrs::read(physical_bits, __cpuid_count(1, 0).eax, |index| unsafe { rdmsr(index) }).map_err(
+        |error| {
             match error {
-                MtrrReadError::VariableCount { capability } =>
-                    admission_hint(105, MTRR_CAP as u64, capability, MAX_VARIABLE as u64),
+                MtrrReadError::VariableCount { capability } => {
+                    admission_hint(105, MTRR_CAP as u64, capability, MAX_VARIABLE as u64)
+                }
                 MtrrReadError::Tom2 { error, sys_cfg, tom2 } => {
                     trace_detail(&("tom2", error));
                     admission_hint(155, TOM2 as u64, tom2, sys_cfg);
                 }
             }
             5
-        })
+        },
+    )
 }
 
 /// Actual same-CPU cache evidence; permitted MSRs and temporary thread-private
 /// SYS_CFG19 visibility follow PPR57896 rev3.00 pp123,126-130,173,202-206,210.
 /// Called only after native CPU/encryption admission and before guest entry.
-unsafe fn cache_observation_detailed(processor:Cpu)->Result<svmvisor_hypervisor::svm::native_cache::CacheObservation,
-    svmvisor_hypervisor::svm::native_cache::CacheAdmissionFailure>{
-    use svmvisor_hypervisor::svm::native_cache::{CacheObservation,native_topology_detailed};
-    CacheObservation::capture_detailed(__cpuid_count(1,0).eax,processor.physical_bits,native_topology_detailed(),
-        |index|unsafe{rdmsr(index)},|index,value|unsafe{wrmsr(index,value)})
+unsafe fn cache_observation_detailed(
+    processor: Cpu,
+) -> Result<
+    svmvisor_hypervisor::svm::native_cache::CacheObservation,
+    svmvisor_hypervisor::svm::native_cache::CacheAdmissionFailure,
+> {
+    use svmvisor_hypervisor::svm::native_cache::{CacheObservation, native_topology_detailed};
+    CacheObservation::capture_detailed(
+        __cpuid_count(1, 0).eax,
+        processor.physical_bits,
+        native_topology_detailed(),
+        |index| unsafe { rdmsr(index) },
+        |index, value| unsafe { wrmsr(index, value) },
+    )
 }
 
 unsafe fn config(cpu: Cpu) -> Result<PagingConfig, u64> {
@@ -330,20 +379,21 @@ unsafe fn config(cpu: Cpu) -> Result<PagingConfig, u64> {
         asm!("mov {}, cr3", out(reg) cr3, options(nomem, nostack, preserves_flags));
         asm!("mov {}, cr4", out(reg) cr4, options(nomem, nostack, preserves_flags));
     }
-    native_paging_config(
-        cr0,
-        cr3,
-        cr4,
-        cpu.physical_bits,
-        unsafe { rdmsr(EFER) } & (1 << 11) != 0,
-    )
-    .ok_or_else(|| {
-        trace_detail(&("controls", cr0, cr3, cr4));
-        let(item,observed,expected)=if cr0&0x80000011!=0x80000011{(0,cr0,0x80000011)}else if cr0&0x60000000!=0{(0,cr0,0)}
-            else if !svmvisor_hypervisor::guest::continuation::native_cr4_supported(cr4){(4,cr4,0)}else{(3,cr3,0)};
-        admission_hint(106,item,observed,expected);
-        6
-    })
+    native_paging_config(cr0, cr3, cr4, cpu.physical_bits, unsafe { rdmsr(EFER) } & (1 << 11) != 0)
+        .ok_or_else(|| {
+            trace_detail(&("controls", cr0, cr3, cr4));
+            let (item, observed, expected) = if cr0 & 0x80000011 != 0x80000011 {
+                (0, cr0, 0x80000011)
+            } else if cr0 & 0x60000000 != 0 {
+                (0, cr0, 0)
+            } else if !svmvisor_hypervisor::guest::continuation::native_cr4_supported(cr4) {
+                (4, cr4, 0)
+            } else {
+                (3, cr3, 0)
+            };
+            admission_hint(106, item, observed, expected);
+            6
+        })
 }
 
 // Map type 7 may have been allocated by firmware since installation. This
@@ -385,14 +435,17 @@ unsafe fn mapped(
     write: bool,
     execute: bool,
 ) -> Result<(), u64> {
-    let end = base.checked_add(bytes).ok_or_else(||{admission_hint(107,base,bytes,u64::MAX-base);7u64})?;
+    let end = base.checked_add(bytes).ok_or_else(|| {
+        admission_hint(107, base, bytes, u64::MAX - base);
+        7u64
+    })?;
     if bytes == 0 || bytes > 2 * 1024 * 1024 || !ram_span(map, base, bytes) {
-        admission_hint(107,base,bytes,2*1024*1024);
+        admission_hint(107, base, bytes, 2 * 1024 * 1024);
         return Err(7);
     }
     let mut page = base & !4095;
     while page < end {
-        let mut last=None;
+        let mut last = None;
         let translated = paging::translate(cfg, page, |address| {
             if !ram_span(map, address, 8) || !mt.page_is_wb(address & !4095) {
                 trace_detail(&(
@@ -401,14 +454,20 @@ unsafe fn mapped(
                     ram_span(map, address, 8),
                     mt.page_is_wb(address & !4095),
                 ));
-                admission_hint(108,address,u64::from(ram_span(map,address,8))|u64::from(mt.page_is_wb(address&!4095))<<1,3);
+                admission_hint(
+                    108,
+                    address,
+                    u64::from(ram_span(map, address, 8))
+                        | u64::from(mt.page_is_wb(address & !4095)) << 1,
+                    3,
+                );
                 return None;
             }
             // Restrict every paging-structure fetch to PAT index0 (WB below).
             let entry = unsafe { ptr::read_volatile(address as *const u64) };
-            last=Some((address,entry));
+            last = Some((address, entry));
             if entry & 0x18 != 0 {
-                admission_hint(109,address,entry,0x18);
+                admission_hint(109, address, entry, 0x18);
                 trace_detail(&("table-cache", address, entry));
                 return None;
             }
@@ -416,7 +475,7 @@ unsafe fn mapped(
         })
         .map_err(|error| {
             trace_detail(&error);
-            admission_walk(error,cfg,page,last);
+            admission_walk(error, cfg, page, last);
             8u64
         })?;
         if translated.physical_address != page
@@ -427,10 +486,18 @@ unsafe fn mapped(
             || pat & 255 != 6
         {
             trace_detail(&("mapping", page, translated, mt.page_is_wb(page), pat));
-            let(predicate,observed,expected)=if translated.physical_address!=page{(110,translated.physical_address,page)}
-                else if write&&!translated.writable{(111,0,1)}else if execute&&!translated.executable{(112,0,1)}
-                else if !mt.page_is_wb(page){(113,0,1)}else{(114,pat,translated.pat_index as u64)};
-            admission_hint(predicate,page,observed,expected);
+            let (predicate, observed, expected) = if translated.physical_address != page {
+                (110, translated.physical_address, page)
+            } else if write && !translated.writable {
+                (111, 0, 1)
+            } else if execute && !translated.executable {
+                (112, 0, 1)
+            } else if !mt.page_is_wb(page) {
+                (113, 0, 1)
+            } else {
+                (114, pat, translated.pat_index as u64)
+            };
+            admission_hint(predicate, page, observed, expected);
             return Err(9);
         }
         page = page.checked_add(4096).ok_or(7u64)?;
@@ -449,36 +516,52 @@ unsafe fn validate_uc_mmio(
     base: u64,
 ) -> Result<(), u64> {
     if base == 0 || base > 0xfffff000 || base & 4095 != 0 || pat & 255 != 6 {
-        admission_hint(147,base,pat,6);
+        admission_hint(147, base, pat, 6);
         return Err(47);
     }
     let mut level = 4;
-    let mut last=None;
+    let mut last = None;
     let translated = paging::translate(cfg, base, |address| {
         if !ram_span(map, address, 8) || !mt.page_is_wb(address & !4095) {
-            admission_hint(108,address,u64::from(ram_span(map,address,8))|u64::from(mt.page_is_wb(address&!4095))<<1,3);
+            admission_hint(
+                108,
+                address,
+                u64::from(ram_span(map, address, 8))
+                    | u64::from(mt.page_is_wb(address & !4095)) << 1,
+                3,
+            );
             return None;
         }
         let entry = unsafe { ptr::read_volatile(address as *const u64) };
-        last=Some((address,entry));
+        last = Some((address, entry));
         let leaf = level == 1 || (level < 4 && entry & 0x80 != 0);
         level -= 1;
         if !leaf && entry & 0x18 != 0 {
-            admission_hint(109,address,entry,0x18);
+            admission_hint(109, address, entry, 0x18);
             None
         } else {
             Some(entry)
         }
     })
-    .map_err(|error|{admission_walk(error,cfg,base,last);47u64})?;
+    .map_err(|error| {
+        admission_walk(error, cfg, base, last);
+        47u64
+    })?;
     if translated.physical_address != base
         || !translated.writable
         || translated.user
         || !mt.page_is_uc(base, ((pat >> (translated.pat_index * 8)) & 255) as u8)
     {
-        let(predicate,observed,expected)=if translated.physical_address!=base{(110,translated.physical_address,base)}
-            else if !translated.writable{(111,0,1)}else if translated.user{(148,1,0)}else{(149,pat,translated.pat_index as u64)};
-        admission_hint(predicate,base,observed,expected);
+        let (predicate, observed, expected) = if translated.physical_address != base {
+            (110, translated.physical_address, base)
+        } else if !translated.writable {
+            (111, 0, 1)
+        } else if translated.user {
+            (148, 1, 0)
+        } else {
+            (149, pat, translated.pat_index as u64)
+        };
+        admission_hint(predicate, base, observed, expected);
         return Err(47);
     }
     Ok(())
@@ -502,42 +585,70 @@ unsafe fn host_closure(
     mt: &Mtrrs,
     pat: u64,
 ) -> Result<(), u64> {
-    let (Some(d), Some(aliases)) = (directories.get(slot), backing_aliases(directories, slot)) else {
-        admission_hint(633,slot as u64,directories.len() as u64,abi::MAX_RESIDENT_CPUS as u64);
+    let (Some(d), Some(aliases)) = (directories.get(slot), backing_aliases(directories, slot))
+    else {
+        admission_hint(633, slot as u64, directories.len() as u64, abi::MAX_RESIDENT_CPUS as u64);
         return Err(24);
     };
     let c = unsafe { &*(d.context as *const abi::BridgeContext) };
     let inside = |address: u64, bytes: u64, alignment: u64| {
         address >= d.data_start
             && address & (alignment - 1) == 0
-            && address
-                .checked_add(bytes)
-                .is_some_and(|end| end <= d.memory_end)
+            && address.checked_add(bytes).is_some_and(|end| end <= d.memory_end)
     };
-    macro_rules! reject {($bad:expr,$predicate:expr,$item:expr,$observed:expr,$expected:expr,$code:expr)=>{
-        if $bad {admission_hint($predicate,$item,$observed as u64,$expected as u64);return Err($code);}
-    };}
-    reject!(c.guest_vmcb_pa!=d.vmcb,601,d.context,c.guest_vmcb_pa,d.vmcb,24);
-    reject!(c.guest_vmcb_va!=d.vmcb,602,d.context,c.guest_vmcb_va,d.vmcb,24);
-    reject!(c.guest_frame_va!=d.registers,603,d.context,c.guest_frame_va,d.registers,24);
-    reject!(c.host_code_selector!=8,604,d.context,c.host_code_selector,8,24);
-    reject!(c.host_data_selector!=16,605,d.context,c.host_data_selector,16,24);
-    reject!(c.host_tr_selector!=24,606,d.context,c.host_tr_selector,24,24);
-    reject!(!inside(c.host_cr3,16384,4096),607,d.context,c.host_cr3,d.memory_end,24);
-    reject!(!inside(c.hsave_pa,4096,4096),608,d.context,c.hsave_pa,d.memory_end,24);
-    reject!(!inside(c.host_extra_pa,4096,4096),609,d.context,c.host_extra_pa,d.memory_end,24);
-    reject!(!inside(c.owner_context,1,8),610,d.context,c.owner_context,d.memory_end,24);
-    reject!(!inside(c.host_gdtr_va,10,1),611,d.context,c.host_gdtr_va,d.memory_end,24);
-    reject!(!inside(c.host_idtr_va,10,1),612,d.context,c.host_idtr_va,d.memory_end,24);
-    let stack_base=c.host_stack_top.checked_sub(65536).ok_or_else(||{admission_hint(613,d.context,c.host_stack_top,65536);24u64})?;
-    reject!(!inside(stack_base,65536,16),613,d.context,c.host_stack_top,d.memory_end,24);
-    reject!((c.dispatch as usize as u64)<d.arena_base,614,d.context,c.dispatch as usize,d.arena_base,24);
-    reject!((c.dispatch as usize as u64)>=d.text_end,615,d.context,c.dispatch as usize,d.text_end,24);
-    reject!(c.hsave_pa==d.vmcb,616,d.context,c.hsave_pa,d.vmcb,24);
-    reject!(c.hsave_pa==d.auxiliary,617,d.context,c.hsave_pa,d.auxiliary,24);
-    reject!(c.host_extra_pa==d.vmcb,618,d.context,c.host_extra_pa,d.vmcb,24);
-    reject!(c.host_extra_pa==d.auxiliary,619,d.context,c.host_extra_pa,d.auxiliary,24);
-    reject!(c.host_extra_pa==c.hsave_pa,620,d.context,c.host_extra_pa,c.hsave_pa,24);
+    macro_rules! reject {
+        ($bad:expr,$predicate:expr,$item:expr,$observed:expr,$expected:expr,$code:expr) => {
+            if $bad {
+                admission_hint($predicate, $item, $observed as u64, $expected as u64);
+                return Err($code);
+            }
+        };
+    }
+    reject!(c.guest_vmcb_pa != d.vmcb, 601, d.context, c.guest_vmcb_pa, d.vmcb, 24);
+    reject!(c.guest_vmcb_va != d.vmcb, 602, d.context, c.guest_vmcb_va, d.vmcb, 24);
+    reject!(c.guest_frame_va != d.registers, 603, d.context, c.guest_frame_va, d.registers, 24);
+    reject!(c.host_code_selector != 8, 604, d.context, c.host_code_selector, 8, 24);
+    reject!(c.host_data_selector != 16, 605, d.context, c.host_data_selector, 16, 24);
+    reject!(c.host_tr_selector != 24, 606, d.context, c.host_tr_selector, 24, 24);
+    reject!(!inside(c.host_cr3, 16384, 4096), 607, d.context, c.host_cr3, d.memory_end, 24);
+    reject!(!inside(c.hsave_pa, 4096, 4096), 608, d.context, c.hsave_pa, d.memory_end, 24);
+    reject!(
+        !inside(c.host_extra_pa, 4096, 4096),
+        609,
+        d.context,
+        c.host_extra_pa,
+        d.memory_end,
+        24
+    );
+    reject!(!inside(c.owner_context, 1, 8), 610, d.context, c.owner_context, d.memory_end, 24);
+    reject!(!inside(c.host_gdtr_va, 10, 1), 611, d.context, c.host_gdtr_va, d.memory_end, 24);
+    reject!(!inside(c.host_idtr_va, 10, 1), 612, d.context, c.host_idtr_va, d.memory_end, 24);
+    let stack_base = c.host_stack_top.checked_sub(65536).ok_or_else(|| {
+        admission_hint(613, d.context, c.host_stack_top, 65536);
+        24u64
+    })?;
+    reject!(!inside(stack_base, 65536, 16), 613, d.context, c.host_stack_top, d.memory_end, 24);
+    reject!(
+        (c.dispatch as usize as u64) < d.arena_base,
+        614,
+        d.context,
+        c.dispatch as usize,
+        d.arena_base,
+        24
+    );
+    reject!(
+        (c.dispatch as usize as u64) >= d.text_end,
+        615,
+        d.context,
+        c.dispatch as usize,
+        d.text_end,
+        24
+    );
+    reject!(c.hsave_pa == d.vmcb, 616, d.context, c.hsave_pa, d.vmcb, 24);
+    reject!(c.hsave_pa == d.auxiliary, 617, d.context, c.hsave_pa, d.auxiliary, 24);
+    reject!(c.host_extra_pa == d.vmcb, 618, d.context, c.host_extra_pa, d.vmcb, 24);
+    reject!(c.host_extra_pa == d.auxiliary, 619, d.context, c.host_extra_pa, d.auxiliary, 24);
+    reject!(c.host_extra_pa == c.hsave_pa, 620, d.context, c.host_extra_pa, c.hsave_pa, 24);
     let cfg = PagingConfig {
         cr3: c.host_cr3,
         physical_bits: cpu.physical_bits,
@@ -549,16 +660,7 @@ unsafe fn host_closure(
     // NXE is the runtime's explicit entry commitment; this walk checks the
     // constructed root with that setting before any live CR3/EFER change.
     unsafe {
-        mapped(
-            map,
-            cfg,
-            mt,
-            pat,
-            d.arena_base,
-            d.text_end - d.arena_base,
-            false,
-            true,
-        )?;
+        mapped(map, cfg, mt, pat, d.arena_base, d.text_end - d.arena_base, false, true)?;
         for (address, bytes) in [
             (d.context, core::mem::size_of::<abi::BridgeContext>() as u64),
             (d.vmcb, 4096),
@@ -576,47 +678,103 @@ unsafe fn host_closure(
         }
     }
     // Private root tables must lie in this image's retained data.
-    let walk=|address|{
-        let mut last=None;
+    let walk = |address| {
+        let mut last = None;
         paging::translate(cfg, address, |physical| {
             if !inside(physical & !4095, 4096, 4096) {
-                admission_hint(621,physical,physical&!4095,d.memory_end);
+                admission_hint(621, physical, physical & !4095, d.memory_end);
                 return None;
             }
-            let entry=unsafe { (physical as *const u64).read_volatile() };last=Some((physical,entry));Some(entry)
+            let entry = unsafe { (physical as *const u64).read_volatile() };
+            last = Some((physical, entry));
+            Some(entry)
         })
-        .map_err(|error|(error,last))
+        .map_err(|error| (error, last))
     };
     // Shared aliases retain one qualified backing and their exact permissions.
-    let check_alias=|address,expected,writable,check_wb|->Result<(),u64>{
-        let translated = walk(address).map_err(|(error,last)|{admission_walk(error,cfg,address,last);24u64})?;
-        reject!(translated.physical_address!=expected,622,address,translated.physical_address,expected,24);
-        reject!(translated.writable!=writable||translated.executable||translated.user,623,address,
-            u64::from(translated.writable)|u64::from(translated.executable)<<1|u64::from(translated.user)<<2,u64::from(writable),24);
-        reject!((pat>>(translated.pat_index*8))&255!=6,624,address,pat,translated.pat_index,24);
+    let check_alias = |address, expected, writable, check_wb| -> Result<(), u64> {
+        let translated = walk(address).map_err(|(error, last)| {
+            admission_walk(error, cfg, address, last);
+            24u64
+        })?;
+        reject!(
+            translated.physical_address != expected,
+            622,
+            address,
+            translated.physical_address,
+            expected,
+            24
+        );
+        reject!(
+            translated.writable != writable || translated.executable || translated.user,
+            623,
+            address,
+            u64::from(translated.writable)
+                | u64::from(translated.executable) << 1
+                | u64::from(translated.user) << 2,
+            u64::from(writable),
+            24
+        );
+        reject!(
+            (pat >> (translated.pat_index * 8)) & 255 != 6,
+            624,
+            address,
+            pat,
+            translated.pat_index,
+            24
+        );
         // page_is_wb answers for a 4KiB page base only; aliases are also probed at +4095.
-        reject!(check_wb&&!mt.page_is_wb(translated.physical_address&!4095),632,address,translated.physical_address,1,24);
+        reject!(
+            check_wb && !mt.page_is_wb(translated.physical_address & !4095),
+            632,
+            address,
+            translated.physical_address,
+            1,
+            24
+        );
         Ok(())
     };
-    for offset in [0,4095]{
-        check_alias(d.arena_base+abi::STARTUP_PAGE_OFFSET+offset,d.pool_base+abi::STARTUP_PAGE_OFFSET+offset,true,false)?;
-        check_alias(d.arena_base+abi::X2AVIC_TABLE_OFFSET+offset,d.pool_base+abi::X2AVIC_TABLE_OFFSET+offset,true,true)?;
+    for offset in [0, 4095] {
+        check_alias(
+            d.arena_base + abi::STARTUP_PAGE_OFFSET + offset,
+            d.pool_base + abi::STARTUP_PAGE_OFFSET + offset,
+            true,
+            false,
+        )?;
+        check_alias(
+            d.arena_base + abi::X2AVIC_TABLE_OFFSET + offset,
+            d.pool_base + abi::X2AVIC_TABLE_OFFSET + offset,
+            true,
+            true,
+        )?;
     }
-    for offset in (abi::CACHE_OWNER_OFFSET..abi::CACHE_CAPTURE_OFFSET
-        + core::mem::size_of::<svmvisor_hypervisor::svm::native_cache::CacheCapture>() as u64)
+    for offset in (abi::CACHE_OWNER_OFFSET
+        ..abi::CACHE_CAPTURE_OFFSET
+            + core::mem::size_of::<svmvisor_hypervisor::svm::native_cache::CacheCapture>() as u64)
         .step_by(4096)
     {
-        check_alias(d.arena_base+offset,d.pool_base+offset,offset<abi::CACHE_CAPTURE_OFFSET,true)?;
+        check_alias(
+            d.arena_base + offset,
+            d.pool_base + offset,
+            offset < abi::CACHE_CAPTURE_OFFSET,
+            true,
+        )?;
     }
     // Remote backing aliases: one WB RW/NX leaf for every pool slot's backing
     // page (this slot's included) and no leaf for the rest of the alias range.
     for (alias, expected) in aliases {
         match expected {
-            Some(backing) => check_alias(alias,backing,true,true)?,
+            Some(backing) => check_alias(alias, backing, true, true)?,
             None => match walk(alias) {
                 Err((paging::WalkError::NotPresent { level: 1 }, _)) => {}
-                Err((error,last)) => {admission_walk(error,cfg,alias,last);return Err(24);}
-                Ok(t) => {admission_hint(634,alias,t.physical_address,0);return Err(24);}
+                Err((error, last)) => {
+                    admission_walk(error, cfg, alias, last);
+                    return Err(24);
+                }
+                Ok(t) => {
+                    admission_hint(634, alias, t.physical_address, 0);
+                    return Err(24);
+                }
             },
         }
     }
@@ -624,10 +782,24 @@ unsafe fn host_closure(
     let idtr = unsafe { core::slice::from_raw_parts(c.host_idtr_va as *const u8, 10) };
     let gdt = u64::from_le_bytes(gdtr[2..10].try_into().unwrap());
     let idt = u64::from_le_bytes(idtr[2..10].try_into().unwrap());
-    reject!(gdtr[..2]!=39u16.to_le_bytes(),625,c.host_gdtr_va,u16::from_le_bytes(gdtr[..2].try_into().unwrap()),39,25);
-    reject!(idtr[..2]!=4095u16.to_le_bytes(),626,c.host_idtr_va,u16::from_le_bytes(idtr[..2].try_into().unwrap()),4095,25);
-    reject!(!inside(gdt,40,8),627,c.host_gdtr_va,gdt,d.memory_end,25);
-    reject!(!inside(idt,4096,16),628,c.host_idtr_va,idt,d.memory_end,25);
+    reject!(
+        gdtr[..2] != 39u16.to_le_bytes(),
+        625,
+        c.host_gdtr_va,
+        u16::from_le_bytes(gdtr[..2].try_into().unwrap()),
+        39,
+        25
+    );
+    reject!(
+        idtr[..2] != 4095u16.to_le_bytes(),
+        626,
+        c.host_idtr_va,
+        u16::from_le_bytes(idtr[..2].try_into().unwrap()),
+        4095,
+        25
+    );
+    reject!(!inside(gdt, 40, 8), 627, c.host_gdtr_va, gdt, d.memory_end, 25);
+    reject!(!inside(idt, 4096, 16), 628, c.host_idtr_va, idt, d.memory_end, 25);
     unsafe {
         mapped(map, cfg, mt, pat, gdt, 40, true, false)?;
         mapped(map, cfg, mt, pat, idt, 4096, false, false)?;
@@ -643,14 +815,17 @@ unsafe fn host_closure(
         tss_descriptor[10],
         tss_descriptor[11],
     ]);
-    reject!(tss_descriptor[5]!=0x89,629,gdt+24,tss_descriptor[5],0x89,26);
-    reject!(!inside(tss,104,8),630,gdt+24,tss,d.memory_end,26);
+    reject!(tss_descriptor[5] != 0x89, 629, gdt + 24, tss_descriptor[5], 0x89, 26);
+    reject!(!inside(tss, 104, 8), 630, gdt + 24, tss, d.memory_end, 26);
     unsafe {
         mapped(map, cfg, mt, pat, tss, 104, true, false)?;
     }
     let fault_top = unsafe { ptr::read_unaligned((tss + 36) as *const u64) };
-    let fault_base=fault_top.checked_sub(16384).ok_or_else(||{admission_hint(631,tss+36,fault_top,16384);26u64})?;
-    reject!(!inside(fault_base,16384,16),631,tss+36,fault_top,d.memory_end,26);
+    let fault_base = fault_top.checked_sub(16384).ok_or_else(|| {
+        admission_hint(631, tss + 36, fault_top, 16384);
+        26u64
+    })?;
+    reject!(!inside(fault_base, 16384, 16), 631, tss + 36, fault_top, d.memory_end, 26);
     unsafe {
         mapped(map, cfg, mt, pat, fault_top - 16384, 16384, true, false)?;
     }
@@ -677,32 +852,58 @@ fn preparation_failure(reason: u32, status: u64, address: u64) {
 fn address_error_code(error: svmvisor_hypervisor::memory::address::AddressError) -> u64 {
     use svmvisor_hypervisor::memory::address::AddressError::*;
     match error {
-        UnsupportedPhysicalWidth => 1, UnknownEncryption => 2, ActiveEncryptionUnsupported => 3,
-        InvalidEncryptionBit => 4, EmptyRange => 5, InvalidAlignment => 6, Misaligned => 7,
-        Overflow => 8, OutsidePhysicalWidth => 9, EncryptionBitEncoded => 10,
+        UnsupportedPhysicalWidth => 1,
+        UnknownEncryption => 2,
+        ActiveEncryptionUnsupported => 3,
+        InvalidEncryptionBit => 4,
+        EmptyRange => 5,
+        InvalidAlignment => 6,
+        Misaligned => 7,
+        Overflow => 8,
+        OutsidePhysicalWidth => 9,
+        EncryptionBitEncoded => 10,
     }
 }
 fn identity_npt_error_code(error: svmvisor_hypervisor::memory::npt::IdentityNptError) -> u64 {
     use svmvisor_hypervisor::memory::npt::IdentityNptError::*;
     match error {
-        RequiredModeNotEstablished => 1, OneGiBPagesNotEstablished => 2, PatZeroNotWriteBack => 3,
-        InvalidExclusion => 4, TableArenaOutsideExclusion => 5, GuestAddressOutsideWidth => 6,
-        StorageBounds => 7, Address(error) => 16 + address_error_code(error),
+        RequiredModeNotEstablished => 1,
+        OneGiBPagesNotEstablished => 2,
+        PatZeroNotWriteBack => 3,
+        InvalidExclusion => 4,
+        TableArenaOutsideExclusion => 5,
+        GuestAddressOutsideWidth => 6,
+        StorageBounds => 7,
+        Address(error) => 16 + address_error_code(error),
     }
 }
 fn resident_memory_error_code(error: resident::memory::ResidentMemoryError) -> u64 {
     use resident::memory::ResidentMemoryError::*;
     use svmvisor_hypervisor::boot::memory::MemoryError as M;
     match error {
-        MonitorUncovered => 1, MonitorNotRuntime => 2, MonitorNotWriteBack => 3,
-        Map(error) => 32 + match error {
-            M::DescriptorCount => 1, M::PhysicalWidth => 2, M::EmptyDescriptor => 3,
-            M::MisalignedDescriptor => 4, M::Overflow => 5, M::OutsidePhysicalWidth => 6,
-            M::UnsortedOrOverlapping => 7, M::EmptyRange => 8, M::MisalignedEntry => 9,
-            M::CopyTooLarge => 10, M::UncoveredRange => 11, M::UntrustedMemoryType => 12,
-            M::ReadProtected => 13, M::MissingWriteBackCapability => 14, M::ReadFailed => 15,
-            M::MonitorOverlap => 16,
-        },
+        MonitorUncovered => 1,
+        MonitorNotRuntime => 2,
+        MonitorNotWriteBack => 3,
+        Map(error) => {
+            32 + match error {
+                M::DescriptorCount => 1,
+                M::PhysicalWidth => 2,
+                M::EmptyDescriptor => 3,
+                M::MisalignedDescriptor => 4,
+                M::Overflow => 5,
+                M::OutsidePhysicalWidth => 6,
+                M::UnsortedOrOverlapping => 7,
+                M::EmptyRange => 8,
+                M::MisalignedEntry => 9,
+                M::CopyTooLarge => 10,
+                M::UncoveredRange => 11,
+                M::UntrustedMemoryType => 12,
+                M::ReadProtected => 13,
+                M::MissingWriteBackCapability => 14,
+                M::ReadFailed => 15,
+                M::MonitorOverlap => 16,
+            }
+        }
         Npt(error) => 64 + identity_npt_error_code(error),
     }
 }
@@ -710,8 +911,11 @@ fn preparation_map_failure(error: memory::MemoryMapError) -> Status {
     use memory::MemoryMapError::*;
     let (reason, status) = match error {
         Firmware(status) => (16, status.0 as u64),
-        Bounds => (17, 0), Layout => (18, 0), RetryLimit => (19, 0),
-        Cleanup(status) => (20, status.0 as u64), Released => (21, 0),
+        Bounds => (17, 0),
+        Layout => (18, 0),
+        RetryLimit => (19, 0),
+        Cleanup(status) => (20, status.0 as u64),
+        Released => (21, 0),
     };
     preparation_failure(reason, status, 0);
     Status::OUT_OF_RESOURCES
@@ -760,21 +964,13 @@ pub(crate) unsafe fn install(image: Handle, table: *mut SystemTable) -> Status {
     #[cfg(feature = "native-resident-boot")]
     if let Some(card) = card {
         card.complete(
-            result
-                .as_ref()
-                .err()
-                .copied()
-                .unwrap_or(Status::PROTOCOL_ERROR),
+            result.as_ref().err().copied().unwrap_or(Status::PROTOCOL_ERROR),
             result.is_ok() && READY.load(Ordering::Acquire),
         );
     }
     match result {
         Ok(()) => {
-            trace(if READY.load(Ordering::Acquire) {
-                b'R'
-            } else {
-                b'J'
-            });
+            trace(if READY.load(Ordering::Acquire) { b'R' } else { b'J' });
             Status::SUCCESS
         }
         Err(status) => {
@@ -875,12 +1071,10 @@ unsafe fn install_inner(image: Handle, bs: &BootServices) -> Result<(), Status> 
         })?;
         trace(b'i');
         preparation_step(10, arena.base());
-        arena
-            .validate_map(policy, map.descriptors())
-            .map_err(|error| {
-                trace_detail(&error);
-                Status::UNSUPPORTED
-            })?;
+        arena.validate_map(policy, map.descriptors()).map_err(|error| {
+            trace_detail(&error);
+            Status::UNSUPPORTED
+        })?;
         trace(b'j');
         for slot in 0..count {
             preparation_step(11, arena.slot_base(slot).unwrap_or(0));
@@ -948,7 +1142,9 @@ unsafe fn install_inner(image: Handle, bs: &BootServices) -> Result<(), Status> 
     {
         use svmvisor_hypervisor::svm::x2avic::PhysicalIdTable;
         let table = (arena.base() + abi::X2AVIC_TABLE_OFFSET) as *mut PhysicalIdTable;
-        unsafe { table.write(PhysicalIdTable::new()); }
+        unsafe {
+            table.write(PhysicalIdTable::new());
+        }
         for d in &directories[..count] {
             unsafe { (&mut *table).insert_stopped(d.apic_id as u16, d.avic_backing, &policy) }
                 .map_err(|_| Status::UNSUPPORTED)?;
@@ -960,27 +1156,39 @@ unsafe fn install_inner(image: Handle, bs: &BootServices) -> Result<(), Status> 
     {
         use svmvisor_hypervisor::svm::native_cache::CacheCapture;
         let capture = (arena.base() + abi::CACHE_CAPTURE_OFFSET) as *mut CacheCapture;
-        unsafe { capture.write(CacheCapture::empty()); }
-        unsafe { ((arena.base() + abi::CACHE_OWNER_OFFSET) as *mut svmvisor_hypervisor::svm::native_cache::CacheOwner)
-            .write(svmvisor_hypervisor::svm::native_cache::CacheOwner::empty()); }
+        unsafe {
+            capture.write(CacheCapture::empty());
+        }
+        unsafe {
+            ((arena.base() + abi::CACHE_OWNER_OFFSET)
+                as *mut svmvisor_hypervisor::svm::native_cache::CacheOwner)
+                .write(svmvisor_hypervisor::svm::native_cache::CacheOwner::empty());
+        }
         #[cfg(feature = "native-resident-boot")]
         if __cpuid_count(1, 0).eax == TARGET_SIGNATURE {
-            if !unsafe { (&mut *capture).initialize(count) } { return Err(Status::LOAD_ERROR); }
+            if !unsafe { (&mut *capture).initialize(count) } {
+                return Err(Status::LOAD_ERROR);
+            }
         }
     }
     #[cfg(feature = "native-resident-smp-activate")]
     {
         // Separate fixed block follows all 32 mailboxes; initialize before any
         // AP can enter. It is not a guest-writable acknowledgement buffer.
-        let terminal_control = (arena.base() + abi::STARTUP_PAGE_OFFSET
-            + abi::terminal::CONTROL_OFFSET) as *mut abi::terminal::TerminalControl;
-        unsafe { terminal_control.write(abi::terminal::TerminalControl::new()); }
+        let terminal_control =
+            (arena.base() + abi::STARTUP_PAGE_OFFSET + abi::terminal::CONTROL_OFFSET)
+                as *mut abi::terminal::TerminalControl;
+        unsafe {
+            terminal_control.write(abi::terminal::TerminalControl::new());
+        }
     }
     #[cfg(feature = "native-resident-guest-startup")]
     {
         use svmvisor_hypervisor::svm::x2avic::startup::NativeStartupMailbox;
-        const _: () =
-            assert!(core::mem::size_of::<NativeStartupMailbox>() * abi::MAX_RESIDENT_CPUS <= abi::terminal::CONTROL_OFFSET as usize);
+        const _: () = assert!(
+            core::mem::size_of::<NativeStartupMailbox>() * abi::MAX_RESIDENT_CPUS
+                <= abi::terminal::CONTROL_OFFSET as usize
+        );
         let shared = (arena.base() + abi::STARTUP_PAGE_OFFSET) as *mut NativeStartupMailbox;
         for slot in 0..count {
             // The admitted pool is exclusively DXE-owned before activation.
@@ -996,15 +1204,15 @@ unsafe fn install_inner(image: Handle, bs: &BootServices) -> Result<(), Status> 
     {
         preparation_step(15, 0);
         let mut map = unsafe { memory::collect(bs) }.map_err(preparation_map_failure)?;
-        arena
-            .validate_map(policy, map.descriptors())
-            .map_err(|_| Status::UNSUPPORTED)?;
+        arena.validate_map(policy, map.descriptors()).map_err(|_| Status::UNSUPPORTED)?;
         let pool = policy
             .validate(arena.base(), arena.bytes() as u64, 4096)
             .map_err(|_| Status::UNSUPPORTED)?;
         for (slot, d) in directories.iter().enumerate().take(count) {
-            unsafe { host_closure(&directories[..count], slot, map.descriptors(), processor, &mt, pat) }
-                .map_err(unsupported)?;
+            unsafe {
+                host_closure(&directories[..count], slot, map.descriptors(), processor, &mt, pat)
+            }
+            .map_err(unsupported)?;
             let storage = unsafe { &mut *(d.npt as *mut TableStorage) };
             let mut npt = resident::memory::prepare_identity_npt(
                 storage,
@@ -1027,10 +1235,7 @@ unsafe fn install_inner(image: Handle, bs: &BootServices) -> Result<(), Status> 
             #[cfg(feature = "native-resident-boot")]
             card_boot::protect_config(&mut npt).map_err(|_| Status::UNSUPPORTED)?;
             for other in directories.iter().take(count) {
-                if npt
-                    .translate(other.arena_base)
-                    .map_err(|_| Status::LOAD_ERROR)?
-                    .is_some()
+                if npt.translate(other.arena_base).map_err(|_| Status::LOAD_ERROR)?.is_some()
                     || npt
                         .translate(other.arena_base + 0xfffff)
                         .map_err(|_| Status::LOAD_ERROR)?
@@ -1066,9 +1271,7 @@ unsafe fn install_inner(image: Handle, bs: &BootServices) -> Result<(), Status> 
     {
         preparation_step(15, 0);
         let mut map = unsafe { memory::collect(bs) }.map_err(preparation_map_failure)?;
-        arena
-            .validate_map(policy, map.descriptors())
-            .map_err(|_| Status::UNSUPPORTED)?;
+        arena.validate_map(policy, map.descriptors()).map_err(|_| Status::UNSUPPORTED)?;
         ValidatedMemoryMap::new(map.descriptors(), processor.physical_bits.min(40))
             .map_err(|_| Status::UNSUPPORTED)?;
         // The admission-hint recorder is armed around each slot's closure and
@@ -1077,15 +1280,19 @@ unsafe fn install_inner(image: Handle, bs: &BootServices) -> Result<(), Status> 
         for (slot, d) in directories.iter().enumerate().take(count) {
             preparation_step(16, d.arena_base);
             physical::admission_begin(9, slot as u32, d.apic_id as u32);
-            unsafe { host_closure(&directories[..count], slot, map.descriptors(), processor, &mt, pat) }
-                .map_err(|code| unsafe { physical::slot_admission_refused(33, count, code, processor, map.descriptors()) })?;
-            let pool = policy
-                .validate(d.pool_base, d.pool_bytes, 4096)
-                .map_err(|error| {
-                    let code = address_error_code(error);
-                    admission_hint(635, d.pool_base, d.pool_bytes, code);
-                    unsafe { physical::slot_admission_refused(34, count, code, processor, map.descriptors()) }
-                })?;
+            unsafe {
+                host_closure(&directories[..count], slot, map.descriptors(), processor, &mt, pat)
+            }
+            .map_err(|code| unsafe {
+                physical::slot_admission_refused(33, count, code, processor, map.descriptors())
+            })?;
+            let pool = policy.validate(d.pool_base, d.pool_bytes, 4096).map_err(|error| {
+                let code = address_error_code(error);
+                admission_hint(635, d.pool_base, d.pool_bytes, code);
+                unsafe {
+                    physical::slot_admission_refused(34, count, code, processor, map.descriptors())
+                }
+            })?;
             physical::admission_clear();
             preparation_step(17, d.arena_base);
             physical::admission_begin(10, slot as u32, d.apic_id as u32);
@@ -1106,13 +1313,17 @@ unsafe fn install_inner(image: Handle, bs: &BootServices) -> Result<(), Status> 
             .map_err(|error| {
                 let code = resident_memory_error_code(error);
                 admission_hint(636, d.npt, d.pool_base, code);
-                unsafe { physical::slot_admission_refused(35, count, code, processor, map.descriptors()) }
+                unsafe {
+                    physical::slot_admission_refused(35, count, code, processor, map.descriptors())
+                }
             })?;
             #[cfg(feature = "native-resident-boot")]
             card_boot::protect_config(&mut _npt).map_err(|error| {
                 let code = identity_npt_error_code(error);
                 admission_hint(637, d.npt, d.pool_base, code);
-                unsafe { physical::slot_admission_refused(36, count, code, processor, map.descriptors()) }
+                unsafe {
+                    physical::slot_admission_refused(36, count, code, processor, map.descriptors())
+                }
             })?;
             physical::admission_clear();
         }
@@ -1173,12 +1384,10 @@ unsafe fn install_inner(image: Handle, bs: &BootServices) -> Result<(), Status> 
             trace_detail(&error);
             preparation_map_failure(error)
         })?;
-        arena
-            .validate_map(policy, map.descriptors())
-            .map_err(|error| {
-                trace_detail(&error);
-                Status::UNSUPPORTED
-            })?;
+        arena.validate_map(policy, map.descriptors()).map_err(|error| {
+            trace_detail(&error);
+            Status::UNSUPPORTED
+        })?;
         ValidatedMemoryMap::new(map.descriptors(), processor.physical_bits.min(40)).map_err(
             |error| {
                 trace_detail(&error);
@@ -1248,7 +1457,9 @@ pub unsafe extern "efiapi" fn svmvisor_resident_callback_inner(
         Err(code) => {
             #[cfg(feature = "native-resident-boot")]
             if unsafe { physical::is_bsp(slot) } {
-                unsafe { card_boot::takeover_failure(slot as u32, CPU_COUNT as u32, code); }
+                unsafe {
+                    card_boot::takeover_failure(slot as u32, CPU_COUNT as u32, code);
+                }
             }
             trace_error(code);
             code
@@ -1312,7 +1523,7 @@ unsafe fn callback(b: &NativeBoundary, slot: usize) -> Result<(), u64> {
         )
     }?;
     #[cfg(feature = "native-resident-boot")]
-    unsafe { physical::cache_sample_before_activation(processor,slot) }?;
+    unsafe { physical::cache_sample_before_activation(processor, slot) }?;
     let sites = CallbackSites {
         resume: ptr::addr_of!(abi::svmvisor_resident_guest_resume) as u64,
         ack: ptr::addr_of!(abi::svmvisor_resident_guest_ack) as u64,
@@ -1320,10 +1531,7 @@ unsafe fn callback(b: &NativeBoundary, slot: usize) -> Result<(), u64> {
     };
     let (image, image_bytes) = unsafe { IMAGE };
     if sites.resume < image
-        || sites
-            .after_ack
-            .checked_add(256)
-            .is_none_or(|end| end > image + image_bytes)
+        || sites.after_ack.checked_add(256).is_none_or(|end| end > image + image_bytes)
     {
         return Err(21);
     }
@@ -1332,35 +1540,21 @@ unsafe fn callback(b: &NativeBoundary, slot: usize) -> Result<(), u64> {
         // The bounded post-ACK epilogue uses this immutable admitted identity
         // table and a shared runtime-image completion word. All remain outside
         // the private monitor pool and are rewalked under each captured root.
+        mapped(map, cfg, &mt, pat, ptr::addr_of!(CPU_COUNT) as u64, 8, false, false)?;
         mapped(
-            map, cfg, &mt, pat, ptr::addr_of!(CPU_COUNT) as u64, 8, false, false,
-        )?;
-        mapped(
-            map, cfg, &mt, pat, ptr::addr_of!(CPU_IDS) as u64,
-            core::mem::size_of::<[u32; abi::MAX_RESIDENT_CPUS]>() as u64, false, false,
+            map,
+            cfg,
+            &mt,
+            pat,
+            ptr::addr_of!(CPU_IDS) as u64,
+            core::mem::size_of::<[u32; abi::MAX_RESIDENT_CPUS]>() as u64,
+            false,
+            false,
         )?;
         mapped(map, cfg, &mt, pat, ptr::addr_of!(GUEST_ACK) as u64, 4, true, false)?;
         mapped(map, cfg, &mt, pat, b.entry_rip, 1, false, true)?;
-        mapped(
-            map,
-            cfg,
-            &mt,
-            pat,
-            b.gdtr.base(),
-            u64::from(b.gdtr.limit()) + 1,
-            true,
-            false,
-        )?;
-        mapped(
-            map,
-            cfg,
-            &mt,
-            pat,
-            b.idtr.base(),
-            u64::from(b.idtr.limit()) + 1,
-            false,
-            false,
-        )?;
+        mapped(map, cfg, &mt, pat, b.gdtr.base(), u64::from(b.gdtr.limit()) + 1, true, false)?;
+        mapped(map, cfg, &mt, pat, b.idtr.base(), u64::from(b.idtr.limit()) + 1, false, false)?;
         mapped(
             map,
             cfg,
@@ -1371,16 +1565,7 @@ unsafe fn callback(b: &NativeBoundary, slot: usize) -> Result<(), u64> {
             false,
             false,
         )?;
-        mapped(
-            map,
-            cfg,
-            &mt,
-            pat,
-            ptr::addr_of!(GDT) as u64,
-            65536,
-            true,
-            false,
-        )?;
+        mapped(map, cfg, &mt, pat, ptr::addr_of!(GDT) as u64, 65536, true, false)?;
     }
     let linked = unsafe { core::slice::from_raw_parts(sites.resume as *const u8, 8) };
     if linked != [0xb8, 0x41, 0x4d, 0x56, 0x53, 0x0f, 0x01, 0xd9] {
@@ -1400,16 +1585,8 @@ unsafe fn callback(b: &NativeBoundary, slot: usize) -> Result<(), u64> {
         );
     }
     let gdt = parse_firmware_gdt(
-        HostTablePointer {
-            base: b.gdtr.base(),
-            limit: b.gdtr.limit(),
-        },
-        FirmwareSelectors {
-            cs: b.cs,
-            ss: b.ss,
-            ds: b.ds,
-            es: b.es,
-        },
+        HostTablePointer { base: b.gdtr.base(), limit: b.gdtr.limit() },
+        FirmwareSelectors { cs: b.cs, ss: b.ss, ds: b.ds, es: b.es },
         gdt_bytes,
     )
     .map_err(|_| 15u64)?;
@@ -1431,8 +1608,13 @@ unsafe fn callback(b: &NativeBoundary, slot: usize) -> Result<(), u64> {
         None
     };
     let efer = svmvisor_hypervisor::svm::dispatch::NativeEfer::admit_native(
-        original_efer, extended.ecx, extended.edx, extended8.ebx, extended21,
-    ).map_err(|_| 16u64)?;
+        original_efer,
+        extended.ecx,
+        extended.edx,
+        extended8.ebx,
+        extended21,
+    )
+    .map_err(|_| 16u64)?;
     // APM2 VMSAVE requires SVME. No fallible operation or Rust return exists
     // between this temporary enable and exact restoration; HSAVE is untouched.
     unsafe {
@@ -1467,10 +1649,7 @@ unsafe fn callback(b: &NativeBoundary, slot: usize) -> Result<(), u64> {
                 dr6,
                 dr7,
                 pat,
-                stack: GuestStackSpan {
-                    base: stack_base,
-                    bytes: stack_end - stack_base,
-                },
+                stack: GuestStackSpan { base: stack_base, bytes: stack_end - stack_base },
                 sites,
             },
             &policy,
@@ -1489,17 +1668,7 @@ unsafe fn callback(b: &NativeBoundary, slot: usize) -> Result<(), u64> {
                 b.efer,
                 b.profile,
             ));
-            trace_detail(&(
-                "callback-selectors",
-                b.cs,
-                b.ss,
-                b.ds,
-                b.es,
-                b.fs,
-                b.gs,
-                b.ldtr,
-                b.tr,
-            ));
+            trace_detail(&("callback-selectors", b.cs, b.ss, b.ds, b.es, b.fs, b.gs, b.ldtr, b.tr));
             trace_detail(&("callback-debug", dr6, dr7, b.cr8, pat));
             trace_detail(&(
                 "callback-stack",
@@ -1532,9 +1701,7 @@ unsafe fn callback(b: &NativeBoundary, slot: usize) -> Result<(), u64> {
             vmcb.initialize_native_cet_msrs(s_cet, isst_addr).map_err(|_| 17u64)?;
         }
         let storage = unsafe { &mut *(d.npt as *mut TableStorage) };
-        let monitor = policy
-            .validate(d.pool_base, d.pool_bytes, 4096)
-            .map_err(|_| 18u64)?;
+        let monitor = policy.validate(d.pool_base, d.pool_bytes, 4096).map_err(|_| 18u64)?;
         let mut _npt = resident::memory::prepare_identity_npt(
             storage,
             d.npt,
@@ -1570,8 +1737,18 @@ unsafe fn callback(b: &NativeBoundary, slot: usize) -> Result<(), u64> {
     #[cfg(not(feature = "native-resident-boot"))]
     let terminal_endpoint: *const abi::terminal::TerminalEndpoint = ptr::null();
     if !terminal_endpoint.is_null() {
-        unsafe { mapped(map, cfg, &mt, pat, terminal_endpoint as u64,
-            core::mem::size_of::<abi::terminal::TerminalEndpoint>() as u64, false, false)?; }
+        unsafe {
+            mapped(
+                map,
+                cfg,
+                &mt,
+                pat,
+                terminal_endpoint as u64,
+                core::mem::size_of::<abi::terminal::TerminalEndpoint>() as u64,
+                false,
+                false,
+            )?;
+        }
     }
     let arm_result = unsafe {
         arm(

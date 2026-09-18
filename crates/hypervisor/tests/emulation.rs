@@ -6,15 +6,10 @@ use svmvisor_hypervisor::svm::emulation::{
 fn scalar_leaf_contract_and_vendor_register_orders() {
     let basic = cpuid(0, 0);
     let hypervisor = cpuid(0x4000_0000, 0);
-    let basic_vendor: Vec<_> = [basic[1], basic[3], basic[2]]
-        .into_iter()
-        .flat_map(u32::to_le_bytes)
-        .collect();
-    let hypervisor_vendor: Vec<_> = hypervisor[1..]
-        .iter()
-        .copied()
-        .flat_map(u32::to_le_bytes)
-        .collect();
+    let basic_vendor: Vec<_> =
+        [basic[1], basic[3], basic[2]].into_iter().flat_map(u32::to_le_bytes).collect();
+    let hypervisor_vendor: Vec<_> =
+        hypervisor[1..].iter().copied().flat_map(u32::to_le_bytes).collect();
     assert_eq!(basic_vendor, b"SvmVisorTest");
     assert_eq!(hypervisor_vendor, basic_vendor);
     assert_eq!(basic[0], 1);
@@ -60,9 +55,7 @@ fn unsupported_leaves_never_forward_host_data() {
 fn hypercalls_only_query_or_stop_without_opcode_truncation() {
     assert_eq!(
         hypercall(HYPERCALL_QUERY),
-        HypercallAction::Query {
-            abi_version: ABI_VERSION as u64
-        }
+        HypercallAction::Query { abi_version: ABI_VERSION as u64 }
     );
     assert_eq!(hypercall(HYPERCALL_STOP), HypercallAction::Stop);
     for opcode in [2, 3, 1 << 32, (1 << 32) | HYPERCALL_STOP, u64::MAX] {

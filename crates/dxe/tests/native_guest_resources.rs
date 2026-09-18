@@ -7,7 +7,9 @@ use native_guest_resources::*;
 use std::alloc::{Layout, alloc, dealloc, handle_alloc_error};
 use svmvisor_dxe::{
     native::admission::boundary::{self as native_boundary, NativeBoundary},
-    native::transition::state::{self as native_transition, ScalarState, guest_capture, mode, outcome},
+    native::transition::state::{
+        self as native_transition, ScalarState, guest_capture, mode, outcome,
+    },
 };
 
 struct Storage(*mut u8);
@@ -109,24 +111,14 @@ fn exact_frozen_fixture_bytes_for_fx_sse_and_avx_with_separate_virtual_backing()
         assert_eq!((i.guest_extra_pa, i.guest_extra_va), (pa(24), va(24)));
         assert_eq!(i.hsave_pa, pa(3));
         assert_eq!(
-            (
-                i.original_xstate_va,
-                i.restored_xstate_va,
-                i.guest_xstate_va
-            ),
+            (i.original_xstate_va, i.restored_xstate_va, i.guest_xstate_va),
             (va(4), va(5), va(6))
         );
         assert_eq!((i.xstate_profile, i.xstate_bytes), (profile, b.xstate_size));
-        assert_eq!(
-            (i.expected_vmmcall_rip, i.expected_vmmcall_rax),
-            (VMMCALL_RIP, COOKIE)
-        );
+        assert_eq!((i.expected_vmmcall_rip, i.expected_vmmcall_rax), (VMMCALL_RIP, COOKIE));
         assert_eq!(i.expected_bsp_apic_id, 5);
         assert_eq!(i.expected_state_va, va(31));
-        assert_eq!(
-            (i.host_gdt_copy_va, i.host_gdt_bytes),
-            (gdt.as_ptr() as u64, 64)
-        );
+        assert_eq!((i.host_gdt_copy_va, i.host_gdt_bytes), (gdt.as_ptr() as u64, 64));
         assert_eq!(i.mode, mode::ONE_ENTRY);
         let expected = unsafe { &*(i.expected_state_va as *const ScalarState) };
         assert_eq!(expected.captured_fields, native_transition::capture::CORE);
@@ -136,10 +128,7 @@ fn exact_frozen_fixture_bytes_for_fx_sse_and_avx_with_separate_virtual_backing()
         );
         assert_eq!(expected.gdtr.bytes, b.gdtr.bytes);
         assert_eq!(expected.idtr.bytes, b.idtr.bytes);
-        assert_eq!(
-            expected.selectors,
-            [b.cs, b.ss, b.ds, b.es, b.fs, b.gs, b.ldtr, b.tr]
-        );
+        assert_eq!(expected.selectors, [b.cs, b.ss, b.ds, b.es, b.fs, b.gs, b.ldtr, b.tr]);
         // Binding is confined to context.inputs and expected scalar data. The
         // canary, journal, and all previously built pages stay initialized.
         for (index, (&old, &new)) in before.iter().zip(storage.bytes()).enumerate() {
@@ -156,13 +145,7 @@ fn exact_frozen_fixture_bytes_for_fx_sse_and_avx_with_separate_virtual_backing()
 fn refused_numeric_and_cpu_profiles_leave_every_owned_byte_untouched() {
     let storage = Storage::new();
     let b = boundary(0);
-    for pa in [
-        0,
-        0xff000,
-        0x200001,
-        (1u64 << 32) - ARENA_BYTES as u64 + 4096,
-        u64::MAX,
-    ] {
+    for pa in [0, 0xff000, 0x200001, (1u64 << 32) - ARENA_BYTES as u64 + 4096, u64::MAX] {
         assert!(unsafe { initialize(storage.0, pa, &b, inputs()) }.is_err());
     }
     for change in 0..7 {
@@ -272,10 +255,7 @@ fn multi_guest_matches_independently_assembled_program_and_core_protocol() {
         let storage = Storage::new();
         let b = boundary(profile);
         let guest = unsafe { initialize_multi_exit(storage.0, 0x200000, &b, inputs()).unwrap() };
-        assert_eq!(
-            &storage.bytes()[7 * 4096..7 * 4096 + assembled.len()],
-            assembled
-        );
+        assert_eq!(&storage.bytes()[7 * 4096..7 * 4096 + assembled.len()], assembled);
         // All pages beyond code and the CPUID/HLT intercept word retain the
         // independently frozen one-entry arena's mappings and initial state.
         for (offset, (&old, &new)) in GOLDEN.iter().zip(storage.bytes()).enumerate() {
@@ -283,22 +263,14 @@ fn multi_guest_matches_independently_assembled_program_and_core_protocol() {
                 assert_eq!(old, new, "unexpected constructor write at {offset:#x}");
             }
         }
-        assert!(
-            storage.bytes()[8 * 4096..9 * 4096]
-                .iter()
-                .all(|byte| *byte == 0)
-        );
+        assert!(storage.bytes()[8 * 4096..9 * 4096].iter().all(|byte| *byte == 0));
         let intercepts = u32::from_le_bytes(storage.bytes()[0x0c..0x10].try_into().unwrap());
         assert_eq!(intercepts, 0x1904000b);
         let gdt = [0u8; 64];
         let bound = unsafe { guest.bind(&b, &gdt, mode::MULTI_EXIT).unwrap() };
         let c = unsafe { &*bound.context() };
         assert_eq!(
-            (
-                c.inputs.mode,
-                c.inputs.expected_vmmcall_rip,
-                c.inputs.expected_vmmcall_rax
-            ),
+            (c.inputs.mode, c.inputs.expected_vmmcall_rip, c.inputs.expected_vmmcall_rax),
             (mode::MULTI_EXIT, MULTI_STOP_RIP, 1)
         );
         assert_eq!(unsafe { bound.multi_completion() }, [0, 0]);
@@ -314,9 +286,7 @@ fn multi_guest_matches_independently_assembled_program_and_core_protocol() {
             let round = index + cycle * 8;
             assert_eq!(
                 u64::from_le_bytes(
-                    assembled[0x200 + round * 8..0x208 + round * 8]
-                        .try_into()
-                        .unwrap()
+                    assembled[0x200 + round * 8..0x208 + round * 8].try_into().unwrap()
                 ),
                 0xaabbccdd00000000 | u64::from(leaf)
             );
@@ -354,17 +324,11 @@ fn multi_program_cannot_bind_legacy_modes_or_repurpose_another_boundary() {
     let gdt = [0u8; 64];
     for requested in [mode::ONE_ENTRY, mode::BIND_ONLY, 3, u64::MAX] {
         let guest = unsafe { initialize_multi_exit(storage.0, 0x200000, &b, inputs()).unwrap() };
-        assert!(matches!(
-            unsafe { guest.bind(&b, &gdt, requested) },
-            Err(12)
-        ));
+        assert!(matches!(unsafe { guest.bind(&b, &gdt, requested) }, Err(12)));
         assert!(storage.bytes()[30 * 4096..].iter().all(|byte| *byte == 0));
     }
     let guest = unsafe { initialize_multi_exit(storage.0, 0x200000, &b, inputs()).unwrap() };
-    assert!(matches!(
-        unsafe { guest.bind(&other, &gdt, mode::MULTI_EXIT) },
-        Err(12)
-    ));
+    assert!(matches!(unsafe { guest.bind(&other, &gdt, mode::MULTI_EXIT) }, Err(12)));
 }
 
 #[cfg(not(feature = "native-transition-event-test"))]
@@ -432,13 +396,7 @@ fn multi_success_requires_guest_payload_and_all_actual_terminal_evidence() {
         c.journal.completed_exits = 65;
     }
     for (offset, valid) in [(0, 32), (8, COOKIE)] {
-        unsafe {
-            storage
-                .0
-                .add(8 * 4096 + offset)
-                .cast::<u64>()
-                .write(valid ^ 1)
-        };
+        unsafe { storage.0.add(8 * 4096 + offset).cast::<u64>().write(valid ^ 1) };
         assert_eq!(unsafe { guest.verify_observations(c) }, Err(37));
         unsafe { storage.0.add(8 * 4096 + offset).cast::<u64>().write(valid) };
     }

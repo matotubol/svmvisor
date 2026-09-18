@@ -26,7 +26,9 @@ impl AvicExit {
         match code {
             0x401 => {
                 let reason = (info2 >> 32) as u32;
-                if reason > 4 { return Err(Error::InvalidExit); }
+                if reason > 4 {
+                    return Err(Error::InvalidExit);
+                }
                 let index = (1..=3).contains(&reason).then_some((info2 & 0xfff) as u16);
                 Ok(Self::IncompleteIpi { icr: info1, reason, index })
             }
@@ -37,9 +39,13 @@ impl AvicExit {
                     // ISR bits 15:0 are reserved (16.6.3 p647): no in-service
                     // vector is below 16.
                     let vector = info2 as u8;
-                    if vector < 16 { return Err(Error::InvalidExit); }
+                    if vector < 16 {
+                        return Err(Error::InvalidExit);
+                    }
                     Some(vector)
-                } else { None };
+                } else {
+                    None
+                };
                 Ok(Self::NoAcceleration { offset, write, eoi_vector })
             }
             _ => Err(Error::InvalidExit),

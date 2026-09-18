@@ -201,9 +201,7 @@ unsafe fn perform(
             },
         )
     };
-    let unused_clean = unused_cache
-        .as_mut()
-        .is_none_or(|cache| cache.release().is_ok());
+    let unused_clean = unused_cache.as_mut().is_none_or(|cache| cache.release().is_ok());
     let cpu_clean = cpus.release().is_ok();
     let mut result = observed.get();
     let outer_error = match completed {

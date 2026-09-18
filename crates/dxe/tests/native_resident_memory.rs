@@ -1,37 +1,22 @@
 #![cfg(feature = "native-preflight")]
 use svmvisor_dxe::native::resident::memory::{ResidentMemoryError as E, prepare_identity_npt};
 use svmvisor_hypervisor::{
-    boot::memory::{MemoryDescriptor as D, MemoryError},
     arch::x86_64::capabilities::EvidenceFlag as F,
+    boot::memory::{MemoryDescriptor as D, MemoryError},
     memory::{
         address::{AddressPolicy, EncryptionState},
-        npt::{NptEvidence, TableStorage, TABLE_COUNT},
+        npt::{NptEvidence, TABLE_COUNT, TableStorage},
     },
 };
 const RUNTIME: u64 = 1 << 63;
 fn policy() -> AddressPolicy {
-    AddressPolicy::new(
-        48,
-        EncryptionState::Unencrypted {
-            encryption_bit: None,
-        },
-    )
-    .unwrap()
+    AddressPolicy::new(48, EncryptionState::Unencrypted { encryption_bit: None }).unwrap()
 }
 fn descriptor(start: u64, pages: u64, ty: u32, attributes: u64) -> D {
-    D {
-        memory_type: ty,
-        physical_start: start,
-        page_count: pages,
-        attributes,
-    }
+    D { memory_type: ty, physical_start: start, page_count: pages, attributes }
 }
 fn evidence() -> NptEvidence {
-    NptEvidence {
-        nx_supported: F::Set,
-        host_nxe: F::Set,
-        host_four_level: F::Set,
-    }
+    NptEvidence { nx_supported: F::Set, host_nxe: F::Set, host_four_level: F::Set }
 }
 
 #[test]
@@ -45,28 +30,13 @@ fn map_consumed_by_native_preparation_retains_code_and_data_and_hides_monitor() 
         descriptor(0x380000, 0x100, 7, 8),
     ];
     let mut storage = TableStorage([[0xa5; 4096]; TABLE_COUNT]);
-    let npt = prepare_identity_npt(
-        &mut storage,
-        0x300000,
-        p,
-        monitor,
-        &map,
-        evidence(),
-        F::Set,
-        6,
-    )
-    .unwrap();
-    assert_eq!(
-        npt.translate(0x27ffff).unwrap().unwrap().host_address,
-        0x27ffff
-    );
+    let npt = prepare_identity_npt(&mut storage, 0x300000, p, monitor, &map, evidence(), F::Set, 6)
+        .unwrap();
+    assert_eq!(npt.translate(0x27ffff).unwrap().unwrap().host_address, 0x27ffff);
     for address in (monitor.base()..=monitor.last_byte()).step_by(4096) {
         assert_eq!(npt.translate(address).unwrap(), None);
     }
-    assert_eq!(
-        npt.translate(0x380000).unwrap().unwrap().host_address,
-        0x380000
-    );
+    assert_eq!(npt.translate(0x380000).unwrap().unwrap().host_address, 0x380000);
 }
 
 #[test]
@@ -85,16 +55,8 @@ fn loader_bootservices_reserved_or_missing_runtime_bit_cannot_stand_in_for_owner
     ] {
         let map = [descriptor(0x280000, 0x100, ty, attributes)];
         let mut storage = TableStorage([[0xa5; 4096]; TABLE_COUNT]);
-        let result = prepare_identity_npt(
-            &mut storage,
-            0x280000,
-            p,
-            monitor,
-            &map,
-            evidence(),
-            F::Set,
-            6,
-        );
+        let result =
+            prepare_identity_npt(&mut storage, 0x280000, p, monitor, &map, evidence(), F::Set, 6);
         assert!(matches!(result, Err(e) if e == expected));
         assert!(storage.0.iter().flatten().all(|b| *b == 0xa5));
     }
@@ -120,25 +82,14 @@ fn gap_overlap_and_any_descriptor_above_aperture_refuse_without_writes() {
             E::Map(MemoryError::UnsortedOrOverlapping),
         ),
         (
-            vec![
-                descriptor(0x280000, 0x100, 5, RUNTIME | 8),
-                descriptor(1 << 40, 1, 11, 1),
-            ],
+            vec![descriptor(0x280000, 0x100, 5, RUNTIME | 8), descriptor(1 << 40, 1, 11, 1)],
             E::Map(MemoryError::OutsidePhysicalWidth),
         ),
     ];
     for (map, expected) in cases {
         let mut storage = TableStorage([[0xa5; 4096]; TABLE_COUNT]);
-        let result = prepare_identity_npt(
-            &mut storage,
-            0x280000,
-            p,
-            monitor,
-            &map,
-            evidence(),
-            F::Set,
-            6,
-        );
+        let result =
+            prepare_identity_npt(&mut storage, 0x280000, p, monitor, &map, evidence(), F::Set, 6);
         assert!(matches!(result, Err(e) if e == expected));
         assert!(storage.0.iter().flatten().all(|b| *b == 0xa5));
     }

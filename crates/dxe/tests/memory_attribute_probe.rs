@@ -5,13 +5,7 @@ use svmvisor_dxe::memory_attributes::probe::*;
 use uefi_raw::Status;
 
 fn profile() -> ProbeProfile {
-    ProbeProfile {
-        root: 0x1000,
-        physical_bits: 48,
-        nxe: true,
-        page1gb: true,
-        bsp_apic_id: 0x1234,
-    }
+    ProbeProfile { root: 0x1000, physical_bits: 48, nxe: true, page1gb: true, bsp_apic_id: 0x1234 }
 }
 
 fn fixture() -> (ProbeFrame, SystemContextX64) {
@@ -89,10 +83,7 @@ fn exact_pinned_abi_layout() {
         assert_eq!(actual, expected);
     }
     assert_eq!(size_of::<CpuArchProtocol>(), 0x48);
-    assert_eq!(
-        offset_of!(CpuArchProtocol, register_interrupt_handler),
-        0x28
-    );
+    assert_eq!(offset_of!(CpuArchProtocol, register_interrupt_handler), 0x28);
     assert_eq!(offset_of!(CpuArchProtocol, set_memory_attributes), 0x38);
     assert_eq!(size_of::<ProbeFrame>(), 136);
 }
@@ -108,10 +99,7 @@ fn exact_fault_recovers_only_rip_rax_cr2_cr4() {
     assert!(recover_fault(true, 14, 0x1234, &frame, &mut context));
     assert_eq!(bytes(&context), bytes(&expected));
     assert_eq!(context.cr4 & (1 << 3), 0, "F7 forced DE must be undone");
-    assert_ne!(
-        context.cr2, frame.source,
-        "fault CR2 must not leak into caller state"
-    );
+    assert_ne!(context.cr2, frame.source, "fault CR2 must not leak into caller state");
 }
 
 #[test]
@@ -133,17 +121,11 @@ fn unarmed_wrong_vector_and_full_cpu_id_are_never_redirected() {
 #[test]
 fn every_error_code_bit_and_reserved_translation_is_rejected() {
     let (frame, context) = fixture();
-    for error in (0..64)
-        .map(|bit| 1u64 << bit)
-        .chain([3, 5, 9, 16, 32, 64, u64::MAX])
-    {
+    for error in (0..64).map(|bit| 1u64 << bit).chain([3, 5, 9, 16, 32, 64, u64::MAX]) {
         let mut changed = context;
         changed.exception_data = error;
         let original = changed;
-        assert!(
-            !recover_fault(true, 14, 0x1234, &frame, &mut changed),
-            "code {error:#x}"
-        );
+        assert!(!recover_fault(true, 14, 0x1234, &frame, &mut changed), "code {error:#x}");
         assert_eq!(bytes(&changed), bytes(&original));
     }
 }
@@ -209,60 +191,28 @@ fn malformed_expectations_cannot_make_a_fault_match() {
 
 #[test]
 fn source_metadata_requires_complete_page_and_bounded_valid_extents() {
-    let extents = [
-        RamExtent {
-            base: 0x1000,
-            length: 0x1000,
-        },
-        RamExtent {
-            base: 0x4000,
-            length: 0x1000,
-        },
-    ];
+    let extents =
+        [RamExtent { base: 0x1000, length: 0x1000 }, RamExtent { base: 0x4000, length: 0x1000 }];
     assert_eq!(validate_source(profile(), &extents, 0x4000), Ok(()));
     assert_eq!(validate_source(profile(), &extents, 0x4ff8), Ok(()));
     for source in [0x4001, 0x4ffc, 1 << 47, u64::MAX] {
-        assert_eq!(
-            validate_source(profile(), &extents, source),
-            Err(ProbeError::InvalidSource)
-        );
+        assert_eq!(validate_source(profile(), &extents, source), Err(ProbeError::InvalidSource));
     }
-    assert_eq!(
-        validate_source(profile(), &extents, 0x3000),
-        Err(ProbeError::SourceOutsideRam)
-    );
-    assert_eq!(
-        validate_source(profile(), &[], 0x4000),
-        Err(ProbeError::Capacity)
-    );
+    assert_eq!(validate_source(profile(), &extents, 0x3000), Err(ProbeError::SourceOutsideRam));
+    assert_eq!(validate_source(profile(), &[], 0x4000), Err(ProbeError::Capacity));
     assert_eq!(
         validate_source(profile(), &vec![extents[0]; MAX_RAM_EXTENTS + 1], 0x1000),
         Err(ProbeError::Capacity)
     );
     for invalid in [
-        vec![RamExtent {
-            base: 0x4000,
-            length: 8,
-        }],
-        vec![RamExtent {
-            base: 0x4008,
-            length: 4096,
-        }],
-        vec![RamExtent {
-            base: 0x4000,
-            length: 0,
-        }],
-        vec![RamExtent {
-            base: 0x4000,
-            length: u64::MAX - 0xfff,
-        }],
+        vec![RamExtent { base: 0x4000, length: 8 }],
+        vec![RamExtent { base: 0x4008, length: 4096 }],
+        vec![RamExtent { base: 0x4000, length: 0 }],
+        vec![RamExtent { base: 0x4000, length: u64::MAX - 0xfff }],
         vec![extents[1], extents[0]],
         vec![extents[0], extents[0]],
     ] {
-        assert_eq!(
-            validate_source(profile(), &invalid, 0x4000),
-            Err(ProbeError::InvalidProfile)
-        );
+        assert_eq!(validate_source(profile(), &invalid, 0x4000), Err(ProbeError::InvalidProfile));
     }
 }
 
@@ -288,10 +238,8 @@ impl HandlerRegistration for Registration {
 #[test]
 fn registration_busy_never_removes_someone_elses_callback() {
     let mut model = RegistrationMachine::new();
-    let mut backend = Registration {
-        install: Some(Status::ALREADY_STARTED),
-        ..Registration::default()
-    };
+    let mut backend =
+        Registration { install: Some(Status::ALREADY_STARTED), ..Registration::default() };
     assert_eq!(
         model.register(&mut backend),
         Err(ProbeError::Registration(Status::ALREADY_STARTED))
@@ -310,14 +258,8 @@ fn failed_removal_retains_ownership_until_explicit_confirmed_removal() {
     assert_eq!(model.register(&mut backend), Err(ProbeError::Busy));
     assert_eq!(backend.installs, 1);
     backend.remove = Some(Status::DEVICE_ERROR);
-    assert_eq!(
-        model.remove(&mut backend),
-        Err(ProbeError::Removal(Status::DEVICE_ERROR))
-    );
-    assert_eq!(
-        model.state(),
-        RegistrationState::RemovalFailed(Status::DEVICE_ERROR)
-    );
+    assert_eq!(model.remove(&mut backend), Err(ProbeError::Removal(Status::DEVICE_ERROR)));
+    assert_eq!(model.state(), RegistrationState::RemovalFailed(Status::DEVICE_ERROR));
     assert!(model.owns_handler());
     backend.remove = Some(Status::SUCCESS);
     assert_eq!(model.remove(&mut backend), Ok(()));
@@ -335,17 +277,11 @@ fn warning_install_or_remove_retains_indeterminate_lifetime_without_null_retry()
         let mut backend = Registration::default();
         if installing {
             backend.install = Some(warning);
-            assert_eq!(
-                model.register(&mut backend),
-                Err(ProbeError::Registration(warning))
-            );
+            assert_eq!(model.register(&mut backend), Err(ProbeError::Registration(warning)));
         } else {
             assert_eq!(model.register(&mut backend), Ok(()));
             backend.remove = Some(warning);
-            assert_eq!(
-                model.remove(&mut backend),
-                Err(ProbeError::Removal(warning))
-            );
+            assert_eq!(model.remove(&mut backend), Err(ProbeError::Removal(warning)));
         }
         assert_eq!(model.state(), RegistrationState::Indeterminate(warning));
         assert!(model.owns_handler());
@@ -362,9 +298,7 @@ fn assembly_has_one_explicit_source_operand_and_fixed_epilogue() {
     assert_eq!(source.matches("mov (%r11), %rax").count(), 1);
     assert!(source.contains("svmvisor_memory_probe_fault_rip:\n    mov (%r11), %rax"));
     assert!(source.contains("svmvisor_memory_probe_failure_rip:"));
-    assert!(!source
-        .lines()
-        .any(|line| line.trim_start().starts_with("call")));
+    assert!(!source.lines().any(|line| line.trim_start().starts_with("call")));
     assert!(source.contains("mov %cr2, %rax"));
     assert!(source.contains("mov %cr4, %rax"));
     assert!(source.contains("svmvisor_memory_probe_fail_stop:\n    cli"));

@@ -1,18 +1,12 @@
 use core::mem::{align_of, size_of};
-use svmvisor_hypervisor::memory::address::{AddressPolicy, EncryptionState};
 use svmvisor_hypervisor::arch::x86_64::capabilities::{
     CapabilityError, CapabilityEvidence, CpuVendor, EvidenceFlag, OptionalFeatures,
 };
+use svmvisor_hypervisor::memory::address::{AddressPolicy, EncryptionState};
 use svmvisor_hypervisor::svm::vmcb::{EventIntercept, InstructionIntercept, VMCB_BYTES, Vmcb};
 
 fn policy() -> AddressPolicy {
-    AddressPolicy::new(
-        48,
-        EncryptionState::Unencrypted {
-            encryption_bit: None,
-        },
-    )
-    .unwrap()
+    AddressPolicy::new(48, EncryptionState::Unencrypted { encryption_bit: None }).unwrap()
 }
 
 #[test]
@@ -40,16 +34,13 @@ fn fields_match_independent_appendix_b_byte_image_with_all_other_bytes_zero() {
         physical_address_bits: Some(48),
         vm_cr_svmdis: EvidenceFlag::Clear,
         hypervisor_present: EvidenceFlag::Clear,
-        encryption: EncryptionState::Unencrypted {
-            encryption_bit: None,
-        },
+        encryption: EncryptionState::Unencrypted { encryption_bit: None },
         optional: OptionalFeatures::default(),
     }
     .validate()
     .unwrap();
     vmcb.set_guest_asid(0x0102_0304, &capabilities).unwrap();
-    vmcb.set_permission_maps(0x1234_5678_9000, 0x2345_6789_a000, &policy())
-        .unwrap();
+    vmcb.set_permission_maps(0x1234_5678_9000, 0x2345_6789_a000, &policy()).unwrap();
     vmcb.set_nested_root(0x3456_789a_b000, &policy()).unwrap();
     vmcb.set_instruction_intercept(InstructionIntercept::Cpuid, true);
     vmcb.set_instruction_intercept(InstructionIntercept::Hlt, true);
@@ -75,10 +66,7 @@ fn fields_match_independent_appendix_b_byte_image_with_all_other_bytes_zero() {
 
     let before = *vmcb.bytes();
     for invalid in [0, capabilities.asid_count(), u32::MAX] {
-        assert_eq!(
-            vmcb.set_guest_asid(invalid, &capabilities),
-            Err(CapabilityError::InvalidAsid)
-        );
+        assert_eq!(vmcb.set_guest_asid(invalid, &capabilities), Err(CapabilityError::InvalidAsid));
         assert_eq!(vmcb.bytes(), &before);
     }
 }
@@ -105,8 +93,7 @@ fn physical_fields_reject_bad_extent_or_alignment_without_partial_mutation() {
         assert_eq!(vmcb.bytes(), &before);
     }
     // Full map spans can end exactly at the physical-address ceiling.
-    vmcb.set_permission_maps(limit - 12288, limit - 8192, &policy())
-        .unwrap();
+    vmcb.set_permission_maps(limit - 12288, limit - 8192, &policy()).unwrap();
     vmcb.set_nested_root(limit - 4096, &policy()).unwrap();
 }
 
@@ -147,11 +134,9 @@ fn typed_intercepts_toggle_independently_and_return_to_reserved_zero_image() {
 fn physical_event_intercepts_match_appendix_b_without_changing_other_fields() {
     // Independent Appendix B byte encodings, including the distinct NMI/SMI/
     // INIT bits. A decoder/setter round trip alone could share an offset bug.
-    for (event, byte) in [
-        (EventIntercept::Nmi, 0x02),
-        (EventIntercept::Smi, 0x04),
-        (EventIntercept::Init, 0x08),
-    ] {
+    for (event, byte) in
+        [(EventIntercept::Nmi, 0x02), (EventIntercept::Smi, 0x04), (EventIntercept::Init, 0x08)]
+    {
         let mut vmcb = Vmcb::new();
         vmcb.set_event_intercept(event, true);
         let mut expected = [0; 4096];
@@ -167,11 +152,7 @@ fn physical_event_intercepts_match_appendix_b_without_changing_other_fields() {
     vmcb.set_instruction_intercept(InstructionIntercept::Cpuid, true);
     vmcb.set_instruction_intercept(InstructionIntercept::Vmmcall, true);
     let instructions = *vmcb.bytes();
-    for event in [
-        EventIntercept::Nmi,
-        EventIntercept::Smi,
-        EventIntercept::Init,
-    ] {
+    for event in [EventIntercept::Nmi, EventIntercept::Smi, EventIntercept::Init] {
         vmcb.set_event_intercept(event, true);
     }
     let mut expected = instructions;

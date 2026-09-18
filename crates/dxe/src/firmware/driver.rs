@@ -29,9 +29,15 @@ struct CallbackGuard;
 #[cfg(any(feature = "card-returning-loader", feature = "card-resident"))]
 impl CallbackGuard {
     fn acquire() -> Result<Self, Status> {
-        CALLBACK_ACTIVE.compare_exchange(false, true,
-            core::sync::atomic::Ordering::Acquire, core::sync::atomic::Ordering::Relaxed)
-            .map(|_| Self).map_err(|_| Status::NOT_READY)
+        CALLBACK_ACTIVE
+            .compare_exchange(
+                false,
+                true,
+                core::sync::atomic::Ordering::Acquire,
+                core::sync::atomic::Ordering::Relaxed,
+            )
+            .map(|_| Self)
+            .map_err(|_| Status::NOT_READY)
     }
 }
 #[cfg(any(feature = "card-returning-loader", feature = "card-resident"))]
@@ -150,9 +156,14 @@ unsafe extern "efiapi" fn supported(
     _: *const DevicePathProtocol,
 ) -> Status {
     #[cfg(any(feature = "card-returning-loader", feature = "card-resident"))]
-    let _guard = match CallbackGuard::acquire() { Ok(guard) => guard, Err(e) => return e };
+    let _guard = match CallbackGuard::acquire() {
+        Ok(guard) => guard,
+        Err(e) => return e,
+    };
     #[cfg(any(feature = "card-returning-loader", feature = "card-resident"))]
-    if crate::card_returning_adapter::has_attempted() { return Status::UNSUPPORTED; }
+    if crate::card_returning_adapter::has_attempted() {
+        return Status::UNSUPPORTED;
+    }
     let pci = match open(controller) {
         Ok(pci) => pci,
         Err(e) => return e,
@@ -196,11 +207,18 @@ unsafe extern "efiapi" fn start(
     _: *const DevicePathProtocol,
 ) -> Status {
     #[cfg(any(feature = "card-returning-loader", feature = "card-resident"))]
-    let _guard = match CallbackGuard::acquire() { Ok(guard) => guard, Err(e) => return e };
+    let _guard = match CallbackGuard::acquire() {
+        Ok(guard) => guard,
+        Err(e) => return e,
+    };
     #[cfg(any(feature = "card-returning-loader", feature = "card-resident"))]
-    if unsafe { !OWNED_PCI.is_null() } { return Status::ALREADY_STARTED; }
+    if unsafe { !OWNED_PCI.is_null() } {
+        return Status::ALREADY_STARTED;
+    }
     #[cfg(any(feature = "card-returning-loader", feature = "card-resident"))]
-    if crate::card_returning_adapter::has_attempted() { return Status::UNSUPPORTED; }
+    if crate::card_returning_adapter::has_attempted() {
+        return Status::UNSUPPORTED;
+    }
     let pci = match open(controller) {
         Ok(pci) => pci,
         Err(e) => return e,
@@ -227,15 +245,25 @@ unsafe extern "efiapi" fn start(
         crate::card_load::verify(&mut io, services(), boot_id, tsc, cpu)?;
         #[cfg(feature = "card-returning-loader")]
         crate::card_returning_adapter::execute(
-            &mut io, services(), unsafe { BINDING.image_handle }, controller, boot_id, tsc,
+            &mut io,
+            services(),
+            unsafe { BINDING.image_handle },
+            controller,
+            boot_id,
+            tsc,
         )?;
         #[cfg(feature = "card-resident")]
         {
             // No fallible registration follows successful resident StartImage.
             lifecycle::register(services(), mapping, boot_id)?;
             crate::card_returning_adapter::execute_resident(
-                &mut io, services(), unsafe { BINDING.image_handle }, controller,
-                boot_id, mapping.physical_base())
+                &mut io,
+                services(),
+                unsafe { BINDING.image_handle },
+                controller,
+                boot_id,
+                mapping.physical_base(),
+            )
         }
         #[cfg(not(feature = "card-resident"))]
         lifecycle::register(services(), mapping, boot_id)
@@ -256,7 +284,10 @@ unsafe extern "efiapi" fn stop(
     _: *const Handle,
 ) -> Status {
     #[cfg(any(feature = "card-returning-loader", feature = "card-resident"))]
-    let _guard = match CallbackGuard::acquire() { Ok(guard) => guard, Err(e) => return e };
+    let _guard = match CallbackGuard::acquire() {
+        Ok(guard) => guard,
+        Err(e) => return e,
+    };
     if children != 0 || controller != unsafe { OWNER } {
         return Status::UNSUPPORTED;
     }

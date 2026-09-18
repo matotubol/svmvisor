@@ -46,16 +46,9 @@ impl Handoff {
         if arena_base == 0 || !arena_base.is_multiple_of(PAGE_SIZE) {
             return Err(HandoffError::ArenaBase);
         }
-        arena_base
-            .checked_add(arena_bytes)
-            .ok_or(HandoffError::AddressOverflow)?;
+        arena_base.checked_add(arena_bytes).ok_or(HandoffError::AddressOverflow)?;
         let layout = Layout::plan(arena_bytes, request).map_err(HandoffError::Layout)?;
-        Ok(Self {
-            arena_base,
-            arena_bytes,
-            request,
-            layout,
-        })
+        Ok(Self { arena_base, arena_bytes, request, layout })
     }
 
     /// Decode exactly one header; reject extensions until a new version defines

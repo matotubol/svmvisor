@@ -109,29 +109,16 @@ impl Layout {
             (Iopm, 3 * PAGE_SIZE, ReadWriteNoExecute),
             (Msrpm, 2 * PAGE_SIZE, ReadWriteNoExecute),
         ];
-        let mut regions = [Region {
-            kind: Code,
-            offset: 0,
-            len: 0,
-            permissions: Unmapped,
-        }; 11];
+        let mut regions = [Region { kind: Code, offset: 0, len: 0, permissions: Unmapped }; 11];
         let mut offset = 0u64;
         for (slot, (kind, len, permissions)) in regions.iter_mut().zip(specifications) {
-            *slot = Region {
-                kind,
-                offset,
-                len,
-                permissions,
-            };
+            *slot = Region { kind, offset, len, permissions };
             offset = offset.checked_add(len).ok_or(LayoutError::Overflow)?;
         }
         if offset > arena_bytes {
             return Err(LayoutError::InsufficientArena);
         }
-        Ok(Self {
-            regions,
-            used_bytes: offset,
-        })
+        Ok(Self { regions, used_bytes: offset })
     }
 
     pub const fn regions(&self) -> &[Region; 11] {

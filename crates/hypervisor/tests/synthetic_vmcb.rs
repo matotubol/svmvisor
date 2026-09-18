@@ -1,19 +1,14 @@
 use svmvisor_hypervisor::{
-    memory::address::{AddressPolicy, EncryptionState},
     guest::state::GuestStateRequest,
+    memory::address::{AddressPolicy, EncryptionState},
     svm::permission_maps::{IOPM_BYTES, MSRPM_BYTES},
     svm::vmcb::{InstructionIntercept, Vmcb},
 };
 
 #[test]
 fn validated_tuple_and_permission_controls_have_exact_independent_layout() {
-    let policy = AddressPolicy::new(
-        48,
-        EncryptionState::Unencrypted {
-            encryption_bit: None,
-        },
-    )
-    .unwrap();
+    let policy =
+        AddressPolicy::new(48, EncryptionState::Unencrypted { encryption_bit: None }).unwrap();
     let state = GuestStateRequest {
         rip: 0xffff_8000_1234_5678,
         rsp: 0x1234_5678,

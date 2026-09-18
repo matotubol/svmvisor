@@ -1,5 +1,5 @@
 use crate::arch::x86_64::msr::{
-    MTRR_CAP, MTRR_DEF_TYPE, MTRR_FIX_16K_0, MTRR_FIX_16K_1, MTRR_FIX_4K_0, MTRR_FIX_64K,
+    MTRR_CAP, MTRR_DEF_TYPE, MTRR_FIX_4K_0, MTRR_FIX_16K_0, MTRR_FIX_16K_1, MTRR_FIX_64K,
     MTRR_VAR_BASE0, SYS_CFG, SYS_CFG_DEFINED, SYS_CFG_ENCRYPTION, SYS_CFG_MTRR_FIX_DRAM_EN,
     SYS_CFG_MTRR_FIX_DRAM_MOD_EN, SYS_CFG_MTRR_TOM2_EN, SYS_CFG_TOM2_FORCE_MEM_TYPE_WB,
     TARGET_PHYSICAL_BITS, TARGET_SIGNATURE, TOM2,
@@ -54,9 +54,12 @@ impl Tom2Default {
     /// ordinary default applies; unused TOM2 reset contents are not interpreted.
     /// Bit22 with disabled TOM2 is conservatively unsupported. DEF_TYPE.E is
     /// checked by Mtrrs::page_type on every use, including this default.
-    pub fn new(signature: u32, physical_bits: u8, sys_cfg: u64, tom2: u64)
-        -> Result<Option<Self>, Tom2Error>
-    {
+    pub fn new(
+        signature: u32,
+        physical_bits: u8,
+        sys_cfg: u64,
+        tom2: u64,
+    ) -> Result<Option<Self>, Tom2Error> {
         if !Self::supported_profile(signature, physical_bits) {
             return Err(Tom2Error::UnsupportedProfile);
         }
@@ -104,9 +107,11 @@ impl Mtrrs {
     /// admission. `read` performs RDMSR of MTRRcap and MTRRdefType, then
     /// SYS_CFG and TOM2 only on the reviewed profile (PPR57896 rev3.00
     /// pp.202/206), then each enumerated variable pair. It never writes.
-    pub fn read(physical_bits: u8, signature: u32, mut read: impl FnMut(u32) -> u64)
-        -> Result<Self, MtrrReadError>
-    {
+    pub fn read(
+        physical_bits: u8,
+        signature: u32,
+        mut read: impl FnMut(u32) -> u64,
+    ) -> Result<Self, MtrrReadError> {
         let capability = read(MTRR_CAP);
         let count = (capability & 255) as usize;
         if count > MAX_VARIABLE {
@@ -168,11 +173,21 @@ impl Mtrrs {
     /// page below1MiB. Caller checks MTRRcap.FIX and DEF_TYPE.E/FE before RDMSR;
     /// enabled fixed ranges take precedence over variable ranges.
     pub fn fixed_range_register(page: u64) -> Option<(u32, u8)> {
-        if page >= 0x100000 || page & 4095 != 0 { return None; }
-        Some(if page < 0x80000 { (MTRR_FIX_64K, ((page / 0x10000) * 8) as u8) }
-            else if page < 0xa0000 { (MTRR_FIX_16K_0, (((page - 0x80000) / 0x4000) * 8) as u8) }
-            else if page < 0xc0000 { (MTRR_FIX_16K_1, (((page - 0xa0000) / 0x4000) * 8) as u8) }
-            else { (MTRR_FIX_4K_0 + ((page - 0xc0000) / 0x8000) as u32, (((page & 0x7fff) / 4096) * 8) as u8) })
+        if page >= 0x100000 || page & 4095 != 0 {
+            return None;
+        }
+        Some(if page < 0x80000 {
+            (MTRR_FIX_64K, ((page / 0x10000) * 8) as u8)
+        } else if page < 0xa0000 {
+            (MTRR_FIX_16K_0, (((page - 0x80000) / 0x4000) * 8) as u8)
+        } else if page < 0xc0000 {
+            (MTRR_FIX_16K_1, (((page - 0xa0000) / 0x4000) * 8) as u8)
+        } else {
+            (
+                MTRR_FIX_4K_0 + ((page - 0xc0000) / 0x8000) as u32,
+                (((page & 0x7fff) / 4096) * 8) as u8,
+            )
+        })
     }
 
     pub fn page_is_wb(&self, page: u64) -> bool {
@@ -226,8 +241,9 @@ impl Mtrrs {
         if types == 0 {
             // PPR pp.202/206 -> APM2 7.7.2/7.7.4: replace only the default,
             // never a matching variable MTRR. PAT is combined by the caller.
-            if self.tom2_default.is_some_and(|tom2|
-                page >= 0x1_0000_0000 && page + 4096 <= tom2.end)
+            if self
+                .tom2_default
+                .is_some_and(|tom2| page >= 0x1_0000_0000 && page + 4096 <= tom2.end)
             {
                 Some(6)
             } else {

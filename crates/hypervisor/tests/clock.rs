@@ -35,30 +35,10 @@ fn capability_gates_are_independent() {
 #[test]
 fn requires_exact_supported_msr_evidence() {
     for (c, a, r, e) in [
-        (
-            caps(false, false),
-            Some(0),
-            None,
-            ClockError::AuxiliaryEvidenceMismatch,
-        ),
-        (
-            caps(true, false),
-            None,
-            None,
-            ClockError::AuxiliaryEvidenceMismatch,
-        ),
-        (
-            caps(false, false),
-            None,
-            Some(1),
-            ClockError::RatioEvidenceMismatch,
-        ),
-        (
-            caps(false, true),
-            None,
-            None,
-            ClockError::RatioEvidenceMismatch,
-        ),
+        (caps(false, false), Some(0), None, ClockError::AuxiliaryEvidenceMismatch),
+        (caps(true, false), None, None, ClockError::AuxiliaryEvidenceMismatch),
+        (caps(false, false), None, Some(1), ClockError::RatioEvidenceMismatch),
+        (caps(false, true), None, None, ClockError::RatioEvidenceMismatch),
     ] {
         assert_eq!(ClockPlan::admit(c, a, r, 0), Err(e));
     }
@@ -83,13 +63,8 @@ fn rejects_reserved_bits_and_zero_host_rate() {
     );
     for ratio in [1, (1 << 40) - 1] {
         assert!(
-            ClockPlan::admit(
-                caps(true, true),
-                Some(u32::MAX as u64),
-                Some(ratio),
-                u32::MAX
-            )
-            .is_ok()
+            ClockPlan::admit(caps(true, true), Some(u32::MAX as u64), Some(ratio), u32::MAX)
+                .is_ok()
         );
     }
 }
@@ -102,29 +77,19 @@ fn restoration_detects_changed_or_missing_registers() {
         (None, p.host_ratio()),
         (p.host_aux(), None),
     ] {
-        assert_eq!(
-            p.validate_restored(aux, ratio),
-            Err(ClockError::RestorationMismatch)
-        );
+        assert_eq!(p.validate_restored(aux, ratio), Err(ClockError::RestorationMismatch));
     }
     let p = ClockPlan::admit(caps(false, false), None, None, 0).unwrap();
-    assert_eq!(
-        p.validate_restored(Some(0), None),
-        Err(ClockError::RestorationMismatch)
-    );
+    assert_eq!(p.validate_restored(Some(0), None), Err(ClockError::RestorationMismatch));
 }
 
 #[test]
 fn clock_cpuid_policy_changes_only_admitted_instruction_bits() {
     use svmvisor_hypervisor::svm::emulation::{cpuid, cpuid_with_clock};
     for rdtscp in [false, true] {
-        let p = ClockPlan::admit(
-            caps(rdtscp, true),
-            rdtscp.then_some(0),
-            Some(IDENTITY_TSC_RATIO),
-            42,
-        )
-        .unwrap();
+        let p =
+            ClockPlan::admit(caps(rdtscp, true), rdtscp.then_some(0), Some(IDENTITY_TSC_RATIO), 42)
+                .unwrap();
         for leaf in [
             0,
             1,

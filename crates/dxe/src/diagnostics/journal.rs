@@ -16,8 +16,12 @@ pub fn commit(io: &mut impl JournalIo, record: [u32; 8]) -> Result<(), Status> {
     struct Adapter<'a, I>(&'a mut I);
     impl<I: JournalIo> terminal::JournalIo for Adapter<'_, I> {
         type Error = Status;
-        fn read(&mut self, offset: u64) -> Result<u32, Status> { self.0.read(offset) }
-        fn write(&mut self, offset: u64, value: u32) -> Result<(), Status> { self.0.write(offset, value) }
+        fn read(&mut self, offset: u64) -> Result<u32, Status> {
+            self.0.read(offset)
+        }
+        fn write(&mut self, offset: u64, value: u32) -> Result<(), Status> {
+            self.0.write(offset, value)
+        }
     }
     terminal::commit_record(&mut Adapter(io), record).map_err(|error| match error {
         CommitError::Access(status) => status,

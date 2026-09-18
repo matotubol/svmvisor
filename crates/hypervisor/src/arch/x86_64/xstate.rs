@@ -75,13 +75,8 @@ impl XstateLayout {
         if caps.supported_xcr0 & 3 != 3 {
             return Err(XstateError::UnsupportedMask);
         }
-        let mut layout = Self {
-            mask: 3,
-            size: XSAVE_BASE_BYTES,
-            avx_offset: None,
-            avx_flags: 0,
-            xsave: true,
-        };
+        let mut layout =
+            Self { mask: 3, size: XSAVE_BASE_BYTES, avx_offset: None, avx_flags: 0, xsave: true };
         if caps.leaf1_ecx & (1 << 28) != 0 {
             if caps.supported_xcr0 & 4 == 0 {
                 return Err(XstateError::UnsupportedMask);
@@ -95,10 +90,9 @@ impl XstateLayout {
             {
                 return Err(XstateError::InvalidLayout);
             }
-            layout.size = caps
-                .avx_offset
-                .checked_add(caps.avx_size)
-                .ok_or(XstateError::InvalidLayout)? as usize;
+            layout.size =
+                caps.avx_offset.checked_add(caps.avx_size).ok_or(XstateError::InvalidLayout)?
+                    as usize;
             layout.mask = 7;
             layout.avx_offset = Some(caps.avx_offset as usize);
             layout.avx_flags = caps.avx_flags;
@@ -189,11 +183,7 @@ impl XstateLayout {
 /// identifies supported bits, independently of their current values. The caller
 /// supplies its actual processor's observed mask, not an invented capability.
 pub fn effective_mxcsr_mask(observed: u32) -> Result<u32, XstateError> {
-    let mask = if observed == 0 {
-        MXCSR_DEFAULT_MASK
-    } else {
-        observed
-    };
+    let mask = if observed == 0 { MXCSR_DEFAULT_MASK } else { observed };
     if mask & !0x2ffff != 0 || mask & MXCSR_INITIAL != MXCSR_INITIAL {
         return Err(XstateError::InvalidMxcsrMask);
     }
@@ -215,9 +205,7 @@ impl Default for XstateArea {
 
 impl XstateArea {
     pub const fn new() -> Self {
-        Self {
-            bytes: [0; XSTATE_AREA_BYTES],
-        }
+        Self { bytes: [0; XSTATE_AREA_BYTES] }
     }
     pub fn as_ptr(&self) -> *const u8 {
         self.bytes.as_ptr()

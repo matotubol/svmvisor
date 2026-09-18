@@ -1,12 +1,12 @@
 use svmvisor_hypervisor::{
-    memory::address::{AddressPolicy, EncryptionState},
     arch::x86_64::capabilities::{
         CapabilityEvidence, CpuVendor, EvidenceFlag, OptionalFeatures, ValidatedCapabilities,
     },
+    arch::x86_64::registers::GuestRegisters,
+    guest::state::GuestStateRequest,
+    memory::address::{AddressPolicy, EncryptionState},
     svm::dispatch::{DispatchError, DispatchOutcome, StopReason, handle_exit},
     svm::exit::ExitSnapshot,
-    guest::state::GuestStateRequest,
-    arch::x86_64::registers::GuestRegisters,
     svm::vmcb::Vmcb,
 };
 
@@ -20,26 +20,16 @@ fn capabilities(nrip: bool) -> ValidatedCapabilities {
         physical_address_bits: Some(48),
         vm_cr_svmdis: EvidenceFlag::Clear,
         hypervisor_present: EvidenceFlag::Clear,
-        encryption: EncryptionState::Unencrypted {
-            encryption_bit: None,
-        },
-        optional: OptionalFeatures {
-            nrip_save: nrip,
-            ..OptionalFeatures::default()
-        },
+        encryption: EncryptionState::Unencrypted { encryption_bit: None },
+        optional: OptionalFeatures { nrip_save: nrip, ..OptionalFeatures::default() },
     }
     .validate()
     .unwrap()
 }
 
 fn state(rax: u64) -> (Vmcb, GuestRegisters) {
-    let policy = AddressPolicy::new(
-        48,
-        EncryptionState::Unencrypted {
-            encryption_bit: None,
-        },
-    )
-    .unwrap();
+    let policy =
+        AddressPolicy::new(48, EncryptionState::Unencrypted { encryption_bit: None }).unwrap();
     let mut vmcb = Vmcb::new();
     vmcb.set_synthetic_state(
         &GuestStateRequest {
@@ -77,13 +67,7 @@ fn state(rax: u64) -> (Vmcb, GuestRegisters) {
 }
 
 fn snapshot(code: u64, nrip: u64) -> ExitSnapshot {
-    ExitSnapshot {
-        code,
-        info1: 0,
-        info2: 0,
-        rip: 0x1000,
-        nrip,
-    }
+    ExitSnapshot { code, info1: 0, info2: 0, rip: 0x1000, nrip }
 }
 
 #[test]
@@ -116,12 +100,7 @@ fn query_returns_abi_but_stop_and_unknown_opcodes_do_not_advance() {
     let (mut vmcb, mut frame) = state(0);
     let before_frame = frame;
     assert_eq!(
-        handle_exit(
-            snapshot(0x81, 0x1003),
-            &mut vmcb,
-            &mut frame,
-            &capabilities(true)
-        ),
+        handle_exit(snapshot(0x81, 0x1003), &mut vmcb, &mut frame, &capabilities(true)),
         Ok(DispatchOutcome::ResumePrepared)
     );
     assert_eq!((vmcb.guest_rax(), vmcb.guest_rip()), (1, 0x1003));
@@ -136,12 +115,7 @@ fn query_returns_abi_but_stop_and_unknown_opcodes_do_not_advance() {
             StopReason::UnsupportedHypercall { opcode }
         };
         assert_eq!(
-            handle_exit(
-                snapshot(0x81, 0),
-                &mut vmcb,
-                &mut frame,
-                &capabilities(false)
-            ),
+            handle_exit(snapshot(0x81, 0), &mut vmcb, &mut frame, &capabilities(false)),
             Ok(DispatchOutcome::Stop(reason))
         );
         assert_eq!(vmcb.bytes(), &before);
@@ -156,12 +130,7 @@ fn rejected_resume_checks_and_terminal_exits_preserve_all_state() {
         let before = *vmcb.bytes();
         let before_frame = frame;
         assert!(matches!(
-            handle_exit(
-                snapshot(0x72, nrip),
-                &mut vmcb,
-                &mut frame,
-                &capabilities(established)
-            ),
+            handle_exit(snapshot(0x72, nrip), &mut vmcb, &mut frame, &capabilities(established)),
             Err(DispatchError::Resume(_))
         ));
         assert_eq!(vmcb.bytes(), &before);
@@ -172,15 +141,8 @@ fn rejected_resume_checks_and_terminal_exits_preserve_all_state() {
         let before = *vmcb.bytes();
         let before_frame = frame;
         assert_eq!(
-            handle_exit(
-                snapshot(code, 0x1002),
-                &mut vmcb,
-                &mut frame,
-                &capabilities(true)
-            ),
-            Ok(DispatchOutcome::Stop(StopReason::Exit(
-                snapshot(code, 0x1002).action()
-            )))
+            handle_exit(snapshot(code, 0x1002), &mut vmcb, &mut frame, &capabilities(true)),
+            Ok(DispatchOutcome::Stop(StopReason::Exit(snapshot(code, 0x1002).action())))
         );
         assert_eq!(vmcb.bytes(), &before);
         assert_eq!(frame, before_frame);
@@ -191,13 +153,9 @@ fn rejected_resume_checks_and_terminal_exits_preserve_all_state() {
 fn opted_in_clock_dispatch_preserves_transactional_refusal() {
     use svmvisor_hypervisor::arch::x86_64::clock::{ClockCapabilities, ClockPlan};
     use svmvisor_hypervisor::svm::dispatch::handle_exit_with_instruction_and_clock;
-    let clock = ClockPlan::admit(
-        ClockCapabilities::detect(0x30, 1 << 27, 0).unwrap(),
-        Some(0),
-        None,
-        123,
-    )
-    .unwrap();
+    let clock =
+        ClockPlan::admit(ClockCapabilities::detect(0x30, 1 << 27, 0).unwrap(), Some(0), None, 123)
+            .unwrap();
     let (mut vmcb, mut frame) = state(1);
     let before = *vmcb.bytes();
     let before_frame = frame;

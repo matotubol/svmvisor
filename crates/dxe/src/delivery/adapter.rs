@@ -1,10 +1,10 @@
 //! Resident driver wrapper. Driver callbacks serialize all access to STATE.
 use crate::pci_io::Bar0;
 use core::ptr;
-#[cfg(feature = "card-returning-loader")]
-use svmvisor_dxe::diagnostics::returning::ReturningDiagnostics;
 #[cfg(not(feature = "card-resident-dev-loader"))]
 use svmvisor_dxe::delivery::returning::Pin;
+#[cfg(feature = "card-returning-loader")]
+use svmvisor_dxe::diagnostics::returning::ReturningDiagnostics;
 use svmvisor_dxe::{
     delivery::returning::{self as card_returning, State},
     diagnostics::journal::{self, JournalIo},
@@ -87,11 +87,7 @@ pub(crate) fn execute(
     }
     // A restored returning refusal still permits ordinary firmware boot. A
     // malformed/incomplete inner result remains a delivery failure.
-    if bits == 1 << 15 {
-        Err(Status::PROTOCOL_ERROR)
-    } else {
-        Ok(())
-    }
+    if bits == 1 << 15 { Err(Status::PROTOCOL_ERROR) } else { Ok(()) }
 }
 
 #[cfg(feature = "card-resident")]
@@ -168,14 +164,21 @@ pub(crate) fn execute_resident(
             // Detail8 phase0x14: failed child preparation. Unlike phase0x10,
             // metadata packs stage/reason/address-high, then exact compressed
             // EFI status and address-low. No armed hook is implied.
-            return journal::commit(io, [sequence, boot_id, status as u32,
-                (status >> 32) as u32, metadata, underlying, address, 0x0008_0014]);
+            return journal::commit(
+                io,
+                [
+                    sequence,
+                    boot_id,
+                    status as u32,
+                    (status >> 32) as u32,
+                    metadata,
+                    underlying,
+                    address,
+                    0x0008_0014,
+                ],
+            );
         }
-        let selected_error = if options.failure != 0 {
-            options.failure
-        } else {
-            status
-        };
+        let selected_error = if options.failure != 0 { options.failure } else { status };
         // Detail 8, phase0x10 is parent load/arm evidence, never resident entry.
         // Word4: delivery stage, entered, armed, status kind, and bit11 set by
         // the dev loader (slot-supplied header); word5/6: exact failure/status.
@@ -205,10 +208,6 @@ pub(crate) fn execute_resident(
         Ok(())
     } else {
         record?;
-        if report.status() == Status::SUCCESS {
-            Ok(())
-        } else {
-            Err(report.status())
-        }
+        if report.status() == Status::SUCCESS { Ok(()) } else { Err(report.status()) }
     }
 }

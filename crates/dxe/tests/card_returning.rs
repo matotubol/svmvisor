@@ -1,5 +1,8 @@
 //! Exact production PE loader with real owned allocations and a fake firmware ABI.
-#![cfg(all(any(feature = "card-returning-loader", feature = "card-resident"), target_os = "windows"))]
+#![cfg(all(
+    any(feature = "card-returning-loader", feature = "card-resident"),
+    target_os = "windows"
+))]
 use sha2::{Digest, Sha256};
 use std::{
     ffi::c_void,
@@ -24,14 +27,8 @@ struct Fixture {
     loaded: usize,
     events: Vec<&'static str>,
 }
-static FIX: Mutex<Fixture> = Mutex::new(Fixture {
-    mode: 0,
-    pool: 0,
-    bytes: 0,
-    exit: 0,
-    loaded: 0,
-    events: Vec::new(),
-});
+static FIX: Mutex<Fixture> =
+    Mutex::new(Fixture { mode: 0, pool: 0, bytes: 0, exit: 0, loaded: 0, events: Vec::new() });
 static TEST_LOCK: Mutex<()> = Mutex::new(());
 static PATH: [u8; 10] = [1, 1, 6, 0, 0, 0, 0x7f, 0xff, 4, 0];
 fn parent() -> Handle {
@@ -57,14 +54,7 @@ fn fixture() -> (Pin, Vec<u8>) {
     pe[..2].copy_from_slice(b"MZ");
     w32(&mut pe, 0x3c, 64);
     pe[64..68].copy_from_slice(b"PE\0\0");
-    for (o, v) in [
-        (68, 0x8664),
-        (70, 1),
-        (84, 240),
-        (86, 2),
-        (88, 0x20b),
-        (156, 11),
-    ] {
+    for (o, v) in [(68, 0x8664), (70, 1), (84, 240), (86, 2), (88, 0x20b), (156, 11)] {
         w16(&mut pe, o, v);
     }
     for (o, v) in [
@@ -86,16 +76,9 @@ fn fixture() -> (Pin, Vec<u8>) {
     let mut slot = vec![0xff; card_returning::SLOT_BYTES];
     slot[..128].fill(0);
     slot[..8].copy_from_slice(b"SVMPE001");
-    for (o, v) in [
-        (8, 1),
-        (12, 128),
-        (88, 4096),
-        (92, 8192),
-        (96, 512),
-        (100, 4096),
-        (104, 512),
-        (108, 1),
-    ] {
+    for (o, v) in
+        [(8, 1), (12, 128), (88, 4096), (92, 8192), (96, 512), (100, 4096), (104, 512), (108, 1)]
+    {
         w32(&mut slot, o, v);
     }
     for (o, v) in [(16, 1024), (24, 0x100000), (32, 128), (40, 2)] {
@@ -110,7 +93,10 @@ fn fixture() -> (Pin, Vec<u8>) {
 }
 unsafe extern "efiapi" fn alloc(ty: MemoryType, n: usize, out: *mut *mut u8) -> Status {
     let mut f = FIX.lock().unwrap();
-    assert_eq!(ty, if f.mode >= 20 { MemoryType::RUNTIME_SERVICES_DATA } else { MemoryType::LOADER_DATA });
+    assert_eq!(
+        ty,
+        if f.mode >= 20 { MemoryType::RUNTIME_SERVICES_DATA } else { MemoryType::LOADER_DATA }
+    );
     f.events.push("allocate");
     if f.mode == 7 {
         return Status::OUT_OF_RESOURCES;
@@ -166,11 +152,7 @@ unsafe extern "efiapi" fn open(
         assert_eq!(handle, child());
         f.events.push("open-child");
         unsafe {
-            *out = if f.mode == 11 {
-                ptr::null_mut()
-            } else {
-                f.loaded as *mut c_void
-            };
+            *out = if f.mode == 11 { ptr::null_mut() } else { f.loaded as *mut c_void };
         }
     }
     Status::SUCCESS
@@ -223,17 +205,21 @@ unsafe extern "efiapi" fn load(
         load_options: ptr::null(),
         image_base: 0x100000 as *const c_void,
         image_size: if f.mode == 14 { 4096 } else { 8192 },
-        image_code_type: if f.mode >= 20 { MemoryType::RUNTIME_SERVICES_CODE } else { MemoryType::BOOT_SERVICES_CODE },
-        image_data_type: if f.mode >= 20 { MemoryType::RUNTIME_SERVICES_DATA } else { MemoryType::BOOT_SERVICES_DATA },
+        image_code_type: if f.mode >= 20 {
+            MemoryType::RUNTIME_SERVICES_CODE
+        } else {
+            MemoryType::BOOT_SERVICES_CODE
+        },
+        image_data_type: if f.mode >= 20 {
+            MemoryType::RUNTIME_SERVICES_DATA
+        } else {
+            MemoryType::BOOT_SERVICES_DATA
+        },
         unload: None,
     });
     f.loaded = Box::into_raw(l) as usize;
     unsafe { *out = child() };
-    if matches!(f.mode, 2 | 6) {
-        Status::SECURITY_VIOLATION
-    } else {
-        Status::SUCCESS
-    }
+    if matches!(f.mode, 2 | 6) { Status::SECURITY_VIOLATION } else { Status::SUCCESS }
 }
 unsafe extern "efiapi" fn start(handle: Handle, _: *mut usize, exit: *mut *mut Char16) -> Status {
     assert_eq!(handle, child());
@@ -251,33 +237,52 @@ unsafe extern "efiapi" fn start(handle: Handle, _: *mut usize, exit: *mut *mut C
         use svmvisor_dxe::diagnostics::resident_boot::ResidentBootOptions;
         let m = unsafe { &mut *l.load_options.cast_mut().cast::<ResidentBootOptions>() };
         assert_eq!(*m, resident_options(f.mode));
-        if f.mode == 25 { return Status::SECURITY_VIOLATION; }
+        if f.mode == 25 {
+            return Status::SECURITY_VIOLATION;
+        }
         m.rust_entered = 1;
         if f.mode == 28 {
             m.failure = Status::OUT_OF_RESOURCES.0 as u64;
             m.preparation_stage = 6;
             m.preparation_reason = 2;
             m.preparation_address = 0x123456789abc;
-            unsafe { drop(Box::from_raw(f.loaded as *mut LoadedImageProtocol)); }
+            unsafe {
+                drop(Box::from_raw(f.loaded as *mut LoadedImageProtocol));
+            }
             f.loaded = 0;
             f.events.push("auto-unload");
             return Status::OUT_OF_RESOURCES;
         }
         if f.mode == 24 || f.mode == 26 {
             m.failure = 17;
-            unsafe { drop(Box::from_raw(f.loaded as *mut LoadedImageProtocol)); }
+            unsafe {
+                drop(Box::from_raw(f.loaded as *mut LoadedImageProtocol));
+            }
             f.loaded = 0;
             f.events.push("auto-unload");
             return if f.mode == 26 { Status::INVALID_PARAMETER } else { Status::UNSUPPORTED };
         }
-        if f.mode != 21 { m.armed = 1; }
-        if f.mode == 22 { m.magic[0] ^= 1; }
-        if f.mode == 27 { m.journal_base += 4096; }
+        if f.mode != 21 {
+            m.armed = 1;
+        }
+        if f.mode == 22 {
+            m.magic[0] ^= 1;
+        }
+        if f.mode == 27 {
+            m.journal_base += 4096;
+        }
         // These mutations remain valid headers, so only exact comparison with
         // the original immutable parent inputs can reject the acknowledgement.
-        if f.mode == 29 { m.version = 1; }
-        if f.mode == 31 { m.reserved[2] ^= 2; }
-        if f.mode == 32 { m.version = 2; m.reserved = [0; 7]; }
+        if f.mode == 29 {
+            m.version = 1;
+        }
+        if f.mode == 31 {
+            m.reserved[2] ^= 2;
+        }
+        if f.mode == 32 {
+            m.version = 2;
+            m.reserved = [0; 7];
+        }
         return if f.mode == 23 { Status::WARN_UNKNOWN_GLYPH } else { Status::SUCCESS };
     }
     let m = unsafe { &mut *l.load_options.cast_mut().cast::<NativeResult>() };
@@ -349,14 +354,8 @@ fn actual_adapter_covers_return_security_transport_and_retry_ownership() {
     let _guard = TEST_LOCK.lock().unwrap();
     let bs = services();
     for mode in 0..=16 {
-        *FIX.lock().unwrap() = Fixture {
-            mode,
-            pool: 0,
-            bytes: 0,
-            exit: 0,
-            loaded: 0,
-            events: Vec::new(),
-        };
+        *FIX.lock().unwrap() =
+            Fixture { mode, pool: 0, bytes: 0, exit: 0, loaded: 0, events: Vec::new() };
         let (pin, mut slot) = fixture();
         if mode == 8 {
             slot[16] ^= 1;
@@ -375,9 +374,7 @@ fn actual_adapter_covers_return_security_transport_and_retry_ownership() {
                     return Err(Status::DEVICE_ERROR);
                 }
                 Ok(u32::from_le_bytes(
-                    slot[offset as usize..offset as usize + 4]
-                        .try_into()
-                        .unwrap(),
+                    slot[offset as usize..offset as usize + 4].try_into().unwrap(),
                 ))
             })
         };
@@ -449,11 +446,24 @@ fn resident_options(mode: u8) -> svmvisor_dxe::diagnostics::resident_boot::Resid
     use svmvisor_dxe::diagnostics::resident_boot::ResidentBootOptions;
     use svmvisor_hypervisor::host::resident::terminal::TerminalEndpoint;
     let options = ResidentBootOptions::new(0xd0000000, 42);
-    if mode < 30 { return options; }
-    options.with_terminal(TerminalEndpoint { config_page: 0xe012a000,
-        bar0_host_page: 0xd0000000, fpga_build_id: 1, rom_build_id: 2,
-        mmio_config_msr: 0xe0000021, bar0_raw: 0xd0000000, segment_bdf: 0x12a,
-        boot_id: 42, command: 2, version: 1, reserved: 0 }).unwrap()
+    if mode < 30 {
+        return options;
+    }
+    options
+        .with_terminal(TerminalEndpoint {
+            config_page: 0xe012a000,
+            bar0_host_page: 0xd0000000,
+            fpga_build_id: 1,
+            rom_build_id: 2,
+            mmio_config_msr: 0xe0000021,
+            bar0_raw: 0xd0000000,
+            segment_bdf: 0x12a,
+            boot_id: 42,
+            command: 2,
+            version: 1,
+            reserved: 0,
+        })
+        .unwrap()
 }
 
 #[test]
@@ -461,23 +471,41 @@ fn resident_lifetime_requires_ack_and_retains_all_nonerror_returns() {
     let _guard = TEST_LOCK.lock().unwrap();
     let bs = services();
     for mode in 20..=32 {
-        *FIX.lock().unwrap() = Fixture { mode, pool: 0, bytes: 0, exit: 0, loaded: 0, events: Vec::new() };
+        *FIX.lock().unwrap() =
+            Fixture { mode, pool: 0, bytes: 0, exit: 0, loaded: 0, events: Vec::new() };
         let (_, mut slot) = fixture();
         slot[..8].copy_from_slice(b"SVMBPE01");
-        w64(&mut slot, 40, 4); w16(&mut slot, 82, 12);
+        w64(&mut slot, 40, 4);
+        w16(&mut slot, 82, 12);
         w16(&mut slot, 128 + 156, 12);
         let digest = Sha256::digest(&slot[128..1152]);
         slot[48..80].copy_from_slice(&digest);
         assert!(Pin::parse(&slot[..128]).is_err());
         let pin = Pin::parse_resident(&slot[..128]).unwrap();
         let mut state = State::new();
-        let report = unsafe { card_returning::execute_resident(&mut state, &bs,
-            parent(), controller(), &pin, resident_options(mode),
-            |offset| Ok(u32::from_le_bytes(slot[offset as usize..offset as usize + 4].try_into().unwrap()))) };
-        let expected = match mode { 20 | 30 => Status::SUCCESS, 24 => Status::UNSUPPORTED,
-            25 => Status::SECURITY_VIOLATION, 26 => Status::INVALID_PARAMETER,
+        let report = unsafe {
+            card_returning::execute_resident(
+                &mut state,
+                &bs,
+                parent(),
+                controller(),
+                &pin,
+                resident_options(mode),
+                |offset| {
+                    Ok(u32::from_le_bytes(
+                        slot[offset as usize..offset as usize + 4].try_into().unwrap(),
+                    ))
+                },
+            )
+        };
+        let expected = match mode {
+            20 | 30 => Status::SUCCESS,
+            24 => Status::UNSUPPORTED,
+            25 => Status::SECURITY_VIOLATION,
+            26 => Status::INVALID_PARAMETER,
             28 => Status::OUT_OF_RESOURCES,
-            _ => Status::PROTOCOL_ERROR };
+            _ => Status::PROTOCOL_ERROR,
+        };
         assert_eq!(report.status(), expected, "mode{mode}");
         let retained = !matches!(mode, 24..=26 | 28);
         if mode == 28 {
@@ -499,8 +527,11 @@ fn resident_lifetime_requires_ack_and_retains_all_nonerror_returns() {
                 drop(Box::from_raw(f.loaded as *mut LoadedImageProtocol));
                 drop(Box::from_raw(ptr::slice_from_raw_parts_mut(f.pool as *mut u8, f.bytes)));
             }
-            f.loaded = 0; f.pool = 0;
-        } else { assert!(state.is_clean()); }
+            f.loaded = 0;
+            f.pool = 0;
+        } else {
+            assert!(state.is_clean());
+        }
     }
 }
 
@@ -534,7 +565,8 @@ fn end_retained_lifetime() {
 }
 #[cfg(feature = "card-resident-dev-loader")]
 fn reset_fixture(mode: u8) {
-    *FIX.lock().unwrap() = Fixture { mode, pool: 0, bytes: 0, exit: 0, loaded: 0, events: Vec::new() };
+    *FIX.lock().unwrap() =
+        Fixture { mode, pool: 0, bytes: 0, exit: 0, loaded: 0, events: Vec::new() };
 }
 
 #[cfg(feature = "card-resident-dev-loader")]
@@ -547,18 +579,37 @@ fn dev_loader_adopts_a_valid_slot_header_and_matches_the_pinned_result() {
     reset_fixture(20);
     let pin = Pin::parse_resident(&slot[..128]).unwrap();
     let mut pinned_state = State::new();
-    let pinned = unsafe { card_returning::execute_resident(&mut pinned_state, &bs, parent(),
-        controller(), &pin, resident_options(20), |offset| word(&slot, offset)) };
+    let pinned = unsafe {
+        card_returning::execute_resident(
+            &mut pinned_state,
+            &bs,
+            parent(),
+            controller(),
+            &pin,
+            resident_options(20),
+            |offset| word(&slot, offset),
+        )
+    };
     let pinned_events = FIX.lock().unwrap().events.clone();
     end_retained_lifetime();
     // Dev loader: no pin supplied, only the slot.
     reset_fixture(20);
     let mut state = State::new();
-    let report = unsafe { card_returning::execute_resident_dev(&mut state, &bs, parent(),
-        controller(), resident_options(20), |offset| word(&slot, offset)) };
+    let report = unsafe {
+        card_returning::execute_resident_dev(
+            &mut state,
+            &bs,
+            parent(),
+            controller(),
+            resident_options(20),
+            |offset| word(&slot, offset),
+        )
+    };
     assert_eq!(report.status(), Status::SUCCESS);
-    assert_eq!((report.stage, report.load_status, report.start_status),
-        (pinned.stage, pinned.load_status, pinned.start_status));
+    assert_eq!(
+        (report.stage, report.load_status, report.start_status),
+        (pinned.stage, pinned.load_status, pinned.start_status)
+    );
     assert_eq!(report.stage, 4);
     assert!(state.is_retained() && pinned_state.is_retained());
     assert_eq!(FIX.lock().unwrap().events, pinned_events);
@@ -566,8 +617,16 @@ fn dev_loader_adopts_a_valid_slot_header_and_matches_the_pinned_result() {
     // A child failure after a good header is reported identically too.
     reset_fixture(24);
     let mut state = State::new();
-    let report = unsafe { card_returning::execute_resident_dev(&mut state, &bs, parent(),
-        controller(), resident_options(24), |offset| word(&slot, offset)) };
+    let report = unsafe {
+        card_returning::execute_resident_dev(
+            &mut state,
+            &bs,
+            parent(),
+            controller(),
+            resident_options(24),
+            |offset| word(&slot, offset),
+        )
+    };
     assert_eq!(report.status(), Status::UNSUPPORTED);
     assert!(state.is_clean());
 }
@@ -600,8 +659,16 @@ fn dev_loader_refuses_every_corruption_class_with_the_pinned_status() {
         corrupt(&mut slot);
         reset_fixture(20);
         let mut state = State::new();
-        let report = unsafe { card_returning::execute_resident_dev(&mut state, &bs, parent(),
-            controller(), resident_options(20), |offset| word(&slot, offset)) };
+        let report = unsafe {
+            card_returning::execute_resident_dev(
+                &mut state,
+                &bs,
+                parent(),
+                controller(),
+                resident_options(20),
+                |offset| word(&slot, offset),
+            )
+        };
         assert_eq!(report.status(), Status::COMPROMISED_DATA, "{name}");
         assert_eq!(report.stage, stage, "{name}");
         assert!(state.is_clean() && !state.is_retained(), "{name}");
@@ -611,8 +678,17 @@ fn dev_loader_refuses_every_corruption_class_with_the_pinned_status() {
         // with the same status.
         reset_fixture(20);
         let mut pinned_state = State::new();
-        let pinned = unsafe { card_returning::execute_resident(&mut pinned_state, &bs, parent(),
-            controller(), &good_pin, resident_options(20), |offset| word(&slot, offset)) };
+        let pinned = unsafe {
+            card_returning::execute_resident(
+                &mut pinned_state,
+                &bs,
+                parent(),
+                controller(),
+                &good_pin,
+                resident_options(20),
+                |offset| word(&slot, offset),
+            )
+        };
         assert_eq!(pinned.status(), report.status(), "{name}");
         assert!(pinned_state.is_clean(), "{name}");
     }
@@ -624,26 +700,52 @@ fn dev_loader_refuses_every_corruption_class_with_the_pinned_status() {
     slot[48..80].copy_from_slice(&digest);
     reset_fixture(20);
     let mut state = State::new();
-    let report = unsafe { card_returning::execute_resident_dev(&mut state, &bs, parent(),
-        controller(), resident_options(20), |offset| word(&slot, offset)) };
+    let report = unsafe {
+        card_returning::execute_resident_dev(
+            &mut state,
+            &bs,
+            parent(),
+            controller(),
+            resident_options(20),
+            |offset| word(&slot, offset),
+        )
+    };
     assert_eq!((report.status(), report.stage), (Status::COMPROMISED_DATA, 1));
     assert!(state.is_clean());
     // Transport failure while reading the header is reported, not masked.
     reset_fixture(20);
     let mut state = State::new();
-    let report = unsafe { card_returning::execute_resident_dev(&mut state, &bs, parent(),
-        controller(), resident_options(20), |_| Err(Status::DEVICE_ERROR)) };
+    let report = unsafe {
+        card_returning::execute_resident_dev(
+            &mut state,
+            &bs,
+            parent(),
+            controller(),
+            resident_options(20),
+            |_| Err(Status::DEVICE_ERROR),
+        )
+    };
     assert_eq!((report.status(), report.stage), (Status::DEVICE_ERROR, 0));
     // A header that changes between the adopting read and the delivery read.
     reset_fixture(20);
     let mut state = State::new();
     let mut header_reads = 0;
-    let report = unsafe { card_returning::execute_resident_dev(&mut state, &bs, parent(),
-        controller(), resident_options(20), |offset| {
-            if offset == 48 { header_reads += 1; }
-            let value = word(&good, offset)?;
-            Ok(if offset == 48 && header_reads == 2 { value ^ 1 } else { value })
-        }) };
+    let report = unsafe {
+        card_returning::execute_resident_dev(
+            &mut state,
+            &bs,
+            parent(),
+            controller(),
+            resident_options(20),
+            |offset| {
+                if offset == 48 {
+                    header_reads += 1;
+                }
+                let value = word(&good, offset)?;
+                Ok(if offset == 48 && header_reads == 2 { value ^ 1 } else { value })
+            },
+        )
+    };
     assert_eq!((report.status(), report.stage), (Status::COMPROMISED_DATA, 0));
     assert!(state.is_clean());
 }
@@ -660,12 +762,20 @@ fn dev_loader_reads_no_more_of_the_slot_than_the_pinned_parent() {
     slot[0x80000] = 0; // stale non-0xff tail byte: invisible to both parents
     reset_fixture(24);
     let (mut state, mut highest, mut reads) = (State::new(), 0u64, 0usize);
-    let report = unsafe { card_returning::execute_resident_dev(&mut state, &bs, parent(),
-        controller(), resident_options(24), |offset| {
-            highest = highest.max(offset);
-            reads += 1;
-            word(&slot, offset)
-        }) };
+    let report = unsafe {
+        card_returning::execute_resident_dev(
+            &mut state,
+            &bs,
+            parent(),
+            controller(),
+            resident_options(24),
+            |offset| {
+                highest = highest.max(offset);
+                reads += 1;
+                word(&slot, offset)
+            },
+        )
+    };
     assert_eq!(report.status(), Status::UNSUPPORTED);
     assert_eq!(highest, 128 + 1024 - 4);
     assert_eq!(reads, 32 + 32 + 256);

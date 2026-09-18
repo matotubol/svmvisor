@@ -2,7 +2,10 @@
 //! (phase B D5/D8).
 use std::cell::RefCell;
 use svmvisor_hypervisor::{
-    arch::x86_64::{apic::{self, DoorbellTarget}, msr},
+    arch::x86_64::{
+        apic::{self, DoorbellTarget},
+        msr,
+    },
     svm::x2avic::{
         BackingPage, GUEST_APIC_VERSION,
         ipi::{FanOutError, IpiAction, IpiDrop, IpiRefusal as R},
@@ -13,8 +16,8 @@ use svmvisor_hypervisor::{
 /// Enabled x2APIC IDs of the captured MADT in table order: primary threads,
 /// then second threads (UIDs 0-23 -> {0-11, 16-27}).
 const MADT_IDS: [u32; 24] = [
-    0x00, 0x02, 0x04, 0x06, 0x08, 0x0a, 0x10, 0x12, 0x14, 0x16, 0x18, 0x1a,
-    0x01, 0x03, 0x05, 0x07, 0x09, 0x0b, 0x11, 0x13, 0x15, 0x17, 0x19, 0x1b,
+    0x00, 0x02, 0x04, 0x06, 0x08, 0x0a, 0x10, 0x12, 0x14, 0x16, 0x18, 0x1a, 0x01, 0x03, 0x05, 0x07,
+    0x09, 0x0b, 0x11, 0x13, 0x15, 0x17, 0x19, 0x1b,
 ];
 
 fn owner(source: u32, ids: &[u32]) -> NativeIcr {
@@ -23,7 +26,10 @@ fn owner(source: u32, ids: &[u32]) -> NativeIcr {
 
 /// Fixed edge ICR with the given shorthand, mode and destination.
 fn fixed(vector: u8, shorthand: u64, logical: bool, destination: u32) -> u64 {
-    (u64::from(destination) << 32) | (shorthand << 18) | (u64::from(logical) << 11) | u64::from(vector)
+    (u64::from(destination) << 32)
+        | (shorthand << 18)
+        | (u64::from(logical) << 11)
+        | u64::from(vector)
 }
 
 /// Slot mask of the wanted IDs in `ids`.
@@ -58,9 +64,7 @@ fn every_incomplete_ipi_id_has_exactly_one_policy() {
     let init = 0x0000_001b_0000_0500;
     let sipi = 0x0000_001b_0000_069a;
     let one = slots(&MADT_IDS, &[0x1b]);
-    let is_fixed = |result: Result<IpiAction, R>, targets: u32| {
-        matches!(result, Ok(IpiAction::Fixed(ipi)) if ipi.targets() == targets && ipi.vector() == 0x55)
-    };
+    let is_fixed = |result: Result<IpiAction, R>, targets: u32| matches!(result, Ok(IpiAction::Fixed(ipi)) if ipi.targets() == targets && ipi.vector() == 0x55);
     // ID 0: routed by message type.
     assert_eq!(inventory.classify(init, 0), Ok(IpiAction::Startup));
     assert_eq!(inventory.classify(sipi, 0), Ok(IpiAction::Startup));
@@ -101,10 +105,14 @@ fn every_incomplete_ipi_id_has_exactly_one_policy() {
     // ID 4: INIT/STARTUP take the startup router (as for IDs 0 and 2); a
     // fixed IPI is consistent only with a vector below 16.
     for vector in 0..16u8 {
-        assert_eq!(inventory.classify(fixed(vector, 0, false, 0x1b), 4),
-            Ok(IpiAction::Dropped(IpiDrop::IllegalVector)));
-        assert_eq!(inventory.classify(fixed(vector, 3, true, 0) | 0x8000, 4),
-            Ok(IpiAction::Dropped(IpiDrop::IllegalVector)));
+        assert_eq!(
+            inventory.classify(fixed(vector, 0, false, 0x1b), 4),
+            Ok(IpiAction::Dropped(IpiDrop::IllegalVector))
+        );
+        assert_eq!(
+            inventory.classify(fixed(vector, 3, true, 0) | 0x8000, 4),
+            Ok(IpiAction::Dropped(IpiDrop::IllegalVector))
+        );
     }
     assert_eq!(inventory.classify(edge, 4), Err(R::InconsistentVectorExit));
     assert_eq!(inventory.classify(init, 4), Ok(IpiAction::Startup));
@@ -117,8 +125,10 @@ fn every_incomplete_ipi_id_has_exactly_one_policy() {
     }
     // Fan-out drops illegal vectors for IDs 0 and 2 as well.
     for reason in [0, 2] {
-        assert_eq!(inventory.classify(fixed(15, 0, false, 0x1b), reason),
-            Ok(IpiAction::Dropped(IpiDrop::IllegalVector)));
+        assert_eq!(
+            inventory.classify(fixed(15, 0, false, 0x1b), reason),
+            Ok(IpiAction::Dropped(IpiDrop::IllegalVector))
+        );
         assert!(matches!(inventory.classify(fixed(16, 0, false, 0x1b), reason),
             Ok(IpiAction::Fixed(ipi)) if ipi.vector() == 16 && ipi.targets() == one));
     }
@@ -160,14 +170,20 @@ fn physical_and_broadcast_destinations_on_the_captured_24_cpu_inventory() {
         (0x13, &[0x13]),
         (u32::MAX, &MADT_IDS[..]),
     ] {
-        assert_eq!(fan(&owner, fixed(0x55, 0, false, destination)), slots(&MADT_IDS, wanted),
-            "{destination:#x}");
+        assert_eq!(
+            fan(&owner, fixed(0x55, 0, false, destination)),
+            slots(&MADT_IDS, wanted),
+            "{destination:#x}"
+        );
     }
     assert_eq!(fan(&owner, fixed(0x55, 0, false, u32::MAX)), (1 << 24) - 1);
     // Unassigned IDs, including x2APIC-mode FFh (no broadcast), reach nobody.
     for destination in [0x0c, 0x0f, 0x1c, 0xff, 0x100, 0x1_0000, 0xffff_fffe] {
-        assert_eq!(dropped(&owner, fixed(0x55, 0, false, destination)), IpiDrop::NoTarget,
-            "{destination:#x}");
+        assert_eq!(
+            dropped(&owner, fixed(0x55, 0, false, destination)),
+            IpiDrop::NoTarget,
+            "{destination:#x}"
+        );
     }
 }
 
@@ -188,8 +204,11 @@ fn logical_cluster_destinations_on_the_captured_24_cpu_inventory() {
         (0x0001_0f0f, &[0x10, 0x11, 0x12, 0x13, 0x18, 0x19, 0x1a, 0x1b]),
         (u32::MAX, &MADT_IDS[..]),
     ] {
-        assert_eq!(fan(&owner, fixed(0x55, 0, true, destination)), slots(&MADT_IDS, wanted),
-            "{destination:#x}");
+        assert_eq!(
+            fan(&owner, fixed(0x55, 0, true, destination)),
+            slots(&MADT_IDS, wanted),
+            "{destination:#x}"
+        );
     }
     for destination in [
         0x0000_0000u32, // no logical ID bit
@@ -199,8 +218,11 @@ fn logical_cluster_destinations_on_the_captured_24_cpu_inventory() {
         0x0100_0001,    // cluster mismatch
         0xffff_fffe,    // cluster FFFFh, not broadcast
     ] {
-        assert_eq!(dropped(&owner, fixed(0x55, 0, true, destination)), IpiDrop::NoTarget,
-            "{destination:#x}");
+        assert_eq!(
+            dropped(&owner, fixed(0x55, 0, true, destination)),
+            IpiDrop::NoTarget,
+            "{destination:#x}"
+        );
     }
 }
 
@@ -210,8 +232,13 @@ fn logical_matching_uses_the_x2apic_ldr_formula_of_every_admitted_id() {
     let owner = owner(0x020, &ids);
     // 16.14 p662: cluster = ID[19:4], logical = 1 << ID[3:0]; the backing
     // page presents the same LDR.
-    for (id, ldr) in [(0x000u32, 0x0000_0001u32), (0x01f, 0x0001_8000), (0x020, 0x0002_0001),
-        (0x123, 0x0012_0008), (0x1ff, 0x001f_8000)] {
+    for (id, ldr) in [
+        (0x000u32, 0x0000_0001u32),
+        (0x01f, 0x0001_8000),
+        (0x020, 0x0002_0001),
+        (0x123, 0x0012_0008),
+        (0x1ff, 0x001f_8000),
+    ] {
         let mut page = BackingPage::new();
         page.reset_stopped(id, GUEST_APIC_VERSION).unwrap();
         assert_eq!(page.read_register(apic::LDR).unwrap(), ldr);
@@ -220,8 +247,11 @@ fn logical_matching_uses_the_x2apic_ldr_formula_of_every_admitted_id() {
     // Clusters 1 and 1Fh both use logical bit 15.
     assert_eq!(fan(&owner, fixed(0x55, 0, true, 0x0001_ffff)), slots(&ids, &[0x01f]));
     for destination in [0x0012_0004u32, 0x0013_0008, 0x0002_0002, 0x001f_7fff] {
-        assert_eq!(dropped(&owner, fixed(0x55, 0, true, destination)), IpiDrop::NoTarget,
-            "{destination:#x}");
+        assert_eq!(
+            dropped(&owner, fixed(0x55, 0, true, destination)),
+            IpiDrop::NoTarget,
+            "{destination:#x}"
+        );
     }
 }
 
@@ -231,9 +261,18 @@ fn shorthands_ignore_destination_and_mode_and_handle_self() {
     let others: Vec<u32> = MADT_IDS.iter().copied().filter(|id| *id != 0x13).collect();
     for logical in [false, true] {
         for destination in [0, 0x1b, 0xff, u32::MAX] {
-            assert_eq!(fan(&owner, fixed(0x55, 1, logical, destination)), slots(&MADT_IDS, &[0x13]));
-            assert_eq!(fan(&owner, fixed(0x55, 2, logical, destination)), slots(&MADT_IDS, &MADT_IDS));
-            assert_eq!(fan(&owner, fixed(0x55, 3, logical, destination)), slots(&MADT_IDS, &others));
+            assert_eq!(
+                fan(&owner, fixed(0x55, 1, logical, destination)),
+                slots(&MADT_IDS, &[0x13])
+            );
+            assert_eq!(
+                fan(&owner, fixed(0x55, 2, logical, destination)),
+                slots(&MADT_IDS, &MADT_IDS)
+            );
+            assert_eq!(
+                fan(&owner, fixed(0x55, 3, logical, destination)),
+                slots(&MADT_IDS, &others)
+            );
         }
     }
     // A single-CPU inventory has no other CPU for shorthand 11.
@@ -252,8 +291,12 @@ fn nmi_ipi_follows_table_16_4_destination_forms() {
     let source = slots(&MADT_IDS, &[0x13]);
     let all = slots(&MADT_IDS, &MADT_IDS);
     // NMI message (4), vector ignored; reason 0 (nothing delivered by hardware).
-    let nmi = |shorthand: u64, logical: bool, dest: u32| inventory.classify(
-        (u64::from(dest) << 32) | (shorthand << 18) | (u64::from(logical) << 11) | (4 << 8), 0);
+    let nmi = |shorthand: u64, logical: bool, dest: u32| {
+        inventory.classify(
+            (u64::from(dest) << 32) | (shorthand << 18) | (u64::from(logical) << 11) | (4 << 8),
+            0,
+        )
+    };
     let targets = |result: Result<IpiAction, R>| match result {
         Ok(IpiAction::Nmi(n)) => n.targets(),
         other => panic!("{other:?}"),
@@ -278,12 +321,14 @@ fn nmi_ipi_follows_table_16_4_destination_forms() {
 
 /// Reset backing pages, software-enabled (SVR 1FFh) as a running guest's.
 fn pages(ids: &[u32]) -> Vec<BackingPage> {
-    ids.iter().map(|&id| {
-        let mut page = BackingPage::new();
-        page.reset_stopped(id.min(511), GUEST_APIC_VERSION).unwrap();
-        page.write_register_stopped(apic::SVR, 0x1ff).unwrap();
-        page
-    }).collect()
+    ids.iter()
+        .map(|&id| {
+            let mut page = BackingPage::new();
+            page.reset_stopped(id.min(511), GUEST_APIC_VERSION).unwrap();
+            page.write_register_stopped(apic::SVR, 0x1ff).unwrap();
+            page
+        })
+        .collect()
 }
 
 fn set_bit(page: &BackingPage, base: u16, vector: u8) {
@@ -309,26 +354,42 @@ fn fan_out_publishes_edge_irr_clears_tmr_and_doorbells_only_remote_targets() {
     assert_eq!(ipi.targets(), 0b111);
     let resolved = RefCell::new(Vec::new());
     let mut rung = Vec::new();
-    owner.inventory().deliver_fixed(ipi, |slot| {
-        resolved.borrow_mut().push(slot);
-        &pages[slot]
-    }, |target| rung.push(target.apic_id())).unwrap();
+    owner
+        .inventory()
+        .deliver_fixed(
+            ipi,
+            |slot| {
+                resolved.borrow_mut().push(slot);
+                &pages[slot]
+            },
+            |target| rung.push(target.apic_id()),
+        )
+        .unwrap();
     assert_eq!(*resolved.borrow(), [0, 1, 2]);
     assert_eq!(rung, [4, 200]);
     for page in &pages {
         assert!(page.is_pending(0x55) && !page.is_level(0x55));
     }
     // A second delivery coalesces in IRR and rings again.
-    owner.inventory().deliver_fixed(ipi, |slot| &pages[slot], |target| rung.push(target.apic_id())).unwrap();
+    owner
+        .inventory()
+        .deliver_fixed(ipi, |slot| &pages[slot], |target| rung.push(target.apic_id()))
+        .unwrap();
     assert_eq!(rung, [4, 200, 4, 200]);
     // A self-only IPI publishes locally and rings nobody.
     let own = fixed_ipi(&owner, fixed(0x66, 1, false, 0));
-    owner.inventory().deliver_fixed(own, |slot| &pages[slot], |_| panic!("no self doorbell")).unwrap();
+    owner
+        .inventory()
+        .deliver_fixed(own, |slot| &pages[slot], |_| panic!("no self doorbell"))
+        .unwrap();
     assert!(pages[1].is_pending(0x66) && !pages[0].is_pending(0x66) && !pages[2].is_pending(0x66));
     // A physical IPI to one remote CPU rings exactly that CPU.
     let one = fixed_ipi(&owner, fixed(0x77, 0, false, 200));
     let mut rung = Vec::new();
-    owner.inventory().deliver_fixed(one, |slot| &pages[slot], |target| rung.push(target.apic_id())).unwrap();
+    owner
+        .inventory()
+        .deliver_fixed(one, |slot| &pages[slot], |target| rung.push(target.apic_id()))
+        .unwrap();
     assert_eq!(rung, [200]);
     assert!(pages[2].is_pending(0x77) && !pages[0].is_pending(0x77) && !pages[1].is_pending(0x77));
 }
@@ -343,18 +404,32 @@ fn fan_out_validates_doorbell_targets_before_any_publication() {
             Ok(IpiAction::Fixed(ipi)) => ipi,
             other => panic!("{other:?}"),
         };
-        assert_eq!(owner.inventory().deliver_fixed(ipi, |_| panic!("no publication"), |_| panic!("no doorbell")),
-            Err(FanOutError::DoorbellTarget { slot, id }));
+        assert_eq!(
+            owner.inventory().deliver_fixed(
+                ipi,
+                |_| panic!("no publication"),
+                |_| panic!("no doorbell")
+            ),
+            Err(FanOutError::DoorbellTarget { slot, id })
+        );
     }
     // A broadcast fails as a whole, before the doorbellable slot 0 is touched.
     let all = fixed_ipi(&owner, fixed(0x55, 0, false, u32::MAX));
-    assert_eq!(owner.inventory().deliver_fixed(all, |_| panic!("no publication"), |_| panic!("no doorbell")),
-        Err(FanOutError::DoorbellTarget { slot: 1, id: 255 }));
+    assert_eq!(
+        owner.inventory().deliver_fixed(
+            all,
+            |_| panic!("no publication"),
+            |_| panic!("no doorbell")
+        ),
+        Err(FanOutError::DoorbellTarget { slot: 1, id: 255 })
+    );
     assert!(pages.iter().all(|page| !page.is_pending(0x55)));
     // The source is never doorbelled, so its own ID needs no doorbell format.
     let big = self::owner(300, &ids);
     let own = fixed_ipi(&big, fixed(0x55, 1, false, 0));
-    big.inventory().deliver_fixed(own, |slot| &pages[slot], |_| panic!("no self doorbell")).unwrap();
+    big.inventory()
+        .deliver_fixed(own, |slot| &pages[slot], |_| panic!("no self doorbell"))
+        .unwrap();
     assert!(pages[2].is_pending(0x55));
 }
 
@@ -370,8 +445,14 @@ fn fan_out_reaches_a_target_with_the_vector_in_service_as_level() {
     // APM2 16.6.3 p648: the second request sets IRR, and TMR takes the edge
     // type of this acceptance, as for a hardware-accelerated IPI.
     let mut rung = Vec::new();
-    assert_eq!(owner.inventory().deliver_fixed(ipi, |slot| &pages[slot], |target| rung.push(target.apic_id())),
-        Ok(()));
+    assert_eq!(
+        owner.inventory().deliver_fixed(
+            ipi,
+            |slot| &pages[slot],
+            |target| rung.push(target.apic_id())
+        ),
+        Ok(())
+    );
     assert_eq!(rung, [4, 5]);
     assert!(pages[0].is_pending(0x55) && pages[1].is_pending(0x55) && pages[2].is_pending(0x55));
     assert!(pages[1].is_in_service(0x55) && !pages[1].is_level(0x55));
@@ -391,12 +472,7 @@ fn doorbell_targets_fit_both_documented_formats() {
 
 #[test]
 fn inventory_admission_is_shared_with_startup_routing() {
-    for (source, ids) in [
-        (0u32, &[][..]),
-        (7, &[1, 2]),
-        (7, &[7, 7]),
-        (7, &[7, u32::MAX]),
-    ] {
+    for (source, ids) in [(0u32, &[][..]), (7, &[1, 2]), (7, &[7, 7]), (7, &[7, u32::MAX])] {
         assert!(matches!(NativeIcr::admit(source, ids), Err(NativeIcrError::InvalidTopology)));
     }
     let many: Vec<u32> = (0..33).collect();

@@ -73,13 +73,7 @@ fn startup_fetch_uses_real_cs_base_and_protected_default_size() {
 #[test]
 fn startup_fetch_rejects_limit_wrap_paging_and_mmio_without_state_changes() {
     for (attributes, limit, rip, cr0, expected) in [
-        (
-            0x9bu64,
-            0xffffu64,
-            0xfffeu64,
-            0x10u64,
-            FetchError::SegmentLimit,
-        ),
+        (0x9bu64, 0xffffu64, 0xfffeu64, 0x10u64, FetchError::SegmentLimit),
         (0xc9b, 0x100, 0xff, 0x11, FetchError::SegmentLimit),
         (0xc9b, 0xffff, 0x10, 0x80000011, FetchError::UnsupportedMode),
         (0x9b, 0xffff, 0x10, 0x40000010, FetchError::UnsupportedMode),
@@ -174,14 +168,9 @@ fn fetch_uses_current_guest_cr3_and_preserves_fetched_prefix() {
 
 #[test]
 fn unsupported_modes_and_noninstruction_exits_never_read_physical_memory() {
-    for (offset, value) in [
-        (0x558, 1),
-        (0x548, 0),
-        (0x548, 0x1020),
-        (0x4d0, 0x1900),
-        (0x410, 0),
-        (0x410, 0x600 << 16),
-    ] {
+    for (offset, value) in
+        [(0x558, 1), (0x548, 0), (0x548, 0x1020), (0x4d0, 0x1900), (0x410, 0), (0x410, 0x600 << 16)]
+    {
         let (mut vmcb, _, _) = setup();
         put(&mut vmcb, offset, value);
         assert_eq!(
@@ -201,33 +190,18 @@ fn unsupported_modes_and_noninstruction_exits_never_read_physical_memory() {
 fn page_permissions_and_cache_aliases_are_refused_before_instruction_read() {
     let (mut vmcb, mut tables, bytes) = setup();
     tables.insert(0x4020, 0x9003 | (1 << 63));
-    assert_eq!(
-        fetch(&vmcb, &tables, &bytes),
-        Err(FetchError::NotExecutable)
-    );
+    assert_eq!(fetch(&vmcb, &tables, &bytes), Err(FetchError::NotExecutable));
     tables.insert(0x4020, 0x9003);
     put(&mut vmcb, 0x4c8, 3 << 24);
-    assert_eq!(
-        fetch(&vmcb, &tables, &bytes),
-        Err(FetchError::PrivilegeMismatch)
-    );
+    assert_eq!(fetch(&vmcb, &tables, &bytes), Err(FetchError::PrivilegeMismatch));
     put(&mut vmcb, 0x4c8, 0);
     tables.insert(0x2000, 0x3013);
-    assert_eq!(
-        fetch(&vmcb, &tables, &bytes),
-        Err(FetchError::UnsupportedCacheControl)
-    );
+    assert_eq!(fetch(&vmcb, &tables, &bytes), Err(FetchError::UnsupportedCacheControl));
     tables.insert(0x2000, 0x3003);
     tables.insert(0x4020, 0x9083); // Leaf PAT=1 selects slot4, currently UC.
-    assert_eq!(
-        fetch(&vmcb, &tables, &bytes),
-        Err(FetchError::NonWriteBackInstruction)
-    );
+    assert_eq!(fetch(&vmcb, &tables, &bytes), Err(FetchError::NonWriteBackInstruction));
     put(&mut vmcb, 0x550, 0x1008);
-    assert_eq!(
-        fetch(&vmcb, &tables, &bytes),
-        Err(FetchError::UnsupportedCacheControl)
-    );
+    assert_eq!(fetch(&vmcb, &tables, &bytes), Err(FetchError::UnsupportedCacheControl));
 }
 
 #[test]
@@ -241,17 +215,10 @@ fn unreadable_second_byte_and_noncanonical_pagecross_preserve_vmcb() {
     );
     assert_eq!(*vmcb.bytes(), original);
     put(&mut vmcb, 0x578, 0x7fff_ffff_ffff);
-    tables.extend([
-        (0x17f8, 0x2003),
-        (0x2ff8, 0x3003),
-        (0x3ff8, 0x4003),
-        (0x4ff8, 0x9003),
-    ]);
+    tables.extend([(0x17f8, 0x2003), (0x2ff8, 0x3003), (0x3ff8, 0x4003), (0x4ff8, 0x9003)]);
     assert!(matches!(
         fetch(&vmcb, &tables, &bytes),
-        Err(FetchError::Walk(
-            svmvisor_hypervisor::host::paging::WalkError::NoncanonicalAddress
-        ))
+        Err(FetchError::Walk(svmvisor_hypervisor::host::paging::WalkError::NoncanonicalAddress))
     ));
 }
 
@@ -298,10 +265,7 @@ fn nonzero_wb_selectors_fetch_across_noncontiguous_pages() {
     assert_eq!(accesses[9], (0xb000, 1));
     assert_eq!(*vmcb.bytes(), original);
     // Selected WB never authorizes a missing owned physical mapping.
-    assert!(matches!(
-        instruction(&vmcb, 48, pat, |_, _| None),
-        Err(FetchError::Walk(_))
-    ));
+    assert!(matches!(instruction(&vmcb, 48, pat, |_, _| None), Err(FetchError::Walk(_))));
 }
 
 #[test]
@@ -345,9 +309,7 @@ fn root_pat_selection_preserves_pcid_semantics() {
     put(&mut vmcb, 0x550, (1 << 63) | 0x1000);
     assert_eq!(
         fetch(&vmcb, &tables, &bytes),
-        Err(FetchError::Walk(
-            svmvisor_hypervisor::host::paging::WalkError::InvalidCr3
-        ))
+        Err(FetchError::Walk(svmvisor_hypervisor::host::paging::WalkError::InvalidCr3))
     );
 }
 

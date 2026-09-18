@@ -85,11 +85,7 @@ impl GuestDescriptorRequest {
         // Offset is beyond the inclusive TSS limit: no TSS I/O permission map.
         // This does not restrict ring-0 I/O; the SVM IOPM is separate.
         put::<102, _, _>(&mut tss, (TSS_BYTES as u16).to_le_bytes());
-        Ok(ValidatedGuestDescriptors {
-            request: self,
-            gdt,
-            tss,
-        })
+        Ok(ValidatedGuestDescriptors { request: self, gdt, tss })
     }
 }
 
@@ -117,20 +113,10 @@ impl ValidatedGuestDescriptors {
         &self.tss
     }
     pub const fn cs(&self) -> SegmentState {
-        SegmentState {
-            selector: CODE_SELECTOR,
-            attributes: 0xa9b,
-            limit: u32::MAX,
-            base: 0,
-        }
+        SegmentState { selector: CODE_SELECTOR, attributes: 0xa9b, limit: u32::MAX, base: 0 }
     }
     pub const fn data(&self) -> SegmentState {
-        SegmentState {
-            selector: DATA_SELECTOR,
-            attributes: 0xc93,
-            limit: u32::MAX,
-            base: 0,
-        }
+        SegmentState { selector: DATA_SELECTOR, attributes: 0xc93, limit: u32::MAX, base: 0 }
     }
     pub const fn tr(&self) -> SegmentState {
         SegmentState {
@@ -141,11 +127,6 @@ impl ValidatedGuestDescriptors {
         }
     }
     pub const fn gdtr(&self) -> SegmentState {
-        SegmentState {
-            selector: 0,
-            attributes: 0,
-            limit: 39,
-            base: self.request.gdt_base,
-        }
+        SegmentState { selector: 0, attributes: 0, limit: 39, base: self.request.gdt_base }
     }
 }

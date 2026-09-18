@@ -227,7 +227,9 @@ pub const TAKEOVER_TAG: u64 = 0xa1;
 pub const TAKEOVER_CAPTURED_REGISTER: u64 = 5;
 
 /// Arm refusal code 11 with its evidence (`TAKEOVER_CAPTURED_REGISTER`).
-pub const fn captured_register_refusal(refusal: crate::svm::x2avic::registers::CaptureRefusal) -> u64 {
+pub const fn captured_register_refusal(
+    refusal: crate::svm::x2avic::registers::CaptureRefusal,
+) -> u64 {
     (TAKEOVER_TAG << 56)
         | ((refusal.value >> 32 != 0) as u64) << 55
         | TAKEOVER_CAPTURED_REGISTER << 48

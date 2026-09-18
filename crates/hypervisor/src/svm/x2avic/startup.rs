@@ -64,7 +64,11 @@ pub struct NativeRouteRecipient {
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 #[repr(u8)]
-pub enum NativeDestinationCause { Observed = 0, GuestControl = 1, GuestInit = 2 }
+pub enum NativeDestinationCause {
+    Observed = 0,
+    GuestControl = 1,
+    GuestInit = 2,
+}
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum NativeIcrError {
@@ -136,15 +140,24 @@ impl NativeIcr {
                     continue;
                 }
                 if !target.is_ready() {
-                    return Err(self.reject_route(0, P::RecipientNotReady,
-                        Some(target.route_recipient()), E::MailboxNotReady));
+                    return Err(self.reject_route(
+                        0,
+                        P::RecipientNotReady,
+                        Some(target.route_recipient()),
+                        E::MailboxNotReady,
+                    ));
                 }
                 let queue = target.queue.load(Ordering::Acquire);
                 let Some(entry) = (0..4).find(|i| queue >> (i * 16) & 0xffff == 0) else {
-                    return Err(self.reject_route(0, P::QueueBusy,
-                        Some(target.route_recipient()), E::MailboxBusy));
+                    return Err(self.reject_route(
+                        0,
+                        P::QueueBusy,
+                        Some(target.route_recipient()),
+                        E::MailboxBusy,
+                    ));
                 };
-                next[slot] = queue | (u64::from(NativeStartupCommand::Nmi.encode()) << (entry * 16));
+                next[slot] =
+                    queue | (u64::from(NativeStartupCommand::Nmi.encode()) << (entry * 16));
             }
             for (slot, target) in routes.mailboxes.iter().enumerate() {
                 if remote & (1 << slot) != 0 {
@@ -170,18 +183,25 @@ impl NativeIcr {
 
     /// The admitted inventory, for incomplete-IPI classification and
     /// software fixed-IPI fan-out.
-    pub fn inventory(&self) -> &Inventory { &self.inventory }
+    pub fn inventory(&self) -> &Inventory {
+        &self.inventory
+    }
 
-    pub fn route_failure(&self) -> Option<NativeRouteFailure> { self.route_failure }
+    pub fn route_failure(&self) -> Option<NativeRouteFailure> {
+        self.route_failure
+    }
 
-    fn reject_route(&mut self, value: u64, predicate: NativeRoutePredicate,
-        recipient: Option<NativeRouteRecipient>, error: NativeIcrError) -> NativeIcrError
-    {
+    fn reject_route(
+        &mut self,
+        value: u64,
+        predicate: NativeRoutePredicate,
+        recipient: Option<NativeRouteRecipient>,
+        error: NativeIcrError,
+    ) -> NativeIcrError {
         let source = self.inventory.source_id();
         self.route_failure = Some(NativeRouteFailure { value, source, predicate, recipient });
         error
     }
-
 }
 
 impl NativeIcr {
@@ -203,7 +223,12 @@ impl NativeIcr {
         // shorthands are not.
         let shorthand = (value >> 18) & 3;
         if !matches!(shorthand, 0 | 3) {
-            return Err(self.reject_route(value, P::DestinationForm, None, E::UnownedStartup { value }));
+            return Err(self.reject_route(
+                value,
+                P::DestinationForm,
+                None,
+                E::UnownedStartup { value },
+            ));
         }
         let broadcast = shorthand == 3;
         // DEST FFFF_FFFFh addresses every APIC including the sender (16.13
@@ -216,13 +241,23 @@ impl NativeIcr {
         // "Destination" covers both destination modes.
         let targets = self.inventory.targets(value);
         if targets & (1 << self.inventory.source_slot()) != 0 {
-            return Err(self.reject_route(value, P::SelfDestination, None, E::UnownedStartup { value }));
+            return Err(self.reject_route(
+                value,
+                P::SelfDestination,
+                None,
+                E::UnownedStartup { value },
+            ));
         }
         if targets == 0 {
             return Err(self.reject_route(value, P::NoMatch, None, E::UnownedStartup { value }));
         }
         if command == 5 && value as u8 != 0 {
-            return Err(self.reject_route(value, P::InitVector, None, E::UnsupportedStartupEncoding));
+            return Err(self.reject_route(
+                value,
+                P::InitVector,
+                None,
+                E::UnsupportedStartupEncoding,
+            ));
         }
         if let Err(error) = self.validate_mailboxes(mailboxes) {
             return Err(self.reject_route(value, P::MailboxMismatch, None, error));
@@ -239,14 +274,22 @@ impl NativeIcr {
             };
             for mailbox in routes.mailboxes {
                 if !mailbox.is_ready() {
-                    return Err(self.reject_route(value, P::RecipientNotReady,
-                        Some(mailbox.route_recipient()), E::MailboxNotReady));
+                    return Err(self.reject_route(
+                        value,
+                        P::RecipientNotReady,
+                        Some(mailbox.route_recipient()),
+                        E::MailboxNotReady,
+                    ));
                 }
                 // Native guest execution requires one identity-preserving
                 // x2APIC profile on every producer and destination.
                 if let Err(error) = mailbox.destination_mode() {
-                    return Err(self.reject_route(value, P::RecipientModeInvalid,
-                        Some(mailbox.route_recipient()), error));
+                    return Err(self.reject_route(
+                        value,
+                        P::RecipientModeInvalid,
+                        Some(mailbox.route_recipient()),
+                        error,
+                    ));
                 }
             }
             if command == 5 && value & 0xc000 == 0x8000 {
@@ -270,39 +313,47 @@ impl NativeIcr {
             // committed.
             let mut next = [0u64; 32];
             for (slot, target) in routes.mailboxes.iter().enumerate() {
-                if targets & (1 << slot) == 0 { continue; }
+                if targets & (1 << slot) == 0 {
+                    continue;
+                }
                 let queue = target.queue.load(Ordering::Acquire);
                 let Some(entry) = (0..4).find(|i| queue >> (i * 16) & 0xffff == 0) else {
-                    return Err(self.reject_route(value, P::QueueBusy,
-                        Some(target.route_recipient()), E::MailboxBusy));
+                    return Err(self.reject_route(
+                        value,
+                        P::QueueBusy,
+                        Some(target.route_recipient()),
+                        E::MailboxBusy,
+                    ));
                 };
                 next[slot] = queue | (u64::from(command.encode()) << (entry * 16));
             }
             for (slot, target) in routes.mailboxes.iter().enumerate() {
-                if targets & (1 << slot) != 0 { target.queue.store(next[slot], Ordering::Release); }
+                if targets & (1 << slot) != 0 {
+                    target.queue.store(next[slot], Ordering::Release);
+                }
             }
         }
         // The native notifier already broadcasts a private wake to all peers;
         // only selected mailboxes carry guest commands. The sentinel tells
         // other adapters to issue that all-excluding-self wake as well.
         let single = !broadcast && targets.count_ones() == 1;
-        kick(if single { self.inventory.ids()[targets.trailing_zeros() as usize] } else { u32::MAX });
+        kick(if single {
+            self.inventory.ids()[targets.trailing_zeros() as usize]
+        } else {
+            u32::MAX
+        });
         Ok(())
     }
 
     fn validate_mailboxes(&self, mailboxes: &[NativeStartupMailbox]) -> Result<(), NativeIcrError> {
         let ids = self.inventory.ids();
         if mailboxes.len() != ids.len()
-            || mailboxes
-                .iter()
-                .zip(ids)
-                .any(|(slot, id)| slot.identity() != *id)
+            || mailboxes.iter().zip(ids).any(|(slot, id)| slot.identity() != *id)
         {
             return Err(NativeIcrError::MailboxMismatch);
         }
         Ok(())
     }
-
 }
 
 /// Native guest CPU lifecycle. No Cold state exists: admission is a captured
@@ -410,20 +461,10 @@ pub fn lock_routes_within(
     if mailboxes.is_empty() || mailboxes.len() > 32 {
         return Err(NativeIcrError::MailboxMismatch);
     }
-    let gate = &mailboxes
-        .first()
-        .ok_or(NativeIcrError::MailboxMismatch)?
-        .route_gate;
+    let gate = &mailboxes.first().ok_or(NativeIcrError::MailboxMismatch)?.route_gate;
     for _ in 0..attempts {
-        if gate
-            .compare_exchange(0, 1, Ordering::Acquire, Ordering::Relaxed)
-            .is_ok()
-        {
-            return Ok(NativeRouteGuard {
-                mailboxes,
-                gate,
-                _local: core::marker::PhantomData,
-            });
+        if gate.compare_exchange(0, 1, Ordering::Acquire, Ordering::Relaxed).is_ok() {
+            return Ok(NativeRouteGuard { mailboxes, gate, _local: core::marker::PhantomData });
         }
         core::hint::spin_loop();
     }
@@ -491,7 +532,8 @@ impl NativeDestinationCommit<'_> {
     /// a guest control write, or the initial hardware observation.
     pub fn commit_destination_mode_from(self, cause: NativeDestinationCause) {
         let old = self.history.load(Ordering::Relaxed);
-        let count = ((old >> 2) as u32).saturating_add(u32::from(cause == NativeDestinationCause::GuestInit));
+        let count = ((old >> 2) as u32)
+            .saturating_add(u32::from(cause == NativeDestinationCause::GuestInit));
         self.history.store((u64::from(count) << 2) | cause as u64, Ordering::Relaxed);
         self.destination.store(self.mode as u64, Ordering::Release);
     }
@@ -545,10 +587,16 @@ impl NativeStartupMailbox {
     // remote hardware reads and no sampling after releasing that guard.
     fn route_recipient(&self) -> NativeRouteRecipient {
         let history = self.destination_history.load(Ordering::Relaxed);
-        NativeRouteRecipient { identity: self.identity(), mode: self.destination_mode().ok(),
+        NativeRouteRecipient {
+            identity: self.identity(),
+            mode: self.destination_mode().ok(),
             init_count: (history >> 2) as u32,
-            cause: match history & 3 { 1 => NativeDestinationCause::GuestControl,
-                2 => NativeDestinationCause::GuestInit, _ => NativeDestinationCause::Observed } }
+            cause: match history & 3 {
+                1 => NativeDestinationCause::GuestControl,
+                2 => NativeDestinationCause::GuestInit,
+                _ => NativeDestinationCause::Observed,
+            },
+        }
     }
 
     /// An observation only. Source routing additionally holds the shared guard
@@ -591,10 +639,7 @@ impl NativeStartupMailbox {
                 .find(|index| queue >> (index * 16) & 0xffff == 0)
                 .ok_or(NativeIcrError::MailboxBusy)?;
             let next = queue | (u64::from(command.encode()) << (entries * 16));
-            match self
-                .queue
-                .compare_exchange(queue, next, Ordering::AcqRel, Ordering::Acquire)
-            {
+            match self.queue.compare_exchange(queue, next, Ordering::AcqRel, Ordering::Acquire) {
                 Ok(_) => return Ok(()),
                 Err(current) => queue = current,
             }
@@ -652,13 +697,17 @@ impl NativeStartupTarget<'_> {
     /// (MPspec 1.4 B.4.2 cross-check; APM2 15.27.8 defines the address and
     /// mode but no duplicate-SIPI rule). Never restart a running AP.
     pub fn validate_x2avic(
-        &self, command: NativeStartupCommand, profile: &NativeX2AvicProfile,
+        &self,
+        command: NativeStartupCommand,
+        profile: &NativeX2AvicProfile,
     ) -> Result<NativeStartupEffect, NativeIcrError> {
         self.vmcb.validate_external_interrupt_conflicts().map_err(NativeIcrError::PendingState)?;
         self.vmcb.validate_native_x2avic(profile).map_err(NativeIcrError::PendingState)?;
         match command {
             NativeStartupCommand::Init => Ok(NativeStartupEffect::Init),
-            NativeStartupCommand::Sipi(_) if *self.state == NativeStartupState::AwaitSipi => Ok(NativeStartupEffect::Started),
+            NativeStartupCommand::Sipi(_) if *self.state == NativeStartupState::AwaitSipi => {
+                Ok(NativeStartupEffect::Started)
+            }
             NativeStartupCommand::Sipi(_) => Ok(NativeStartupEffect::Ignored),
             // NMI IPIs are applied directly by the startup service
             // (`set_guest_v_nmi_pending`), never through this CPU-state commit.
@@ -674,7 +723,9 @@ impl NativeStartupTarget<'_> {
     /// ordering. The INIT commit leaves V_TPR 0, matching the reset backing
     /// TPR, and clears every VMCB clean bit (`Vmcb::initialize_ap_after_init`).
     pub fn apply_x2avic(
-        &mut self, command: NativeStartupCommand, profile: &NativeX2AvicProfile,
+        &mut self,
+        command: NativeStartupCommand,
+        profile: &NativeX2AvicProfile,
     ) -> Result<NativeStartupEffect, NativeIcrError> {
         let effect = self.validate_x2avic(command, profile)?;
         self.commit_effect(command, effect);
@@ -685,16 +736,12 @@ impl NativeStartupTarget<'_> {
         match effect {
             NativeStartupEffect::Init => {
                 self.vmcb.initialize_ap_after_init();
-                *self.frame = GuestRegisters {
-                    rdx: u64::from(self.signature),
-                    ..GuestRegisters::default()
-                };
+                *self.frame =
+                    GuestRegisters { rdx: u64::from(self.signature), ..GuestRegisters::default() };
                 *self.state = NativeStartupState::AwaitSipi;
             }
             NativeStartupEffect::Started => {
-                let NativeStartupCommand::Sipi(vector) = command else {
-                    unreachable!()
-                };
+                let NativeStartupCommand::Sipi(vector) = command else { unreachable!() };
                 self.vmcb.start_ap_from_sipi(vector);
                 *self.state = NativeStartupState::Running;
             }

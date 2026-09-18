@@ -8,10 +8,7 @@ fn set_word(bytes: &mut [u8], offset: usize, value: u64) {
 fn package() -> Vec<u8> {
     let mut bytes = vec![0; 64 + 32 + 32];
     bytes[..8].copy_from_slice(b"SVMRELO1");
-    for (i, value) in [0x100000, ARENA_BYTES as u64, 32, 4096, 16, 2, 0]
-        .into_iter()
-        .enumerate()
-    {
+    for (i, value) in [0x100000, ARENA_BYTES as u64, 32, 4096, 16, 2, 0].into_iter().enumerate() {
         set_word(&mut bytes, 8 + i * 8, value);
     }
     set_word(&mut bytes, 64, 0x100008);
@@ -33,10 +30,7 @@ fn same_package_relocates_initialized_addresses_and_zeros_owned_memory() {
         let mut arena = vec![0xcc; ARENA_BYTES];
         payload.load(&mut arena, base).unwrap();
         assert_eq!(u64::from_le_bytes(arena[..8].try_into().unwrap()), base + 8);
-        assert_eq!(
-            u32::from_le_bytes(arena[8..12].try_into().unwrap()) as u64,
-            base + 4096
-        );
+        assert_eq!(u32::from_le_bytes(arena[8..12].try_into().unwrap()) as u64, base + 4096);
         assert!(arena[32..HANDOFF_OFFSET].iter().all(|&b| b == 0));
         assert_eq!(&arena[HANDOFF_OFFSET..HANDOFF_OFFSET + 8], b"SVMUEFI2");
         for (index, expected) in [base, ARENA_BYTES as u64, 32, 4096, 16].iter().enumerate() {
@@ -72,14 +66,7 @@ fn malformed_header_and_arithmetic_overflow_are_rejected() {
 }
 #[test]
 fn relocation_sites_must_be_sorted_disjoint_and_initialized() {
-    for (offset, value) in [
-        (96, u64::MAX),
-        (96, 29),
-        (104, 3),
-        (112, 4),
-        (112, 0),
-        (112, 32),
-    ] {
+    for (offset, value) in [(96, u64::MAX), (96, 29), (104, 3), (112, 4), (112, 0), (112, 32)] {
         let mut bytes = package();
         set_word(&mut bytes, offset, value);
         rejects(&bytes, LayoutError::Relocation);
@@ -103,8 +90,5 @@ fn invalid_arena_rejection_preserves_destination() {
         assert_eq!(payload.load(&mut arena, base), Err(LayoutError::Arena));
         assert!(arena.iter().all(|&b| b == 0xa5));
     }
-    assert_eq!(
-        payload.load(&mut arena[..ARENA_BYTES - 1], 0x200000),
-        Err(LayoutError::Arena)
-    );
+    assert_eq!(payload.load(&mut arena[..ARENA_BYTES - 1], 0x200000), Err(LayoutError::Arena));
 }

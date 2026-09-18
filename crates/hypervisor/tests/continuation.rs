@@ -1,27 +1,17 @@
 use svmvisor_hypervisor::guest::continuation::{
-    ContinuationError, IntegerContinuation, CONTINUATION_RFLAGS_MASK,
+    CONTINUATION_RFLAGS_MASK, ContinuationError, IntegerContinuation,
 };
 use svmvisor_hypervisor::memory::address::{AddressPolicy, EncryptionState, PhysicalRange};
 
 fn page(base: u64) -> PhysicalRange {
-    AddressPolicy::new(
-        48,
-        EncryptionState::Unencrypted {
-            encryption_bit: None,
-        },
-    )
-    .unwrap()
-    .validate(base, 4096, 4096)
-    .unwrap()
+    AddressPolicy::new(48, EncryptionState::Unencrypted { encryption_bit: None })
+        .unwrap()
+        .validate(base, 4096, 4096)
+        .unwrap()
 }
 
 fn captured() -> IntegerContinuation {
-    IntegerContinuation {
-        rip: 0x10200,
-        rsp: 0x21ff0,
-        rflags: 3,
-        ..Default::default()
-    }
+    IntegerContinuation { rip: 0x10200, rsp: 0x21ff0, rflags: 3, ..Default::default() }
 }
 
 #[test]
@@ -96,17 +86,11 @@ fn capture_requires_separate_whole_pages() {
         state.validate_bounds(page(0x10000), page(0x10000)),
         Err(ContinuationError::OverlappingPages)
     );
-    let policy = AddressPolicy::new(
-        48,
-        EncryptionState::Unencrypted {
-            encryption_bit: None,
-        },
-    )
-    .unwrap();
-    for range in [
-        policy.validate(0x10000, 8192, 4096).unwrap(),
-        policy.validate(0x10001, 4096, 1).unwrap(),
-    ] {
+    let policy =
+        AddressPolicy::new(48, EncryptionState::Unencrypted { encryption_bit: None }).unwrap();
+    for range in
+        [policy.validate(0x10000, 8192, 4096).unwrap(), policy.validate(0x10001, 4096, 1).unwrap()]
+    {
         assert_eq!(
             state.validate_bounds(range, page(0x21000)),
             Err(ContinuationError::InvalidCodePage)

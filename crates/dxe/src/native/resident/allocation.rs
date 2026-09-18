@@ -51,11 +51,8 @@ impl AllocationError {
 }
 
 const LOW_RUNTIME_MAX: u64 = 0x3fff_ffff;
-const PLATFORM_MAXIMUM: Option<u64> = if cfg!(feature = "native-resident-low-runtime") {
-    Some(LOW_RUNTIME_MAX)
-} else {
-    None
-};
+const PLATFORM_MAXIMUM: Option<u64> =
+    if cfg!(feature = "native-resident-low-runtime") { Some(LOW_RUNTIME_MAX) } else { None };
 
 // A narrow internal interface permits ownership/failure tests without fake
 // BootServices function tables or host physical-address dereferences.
@@ -75,19 +72,11 @@ impl PageServices for FirmwarePages<'_> {
                 &mut base,
             )
         };
-        if status == Status::SUCCESS {
-            Ok(base)
-        } else {
-            Err(status)
-        }
+        if status == Status::SUCCESS { Ok(base) } else { Err(status) }
     }
     fn free_pages(&mut self, base: u64, pages: usize) -> Result<(), Status> {
         let status = unsafe { (self.0.free_pages)(base, pages) };
-        if status == Status::SUCCESS {
-            Ok(())
-        } else {
-            Err(status)
-        }
+        if status == Status::SUCCESS { Ok(()) } else { Err(status) }
     }
 }
 
@@ -107,26 +96,22 @@ impl<S: PageServices> OwnedPages<S> {
     fn allocate_count(services: S, count: usize) -> Result<Self, AllocationError> {
         Self::allocate_count_at(services, count, None)
     }
-    fn allocate_count_at(mut services: S, count: usize, maximum: Option<u64>) -> Result<Self, AllocationError> {
+    fn allocate_count_at(
+        mut services: S,
+        count: usize,
+        maximum: Option<u64>,
+    ) -> Result<Self, AllocationError> {
         if !(1..=MAX_RESIDENT_CPUS).contains(&count) {
             return Err(AllocationError::Address(0));
         }
         let keep_pages = count * ARENA_PAGES;
-        let reservation = if count == 1 {
-            RESERVATION_PAGES
-        } else {
-            keep_pages + 512
-        };
-        let base = services
-            .allocate_code(reservation, maximum)
-            .map_err(AllocationError::Firmware)?;
-        let mut owned = Self {
-            services,
-            base,
-            pages: reservation,
-            keep_pages,
-        };
-        let placement = if maximum.is_some_and(|limit| base.checked_add(reservation as u64 * PAGE_BYTES - 1).is_none_or(|end| end > limit)) {
+        let reservation = if count == 1 { RESERVATION_PAGES } else { keep_pages + 512 };
+        let base =
+            services.allocate_code(reservation, maximum).map_err(AllocationError::Firmware)?;
+        let mut owned = Self { services, base, pages: reservation, keep_pages };
+        let placement = if maximum.is_some_and(|limit| {
+            base.checked_add(reservation as u64 * PAGE_BYTES - 1).is_none_or(|end| end > limit)
+        }) {
             Err(AllocationError::Address(base))
         } else {
             owned.trim()
@@ -154,9 +139,11 @@ impl<S: PageServices> OwnedPages<S> {
         }
         let suffix = self.pages - self.keep_pages;
         if suffix != 0 {
-            self.services
-                .free_pages(arena + self.keep_pages as u64 * PAGE_BYTES, suffix)
-                .map_err(|status| AllocationError::Cleanup(status, arena + self.keep_pages as u64 * PAGE_BYTES))?;
+            self.services.free_pages(arena + self.keep_pages as u64 * PAGE_BYTES, suffix).map_err(
+                |status| {
+                    AllocationError::Cleanup(status, arena + self.keep_pages as u64 * PAGE_BYTES)
+                },
+            )?;
             self.pages = self.keep_pages;
         }
         Ok(())
@@ -171,10 +158,8 @@ impl<S: PageServices> OwnedPages<S> {
     }
 
     fn publish(mut self) -> PublishedArena {
-        let arena = PublishedArena {
-            base: self.base,
-            bytes: self.keep_pages * PAGE_BYTES as usize,
-        };
+        let arena =
+            PublishedArena { base: self.base, bytes: self.keep_pages * PAGE_BYTES as usize };
         self.pages = 0;
         arena
     }
@@ -259,7 +244,8 @@ impl PublishedArena {
 /// and serialized until the returned owner is released or published. Functions
 /// obey UEFI 2.11 7.2.1/7.2.2, including allocation alignment and ownership.
 pub unsafe fn allocate(services: &BootServices) -> Result<RuntimeArena<'_>, AllocationError> {
-    OwnedPages::allocate_count_at(FirmwarePages(services), 1, PLATFORM_MAXIMUM).map(|owned| RuntimeArena { owned })
+    OwnedPages::allocate_count_at(FirmwarePages(services), 1, PLATFORM_MAXIMUM)
+        .map(|owned| RuntimeArena { owned })
 }
 /// Allocate one retained pool for a bounded set of private relocated copies.
 /// # Safety
@@ -269,7 +255,8 @@ pub unsafe fn allocate_for_processors(
     services: &BootServices,
     count: usize,
 ) -> Result<RuntimeArena<'_>, AllocationError> {
-    OwnedPages::allocate_count_at(FirmwarePages(services), count, PLATFORM_MAXIMUM).map(|owned| RuntimeArena { owned })
+    OwnedPages::allocate_count_at(FirmwarePages(services), count, PLATFORM_MAXIMUM)
+        .map(|owned| RuntimeArena { owned })
 }
 
 impl RuntimeArena<'_> {
@@ -384,14 +371,16 @@ mod tests {
 
         // A malformed firmware response crossing the bound is fully released.
         let (provider, record) = mock(base + 4096, 0);
-        let error = OwnedPages::allocate_count_at(provider, 24, Some(LOW_RUNTIME_MAX)).err().unwrap();
+        let error =
+            OwnedPages::allocate_count_at(provider, 24, Some(LOW_RUNTIME_MAX)).err().unwrap();
         assert_eq!(error.diagnostic(), (2, 0, base + 4096));
         assert!(record.borrow().live.is_empty());
         assert_eq!(record.borrow().calls.len(), 2);
 
         let (mut provider, record) = mock(0, 0);
         provider.base = Err(Status::OUT_OF_RESOURCES);
-        let error = OwnedPages::allocate_count_at(provider, 24, Some(LOW_RUNTIME_MAX)).err().unwrap();
+        let error =
+            OwnedPages::allocate_count_at(provider, 24, Some(LOW_RUNTIME_MAX)).err().unwrap();
         assert_eq!(error.diagnostic(), (1, Status::OUT_OF_RESOURCES.0 as u64, 0));
         assert_eq!(record.borrow().calls, [Call::Allocate(26 * 256)]);
     }
@@ -494,8 +483,7 @@ mod tests {
             r.calls.push(Call::Allocate(pages));
             r.maximums.push(maximum);
             let base = self.base?;
-            r.live
-                .extend((0..pages).map(|i| base + i as u64 * PAGE_BYTES));
+            r.live.extend((0..pages).map(|i| base + i as u64 * PAGE_BYTES));
             Ok(base)
         }
         fn free_pages(&mut self, base: u64, pages: usize) -> Result<(), Status> {
@@ -519,17 +507,8 @@ mod tests {
         }
     }
     fn mock(base: u64, fail_mask: u64) -> (Mock, Rc<RefCell<Record>>) {
-        let record = Rc::new(RefCell::new(Record {
-            fail_mask,
-            ..Record::default()
-        }));
-        (
-            Mock {
-                base: Ok(base),
-                record: record.clone(),
-            },
-            record,
-        )
+        let record = Rc::new(RefCell::new(Record { fail_mask, ..Record::default() }));
+        (Mock { base: Ok(base), record: record.clone() }, record)
     }
 
     #[test]
@@ -554,11 +533,7 @@ mod tests {
         assert_eq!(owner.pages, ARENA_PAGES);
         assert_eq!(
             record.borrow().calls.as_slice(),
-            &[
-                Call::Allocate(512),
-                Call::Free(0x380000, 128),
-                Call::Free(0x500000, 128),
-            ]
+            &[Call::Allocate(512), Call::Free(0x380000, 128), Call::Free(0x500000, 128),]
         );
         let published = owner.publish();
         assert_eq!(published.base(), 0x400000);
@@ -566,11 +541,7 @@ mod tests {
         assert_eq!(record.borrow().calls.len(), 3, "publication must not free");
         assert_eq!(record.borrow().live.len(), ARENA_PAGES);
         drop(published);
-        assert_eq!(
-            record.borrow().calls.len(),
-            3,
-            "retained metadata has no cleanup"
-        );
+        assert_eq!(record.borrow().calls.len(), 3, "retained metadata has no cleanup");
     }
 
     #[test]
@@ -596,11 +567,8 @@ mod tests {
             ));
             let r = record.borrow();
             assert!(r.live.is_empty());
-            let remaining = if fail_mask == 1 {
-                Call::Free(0x380000, 512)
-            } else {
-                Call::Free(0x400000, 384)
-            };
+            let remaining =
+                if fail_mask == 1 { Call::Free(0x380000, 512) } else { Call::Free(0x400000, 384) };
             assert_eq!(r.calls.last(), Some(&remaining));
         }
     }
@@ -616,10 +584,7 @@ mod tests {
         ));
         let r = record.borrow();
         assert!(r.live.is_empty());
-        assert_eq!(
-            r.calls[3..],
-            [Call::Free(0x400000, 384), Call::Free(0x400000, 384)]
-        );
+        assert_eq!(r.calls[3..], [Call::Free(0x400000, 384), Call::Free(0x400000, 384)]);
     }
 
     #[test]
@@ -636,16 +601,10 @@ mod tests {
     #[test]
     fn unsupported_anypages_address_is_freed_before_error() {
         let (mock, record) = mock(0x40000000, 0);
-        assert!(matches!(
-            OwnedPages::allocate(mock),
-            Err(AllocationError::Address(0x40000000))
-        ));
+        assert!(matches!(OwnedPages::allocate(mock), Err(AllocationError::Address(0x40000000))));
         let r = record.borrow();
         assert!(r.live.is_empty());
-        assert_eq!(
-            r.calls.as_slice(),
-            &[Call::Allocate(512), Call::Free(0x40000000, 512)]
-        );
+        assert_eq!(r.calls.as_slice(), &[Call::Allocate(512), Call::Free(0x40000000, 512)]);
     }
 
     #[test]
@@ -661,7 +620,10 @@ mod tests {
 
     mod firmware_boundary_tests {
         use super::*;
-        use core::{mem::{MaybeUninit, size_of}, ptr};
+        use core::{
+            mem::{MaybeUninit, size_of},
+            ptr,
+        };
 
         #[derive(Default)]
         struct FirmwareRecord {
@@ -677,7 +639,10 @@ mod tests {
             panic!("unexpected firmware service in runtime allocation test")
         }
         unsafe extern "efiapi" fn allocate_pages(
-            kind: AllocateType, memory: MemoryType, count: usize, address: *mut u64,
+            kind: AllocateType,
+            memory: MemoryType,
+            count: usize,
+            address: *mut u64,
         ) -> Status {
             FIRMWARE.with(|record| {
                 let mut record = record.borrow_mut();
@@ -694,15 +659,22 @@ mod tests {
             Status::SUCCESS
         }
         fn services(base: u64, fail: bool) -> BootServices {
-            FIRMWARE.with(|record| *record.borrow_mut() = FirmwareRecord {
-                returned_base: base, fail_allocation: fail, ..FirmwareRecord::default()
+            FIRMWARE.with(|record| {
+                *record.borrow_mut() = FirmwareRecord {
+                    returned_base: base,
+                    fail_allocation: fail,
+                    ..FirmwareRecord::default()
+                }
             });
             let mut table = MaybeUninit::<BootServices>::uninit();
             unsafe {
                 // Existing native firmware fixtures use this table pattern:
                 // unused service pointers are non-NULL and never invoked.
                 for index in 0..size_of::<BootServices>() / size_of::<usize>() {
-                    table.as_mut_ptr().cast::<usize>().add(index)
+                    table
+                        .as_mut_ptr()
+                        .cast::<usize>()
+                        .add(index)
                         .write(unused as *const () as usize);
                 }
                 ptr::addr_of_mut!((*table.as_mut_ptr()).header).write(core::mem::zeroed());
@@ -715,7 +687,10 @@ mod tests {
         fn public_processor_allocator_uses_firmware_policy_and_rolls_back_exact_pages() {
             let table = services(0x380000, false);
             let owner = unsafe { allocate_for_processors(&table, 24) }.unwrap();
-            assert_eq!((owner.base(), owner.bytes(), owner.processors()), (0x400000, 0x1800000, 24));
+            assert_eq!(
+                (owner.base(), owner.bytes(), owner.processors()),
+                (0x400000, 0x1800000, 24)
+            );
             drop(owner);
             let expected_policy = if cfg!(feature = "native-resident-low-runtime") {
                 (1, 0x3fff_ffff)
@@ -726,18 +701,25 @@ mod tests {
                 let record = record.borrow();
                 // Independent UEFI numeric values: AnyPages=0, MaxAddress=1,
                 // RuntimeServicesCode=5; 24 MiB plus 2 MiB alignment slack.
-                assert_eq!(record.allocation, Some((expected_policy.0, 5, 6656, expected_policy.1)));
+                assert_eq!(
+                    record.allocation,
+                    Some((expected_policy.0, 5, 6656, expected_policy.1))
+                );
                 assert_eq!(record.frees, [(0x380000, 128), (0x1c00000, 384), (0x400000, 6144)]);
             });
 
             let table = services(0x40000000, false);
-            assert!(matches!(unsafe { allocate_for_processors(&table, 24) },
-                Err(AllocationError::Address(0x40000000))));
+            assert!(matches!(
+                unsafe { allocate_for_processors(&table, 24) },
+                Err(AllocationError::Address(0x40000000))
+            ));
             FIRMWARE.with(|record| assert_eq!(record.borrow().frees, [(0x40000000, 6656)]));
 
             let table = services(0, true);
-            assert!(matches!(unsafe { allocate_for_processors(&table, 24) },
-                Err(AllocationError::Firmware(Status::OUT_OF_RESOURCES))));
+            assert!(matches!(
+                unsafe { allocate_for_processors(&table, 24) },
+                Err(AllocationError::Firmware(Status::OUT_OF_RESOURCES))
+            ));
             FIRMWARE.with(|record| assert!(record.borrow().frees.is_empty()));
         }
     }

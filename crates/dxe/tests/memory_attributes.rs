@@ -55,14 +55,8 @@ impl Attributes for Backend {
 fn exact_efi_interface_layout_and_guid() {
     use core::mem::{offset_of, size_of};
     assert_eq!(size_of::<MemoryAttributeProtocol>(), 3 * size_of::<usize>());
-    assert_eq!(
-        offset_of!(MemoryAttributeProtocol, get_memory_attributes),
-        0
-    );
-    assert_eq!(
-        offset_of!(MemoryAttributeProtocol, set_memory_attributes),
-        size_of::<usize>()
-    );
+    assert_eq!(offset_of!(MemoryAttributeProtocol, get_memory_attributes), 0);
+    assert_eq!(offset_of!(MemoryAttributeProtocol, set_memory_attributes), size_of::<usize>());
     assert_eq!(
         offset_of!(MemoryAttributeProtocol, clear_memory_attributes),
         2 * size_of::<usize>()
@@ -79,10 +73,7 @@ fn exact_efi_interface_layout_and_guid() {
 
 #[test]
 fn callbacks_forward_full_width_arguments_and_all_masks() {
-    let state = Arc::new(Mutex::new(State {
-        result: ACCESS_MASK,
-        ..State::default()
-    }));
+    let state = Arc::new(Mutex::new(State { result: ACCESS_MASK, ..State::default() }));
     let adapter = Box::pin(Adapter::new(Backend(state.clone())));
     let this = adapter.as_ref().protocol_ptr();
     // SAFETY: The pinned owner stays live throughout each test.
@@ -113,12 +104,7 @@ fn callbacks_forward_full_width_arguments_and_all_masks() {
     }
     let state = state.lock().unwrap();
     assert_eq!(state.calls.len(), 15);
-    assert!(
-        state
-            .calls
-            .iter()
-            .all(|call| call.1 == base && call.2 == length)
-    );
+    assert!(state.calls.iter().all(|call| call.1 == base && call.2 == length));
     for pair in state.calls[1..].chunks_exact(2) {
         assert_eq!(pair[0].0, 's');
         assert_eq!(pair[1].0, 'c');
@@ -155,26 +141,14 @@ fn validation_precedes_backend_access_and_preserves_output() {
             (protocol.get_memory_attributes)(this, 0, 4096, core::ptr::without_provenance_mut(1)),
             Status::INVALID_PARAMETER
         );
-        for change in [
-            protocol.set_memory_attributes,
-            protocol.clear_memory_attributes,
-        ] {
-            assert_eq!(
-                change(this, 1, 1, MemoryAttribute::empty()),
-                Status::INVALID_PARAMETER
-            );
+        for change in [protocol.set_memory_attributes, protocol.clear_memory_attributes] {
+            assert_eq!(change(this, 1, 1, MemoryAttribute::empty()), Status::INVALID_PARAMETER);
             assert_eq!(
                 change(this, 0, 4096, MemoryAttribute::WRITE_BACK),
                 Status::INVALID_PARAMETER
             );
-            assert_eq!(
-                change(this, 1, 0, MemoryAttribute::READ_ONLY),
-                Status::INVALID_PARAMETER
-            );
-            assert_eq!(
-                change(this, 1, 4096, MemoryAttribute::READ_ONLY),
-                Status::UNSUPPORTED
-            );
+            assert_eq!(change(this, 1, 0, MemoryAttribute::READ_ONLY), Status::INVALID_PARAMETER);
+            assert_eq!(change(this, 1, 4096, MemoryAttribute::READ_ONLY), Status::UNSUPPORTED);
             assert_eq!(
                 change(core::ptr::null(), 0, 4096, MemoryAttribute::READ_ONLY),
                 Status::INVALID_PARAMETER
@@ -204,10 +178,7 @@ fn every_engine_error_maps_to_efi_and_get_never_clobbers_on_failure() {
         state.lock().unwrap().failure = Some(error);
         let mut output = MemoryAttribute::RUNTIME;
         unsafe {
-            assert_eq!(
-                (protocol.get_memory_attributes)(this, 0, 4096, &mut output),
-                expected
-            );
+            assert_eq!((protocol.get_memory_attributes)(this, 0, 4096, &mut output), expected);
             assert_eq!(
                 (protocol.set_memory_attributes)(this, 0, 4096, MemoryAttribute::READ_ONLY),
                 expected
@@ -230,10 +201,7 @@ fn every_engine_error_maps_to_efi_and_get_never_clobbers_on_failure() {
 
 #[test]
 fn reentry_fails_without_deadlock_and_guard_releases() {
-    let state = Arc::new(Mutex::new(State {
-        result: READ_ONLY,
-        ..State::default()
-    }));
+    let state = Arc::new(Mutex::new(State { result: READ_ONLY, ..State::default() }));
     let adapter = Box::pin(Adapter::new(Backend(state.clone())));
     let this = adapter.as_ref().protocol_ptr();
     // SAFETY: The pinned owner stays live throughout each test.
@@ -248,10 +216,7 @@ fn reentry_fails_without_deadlock_and_guard_releases() {
             );
         }
         assert_eq!(output.bits(), READ_ONLY);
-        assert_eq!(
-            state.lock().unwrap().reentry_status,
-            Some(Status::ACCESS_DENIED)
-        );
+        assert_eq!(state.lock().unwrap().reentry_status, Some(Status::ACCESS_DENIED));
     }
     assert_eq!(state.lock().unwrap().calls.len(), 2);
 }
@@ -325,10 +290,7 @@ fn real_provider_round_trip_through_efi_callbacks() {
             Status::SUCCESS
         );
         assert_eq!(output.bits(), 0);
-        assert_eq!(
-            (protocol.set_memory_attributes)(this, 0x8000, 4096, mask),
-            Status::SUCCESS
-        );
+        assert_eq!((protocol.set_memory_attributes)(this, 0x8000, 4096, mask), Status::SUCCESS);
         assert_eq!(
             (protocol.get_memory_attributes)(this, 0x8000, 4096, &mut output),
             Status::SUCCESS
@@ -339,10 +301,7 @@ fn real_provider_round_trip_through_efi_callbacks() {
             Status::NO_MAPPING
         );
         assert_eq!(output, mask);
-        assert_eq!(
-            (protocol.clear_memory_attributes)(this, 0x8000, 4096, mask),
-            Status::SUCCESS
-        );
+        assert_eq!((protocol.clear_memory_attributes)(this, 0x8000, 4096, mask), Status::SUCCESS);
         assert_eq!(
             (protocol.get_memory_attributes)(this, 0x8000, 8192, &mut output),
             Status::SUCCESS

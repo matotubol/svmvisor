@@ -57,11 +57,7 @@ fn caches() -> HostCacheEvidence {
 fn layout(mask: u64) -> XstateLayout {
     XstateLayout::detect(XstateCapabilities {
         leaf1_edx: u32::MAX,
-        leaf1_ecx: if mask == 0 {
-            0
-        } else {
-            (1 << 26) | if mask == 7 { 1 << 28 } else { 0 }
-        },
+        leaf1_ecx: if mask == 0 { 0 } else { (1 << 26) | if mask == 7 { 1 << 28 } else { 0 } },
         supported_xcr0: mask,
         enabled_size: 832,
         max_size: 832,
@@ -105,24 +101,12 @@ fn contract(mask: u64) -> RuntimeCpuContract {
 }
 
 fn state(mask: u64) -> GuestCpuState {
-    GuestCpuState {
-        vcpu_id: 0,
-        cr4: if mask == 0 { 0 } else { 1 << 18 },
-        xcr0: mask,
-    }
+    GuestCpuState { vcpu_id: 0, cr4: if mask == 0 { 0 } else { 1 << 18 }, xcr0: mask }
 }
 
 fn query(model: AmdCpuModel, leaf: u32, subleaf: u32) -> [u32; 4] {
     model
-        .cpuid(
-            leaf,
-            subleaf,
-            state(if model.uses_xsave() {
-                model.xcr0_mask()
-            } else {
-                0
-            }),
-        )
+        .cpuid(leaf, subleaf, state(if model.uses_xsave() { model.xcr0_mask() } else { 0 }))
         .unwrap()
 }
 
@@ -132,10 +116,8 @@ fn native_identity_has_amd_vendor_in_both_namespaces_and_complete_brand() {
     for (leaf, max) in [(0, MAX_BASIC_LEAF), (0x8000_0000, MAX_EXTENDED_LEAF)] {
         let words = query(model, leaf, u32::MAX);
         assert_eq!(words[0], max);
-        let vendor: Vec<u8> = [words[1], words[3], words[2]]
-            .into_iter()
-            .flat_map(u32::to_le_bytes)
-            .collect();
+        let vendor: Vec<u8> =
+            [words[1], words[3], words[2]].into_iter().flat_map(u32::to_le_bytes).collect();
         assert_eq!(vendor, b"AuthenticAMD");
     }
     assert_eq!(query(model, 1, 0)[0], SIGNATURE);
@@ -156,10 +138,7 @@ fn native_identity_has_amd_vendor_in_both_namespaces_and_complete_brand() {
 fn two_cores_and_cache_sharing_are_consistent_across_all_leaves() {
     let model = AmdCpuModel::admit(host(), contract(7)).unwrap();
     for id in 0..2 {
-        let guest = GuestCpuState {
-            vcpu_id: id,
-            ..state(7)
-        };
+        let guest = GuestCpuState { vcpu_id: id, ..state(7) };
         let basic = model.cpuid(1, 0, guest).unwrap();
         assert_eq!(basic[1] >> 24, id);
         assert_eq!((basic[1] >> 16) & 0xff, 2);
@@ -167,26 +146,13 @@ fn two_cores_and_cache_sharing_are_consistent_across_all_leaves() {
         assert_eq!(model.cpuid(0x0b, 0, guest).unwrap(), [0, 1, 0x100, id]);
         assert_eq!(model.cpuid(0x0b, 1, guest).unwrap(), [1, 2, 0x201, id]);
         for subleaf in [2, 3, 255, 256, u32::MAX] {
-            assert_eq!(
-                model.cpuid(0x0b, subleaf, guest).unwrap(),
-                [0, 0, subleaf & 255, id]
-            );
+            assert_eq!(model.cpuid(0x0b, subleaf, guest).unwrap(), [0, 0, subleaf & 255, id]);
         }
-        assert_eq!(
-            model.cpuid(0x8000_0008, 0, guest).unwrap(),
-            [0x3028, 1, 0x1001, 0]
-        );
+        assert_eq!(model.cpuid(0x8000_0008, 0, guest).unwrap(), [0x3028, 1, 0x1001, 0]);
         assert_eq!(model.cpuid(0x8000_001e, 0, guest).unwrap(), [0, id, 0, 0]);
     }
     assert_eq!(
-        model.cpuid(
-            0,
-            0,
-            GuestCpuState {
-                vcpu_id: 2,
-                ..state(7)
-            }
-        ),
+        model.cpuid(0, 0, GuestCpuState { vcpu_id: 2, ..state(7) }),
         Err(CpuModelError::InvalidVcpuId)
     );
     let sizes = [32 * 1024, 32 * 1024, 512 * 1024, 2 * 1024 * 1024];
@@ -197,10 +163,7 @@ fn two_cores_and_cache_sharing_are_consistent_across_all_leaves() {
             * ((leaf[1] >> 22) + 1)
             * (leaf[2] + 1);
         assert_eq!(decoded, size);
-        assert_eq!(
-            ((leaf[0] >> 14) & 0xfff) + 1,
-            if index == 3 { 2 } else { 1 }
-        );
+        assert_eq!(((leaf[0] >> 14) & 0xfff) + 1, if index == 3 { 2 } else { 1 });
         assert_eq!(leaf[0] >> 26, 0, "AMD reserved, not Intel max cores");
         assert_eq!(leaf[3] & !3, 0, "AMD has no Intel complex-index bit");
     }
@@ -228,23 +191,13 @@ fn xsave_avx_and_osxsave_follow_owned_layout_and_stopped_state() {
             for subleaf in [0, 1, 2, 3, 63, 64, u32::MAX] {
                 assert_eq!(query(model, 0x0d, subleaf), [0; 4]);
             }
-            assert_eq!(
-                model.cpuid(1, 0, state(1)),
-                Err(CpuModelError::InvalidGuestXstate)
-            );
+            assert_eq!(model.cpuid(1, 0, state(1)), Err(CpuModelError::InvalidGuestXstate));
             continue;
         }
         for xcr0 in [1, 3, 7].into_iter().filter(|&x| x & !mask == 0) {
             for cr4 in [0, 1 << 18] {
-                let guest = GuestCpuState {
-                    cr4,
-                    xcr0,
-                    ..state(mask)
-                };
-                assert_eq!(
-                    model.cpuid(1, 0, guest).unwrap()[2] & (1 << 27) != 0,
-                    cr4 != 0
-                );
+                let guest = GuestCpuState { cr4, xcr0, ..state(mask) };
+                assert_eq!(model.cpuid(1, 0, guest).unwrap()[2] & (1 << 27) != 0, cr4 != 0);
                 assert_eq!(
                     model.cpuid(0x0d, 0, guest).unwrap(),
                     [
@@ -257,20 +210,10 @@ fn xsave_avx_and_osxsave_follow_owned_layout_and_stopped_state() {
             }
         }
         assert_eq!(query(model, 0x0d, 1), [0; 4]);
-        assert_eq!(
-            query(model, 0x0d, 2),
-            if mask == 7 { [256, 576, 0, 0] } else { [0; 4] }
-        );
+        assert_eq!(query(model, 0x0d, 2), if mask == 7 { [256, 576, 0, 0] } else { [0; 4] });
         for invalid in [0, 2, 4, 5, 6, 8, 0x8000_0000_0000_0001] {
             assert_eq!(
-                model.cpuid(
-                    0,
-                    0,
-                    GuestCpuState {
-                        xcr0: invalid,
-                        ..state(mask)
-                    }
-                ),
+                model.cpuid(0, 0, GuestCpuState { xcr0: invalid, ..state(mask) }),
                 Err(CpuModelError::InvalidGuestXstate)
             );
         }
@@ -301,9 +244,7 @@ fn no_host_stateful_features_leak_into_the_admitted_model() {
     let structured = query(model, 7, 0);
     assert_eq!(
         structured[1],
-        [3, 5, 8, 9, 18, 19, 23, 24, 29]
-            .into_iter()
-            .fold(0, |mask, bit| mask | (1 << bit))
+        [3, 5, 8, 9, 18, 19, 23, 24, 29].into_iter().fold(0, |mask, bit| mask | (1 << bit))
     );
     assert_eq!(structured[2], (1 << 8) | (1 << 9) | (1 << 10) | (1 << 22));
     assert_eq!(structured[3], 1 << 4);
@@ -324,11 +265,7 @@ fn every_reserved_and_unsupported_namespace_has_bounded_zero_behavior() {
         .chain([0x3fff_ffff, 0x7fff_ffff, 0x9000_0000, 0xc000_0000, u32::MAX])
     {
         for subleaf in [0, 1, 2, 63, 64, u32::MAX] {
-            assert_eq!(
-                query(model, leaf, subleaf),
-                [0; 4],
-                "{leaf:08x}:{subleaf:x}"
-            );
+            assert_eq!(query(model, leaf, subleaf), [0; 4], "{leaf:08x}:{subleaf:x}");
         }
     }
     for subleaf in [1, 2, 64, u32::MAX] {
@@ -362,10 +299,7 @@ fn admission_refuses_missing_host_evidence_and_unbacked_dependencies() {
     let runtime = contract(7);
     let mut evidence = host();
     evidence.vendor = *b"GenuineIntel";
-    assert_eq!(
-        AmdCpuModel::admit(evidence, runtime),
-        Err(CpuModelError::UnsupportedVendor)
-    );
+    assert_eq!(AmdCpuModel::admit(evidence, runtime), Err(CpuModelError::UnsupportedVendor));
     for bit in [0, 5, 6, 8, 15, 23, 24, 25, 26] {
         evidence = host();
         evidence.leaf1_edx &= !(1 << bit);
@@ -376,86 +310,47 @@ fn admission_refuses_missing_host_evidence_and_unbacked_dependencies() {
     }
     evidence = host();
     evidence.extended1_edx &= !(1 << 29);
-    assert_eq!(
-        AmdCpuModel::admit(evidence, runtime),
-        Err(CpuModelError::MissingBaselineFeatures)
-    );
+    assert_eq!(AmdCpuModel::admit(evidence, runtime), Err(CpuModelError::MissingBaselineFeatures));
     evidence = host();
     evidence.max_extended = 0x8000_0007;
-    assert_eq!(
-        AmdCpuModel::admit(evidence, runtime),
-        Err(CpuModelError::MissingHostLeaves)
-    );
+    assert_eq!(AmdCpuModel::admit(evidence, runtime), Err(CpuModelError::MissingHostLeaves));
     evidence = host();
     evidence.max_basic = 0;
-    assert_eq!(
-        AmdCpuModel::admit(evidence, runtime),
-        Err(CpuModelError::MissingHostLeaves)
-    );
+    assert_eq!(AmdCpuModel::admit(evidence, runtime), Err(CpuModelError::MissingHostLeaves));
     for bits in [0, 31, 39, 41, 49, 53] {
         assert_eq!(
             AmdCpuModel::admit(
                 host(),
-                RuntimeCpuContract {
-                    physical_address_bits: bits,
-                    ..runtime
-                }
+                RuntimeCpuContract { physical_address_bits: bits, ..runtime }
             ),
             Err(CpuModelError::InvalidAddressWidth)
         );
     }
     evidence = host();
     evidence.address_sizes = 0x2030;
-    assert_eq!(
-        AmdCpuModel::admit(evidence, runtime),
-        Err(CpuModelError::InvalidAddressWidth)
-    );
+    assert_eq!(AmdCpuModel::admit(evidence, runtime), Err(CpuModelError::InvalidAddressWidth));
     evidence = host();
     evidence.clflush_bytes = 128;
-    assert_eq!(
-        AmdCpuModel::admit(evidence, runtime),
-        Err(CpuModelError::InvalidClflushSize)
-    );
+    assert_eq!(AmdCpuModel::admit(evidence, runtime), Err(CpuModelError::InvalidClflushSize));
     for bit in [26, 28] {
         evidence = host();
         evidence.leaf1_ecx &= !(1 << bit);
-        assert_eq!(
-            AmdCpuModel::admit(evidence, runtime),
-            Err(CpuModelError::XstateNotSupported)
-        );
+        assert_eq!(AmdCpuModel::admit(evidence, runtime), Err(CpuModelError::XstateNotSupported));
     }
     evidence = host();
     evidence.max_basic = 7;
-    assert_eq!(
-        AmdCpuModel::admit(evidence, runtime),
-        Err(CpuModelError::XstateNotSupported)
-    );
+    assert_eq!(AmdCpuModel::admit(evidence, runtime), Err(CpuModelError::XstateNotSupported));
     evidence = host();
     evidence.extended1_edx &= !(1 << 20);
-    assert_eq!(
-        AmdCpuModel::admit(evidence, runtime),
-        Err(CpuModelError::NxNotSupported)
-    );
+    assert_eq!(AmdCpuModel::admit(evidence, runtime), Err(CpuModelError::NxNotSupported));
     evidence = host();
     evidence.extended1_edx &= !(1 << 27);
-    assert_eq!(
-        AmdCpuModel::admit(evidence, runtime),
-        Err(CpuModelError::ClockNotSupported)
-    );
+    assert_eq!(AmdCpuModel::admit(evidence, runtime), Err(CpuModelError::ClockNotSupported));
     evidence = host();
     evidence.leaf1_edx &= !(1 << 4);
+    assert_eq!(AmdCpuModel::admit(evidence, runtime), Err(CpuModelError::ClockNotSupported));
     assert_eq!(
-        AmdCpuModel::admit(evidence, runtime),
-        Err(CpuModelError::ClockNotSupported)
-    );
-    assert_eq!(
-        AmdCpuModel::admit(
-            host(),
-            RuntimeCpuContract {
-                tsc: false,
-                ..runtime
-            }
-        ),
+        AmdCpuModel::admit(host(), RuntimeCpuContract { tsc: false, ..runtime }),
         Err(CpuModelError::ClockNotSupported)
     );
 }
@@ -475,12 +370,7 @@ fn optional_features_require_host_evidence_and_explicit_runtime_owners() {
     evidence.clflush_bytes = 0;
     let model = AmdCpuModel::admit(
         evidence,
-        RuntimeCpuContract {
-            tsc: false,
-            rdtscp: false,
-            nx: false,
-            ..contract(0)
-        },
+        RuntimeCpuContract { tsc: false, rdtscp: false, nx: false, ..contract(0) },
     )
     .unwrap();
     assert_eq!(query(model, 1, 0)[2], 0);
@@ -488,10 +378,7 @@ fn optional_features_require_host_evidence_and_explicit_runtime_owners() {
     assert_eq!(query(model, 1, 0)[3] & (1 << 4), 0);
     assert_eq!(query(model, 7, 0), [0; 4]);
     assert_eq!(query(model, 0x8000_0001, 0)[2], 1 << 1);
-    assert_eq!(
-        query(model, 0x8000_0001, 0)[3] & ((1 << 4) | (1 << 20) | (1 << 27)),
-        0
-    );
+    assert_eq!(query(model, 0x8000_0001, 0)[3] & ((1 << 4) | (1 << 20) | (1 << 27)), 0);
 }
 
 #[test]
@@ -507,27 +394,12 @@ fn xstate_component_metadata_matches_the_actual_admitted_standard_layout() {
         avx_flags: 2,
     })
     .unwrap();
-    let model = AmdCpuModel::admit(
-        host(),
-        RuntimeCpuContract {
-            xstate: layout,
-            ..contract(7)
-        },
-    )
-    .unwrap();
+    let model =
+        AmdCpuModel::admit(host(), RuntimeCpuContract { xstate: layout, ..contract(7) }).unwrap();
     assert_eq!(query(model, 0x0d, 2), [256, 1024, 2, 0]);
     assert_eq!(query(model, 0x0d, 0), [7, 1280, 1280, 0]);
     assert_eq!(
-        model
-            .cpuid(
-                0x0d,
-                0,
-                GuestCpuState {
-                    xcr0: 1,
-                    ..state(7)
-                }
-            )
-            .unwrap(),
+        model.cpuid(0x0d, 0, GuestCpuState { xcr0: 1, ..state(7) }).unwrap(),
         [7, 576, 1280, 0]
     );
 }
@@ -548,23 +420,14 @@ fn optional_native_instruction_groups_have_exact_dependency_gates() {
         );
         assert_ne!(query(model, 1, 0)[2] & (1 << 30), 0); // RDRAND.
         assert_ne!(query(model, 7, 0)[1] & (1 << 18), 0); // RDSEED.
-        assert_eq!(
-            query(model, 0x8000_0001, 0)[2] & ((1 << 8) | (1 << 21)),
-            (1 << 8) | (1 << 21)
-        );
+        assert_eq!(query(model, 0x8000_0001, 0)[2] & ((1 << 8) | (1 << 21)), (1 << 8) | (1 << 21));
         assert_eq!(
             query(model, 0x8000_0001, 0)[3] & ((1 << 22) | (3 << 30)),
             (1 << 22) | (3 << 30)
         );
     }
-    let model = AmdCpuModel::admit(
-        host(),
-        RuntimeCpuContract {
-            rdtscp: false,
-            ..contract(7)
-        },
-    )
-    .unwrap();
+    let model =
+        AmdCpuModel::admit(host(), RuntimeCpuContract { rdtscp: false, ..contract(7) }).unwrap();
     assert_eq!(query(model, 7, 0)[2] & (1 << 22), 0); // RDPID requires owned AUX.
     let mut missing = host();
     missing.leaf1_edx &= !(1 << 19);
@@ -601,14 +464,8 @@ fn captured_identity_preserves_all_bytes_without_importing_features_or_topology(
     assert_eq!(native.vendor(), *b"AuthenticAMD");
     assert_eq!(native.signature(), native.extended_signature());
     assert_eq!(native.family_model_stepping(), (0x1a, 0x44, 0));
-    let model = AmdCpuModel::admit(
-        host(),
-        RuntimeCpuContract {
-            identity: native,
-            ..contract(7)
-        },
-    )
-    .unwrap();
+    let model =
+        AmdCpuModel::admit(host(), RuntimeCpuContract { identity: native, ..contract(7) }).unwrap();
     let actual: Vec<u8> = (0x8000_0002..=0x8000_0004)
         .flat_map(|leaf| query(model, leaf, 0))
         .flat_map(u32::to_le_bytes)
@@ -620,14 +477,8 @@ fn captured_identity_preserves_all_bytes_without_importing_features_or_topology(
     assert_eq!(query(model, 1, 0)[2] >> 31, 0);
     assert_eq!(query(model, 0x8000_0001, 0)[2] & (1 << 2), 0);
     assert_eq!(query(model, 0x8000_0000, 0)[0], MAX_EXTENDED_LEAF);
-    assert_eq!(
-        identity(0x0003_06a2, BRAND).family_model_stepping(),
-        (6, 0x3a, 2)
-    );
-    assert_eq!(
-        identity(0x00f3_05a2, BRAND).family_model_stepping(),
-        (5, 0xa, 2)
-    );
+    assert_eq!(identity(0x0003_06a2, BRAND).family_model_stepping(), (6, 0x3a, 2));
+    assert_eq!(identity(0x00f3_05a2, BRAND).family_model_stepping(), (5, 0xa, 2));
 }
 
 #[test]
@@ -692,10 +543,7 @@ fn native_cache_geometry_and_size_metadata_survive_topology_projection() {
         let guest = query(model, 0x8000_001d, index as u32);
         assert_eq!(guest[0] & !(0xfff << 14), native[0] & !(0xfff << 14));
         assert_eq!(guest[1..], native[1..]);
-        assert_eq!(
-            ((guest[0] >> 14) & 0xfff) + 1,
-            if index == 3 { 2 } else { 1 }
-        );
+        assert_eq!(((guest[0] >> 14) & 0xfff) + 1, if index == 3 { 2 } else { 1 });
     }
     evidence.max_extended = 0x8000_001e;
     let old = AmdCpuModel::admit(evidence, contract(7)).unwrap();
@@ -707,10 +555,7 @@ fn native_cache_geometry_and_size_metadata_survive_topology_projection() {
 fn cache_capture_refuses_unterminated_reserved_or_missing_dependency_data() {
     let mut evidence = host();
     evidence.caches.deterministic_count = 8;
-    assert_eq!(
-        AmdCpuModel::admit(evidence, contract(7)),
-        Err(CpuModelError::InvalidCacheEvidence)
-    );
+    assert_eq!(AmdCpuModel::admit(evidence, contract(7)), Err(CpuModelError::InvalidCacheEvidence));
     for (word, bit) in [(0, 26), (0, 10), (3, 2)] {
         evidence = host();
         evidence.caches.deterministic[0][word] |= 1 << bit;
@@ -721,27 +566,18 @@ fn cache_capture_refuses_unterminated_reserved_or_missing_dependency_data() {
     }
     evidence = host();
     evidence.caches.deterministic[4][1] = 1;
-    assert_eq!(
-        AmdCpuModel::admit(evidence, contract(7)),
-        Err(CpuModelError::InvalidCacheEvidence)
-    );
+    assert_eq!(AmdCpuModel::admit(evidence, contract(7)), Err(CpuModelError::InvalidCacheEvidence));
     evidence = host();
     evidence.caches.deterministic_count = 0;
     evidence.caches.deterministic = [[0; 4]; 8];
-    assert_eq!(
-        AmdCpuModel::admit(evidence, contract(7)),
-        Err(CpuModelError::InvalidCacheEvidence)
-    );
+    assert_eq!(AmdCpuModel::admit(evidence, contract(7)), Err(CpuModelError::InvalidCacheEvidence));
     evidence.extended1_ecx &= !(1 << 22);
     let no_topology = AmdCpuModel::admit(evidence, contract(7)).unwrap();
     assert_eq!(query(no_topology, 0x8000_001d, 0), [0; 4]);
     assert_eq!(query(no_topology, 0x8000_001e, 0), [0; 4]);
     assert_eq!(query(no_topology, 0x8000_0001, 0)[2] & (1 << 22), 0);
     evidence.caches.legacy_l2_l3[3] = 0x0100_9140;
-    assert_eq!(
-        AmdCpuModel::admit(evidence, contract(7)),
-        Err(CpuModelError::InvalidCacheEvidence)
-    );
+    assert_eq!(AmdCpuModel::admit(evidence, contract(7)), Err(CpuModelError::InvalidCacheEvidence));
     evidence = host();
     evidence.extended21_ebx = 1 << 24;
     assert_eq!(

@@ -16,7 +16,10 @@ use crate::arch::x86_64::apic::{self, PhysicalX2Apic, highest_vector};
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum IrqError {
     ReservedVector(u8),
-    PhysicalIsrMismatch { vector: u8, highest: Option<u8> },
+    PhysicalIsrMismatch {
+        vector: u8,
+        highest: Option<u8>,
+    },
     DuplicatePhysicalSource(u8),
     /// Retired (`PhysicalIrqLedger::prepare_capture`).
     AmbiguousLevelSource(u8),
@@ -26,7 +29,10 @@ pub enum IrqError {
     /// The backing page refused the captured vector (`BackingPage::enqueue`).
     VirtualPublication(u8),
     /// A level-EOI exit named an in-service vector that is not the highest.
-    VirtualIsrMismatch { vector: u8, highest: Option<u8> },
+    VirtualIsrMismatch {
+        vector: u8,
+        highest: Option<u8>,
+    },
     /// The bounded physical EOI drain did not reach an empty ledger.
     DrainIncomplete,
     /// The host accepted this vector, but it has no physical ISR bit and is
@@ -65,12 +71,16 @@ impl PhysicalIrqLedger {
     }
 
     /// True when no level source is held.
-    pub fn is_empty(&self) -> bool { self.held.iter().all(|word| *word == 0) }
+    pub fn is_empty(&self) -> bool {
+        self.held.iter().all(|word| *word == 0)
+    }
 
     /// Whether the vCPU's MSRPM must intercept guest EOI writes
     /// (`Msrpm::update_x2apic_eoi_intercept`): a level source is held, or an
     /// EOI write may still be re-executed (`level_eoi_exit`).
-    pub fn intercepts_eoi(&self) -> bool { !self.is_empty() || self.eoi_replay.is_some() }
+    pub fn intercepts_eoi(&self) -> bool {
+        !self.is_empty() || self.eoi_replay.is_some()
+    }
 
     /// An intercepted guest EOI write at `rip`. True when it is the
     /// re-execution of the write `level_eoi_exit` already completed, which
@@ -108,21 +118,32 @@ impl PhysicalIrqLedger {
     /// `IrqError::AmbiguousLevelSource` is retired; its wire code stays
     /// reserved.
     pub fn prepare_capture(
-        &self, vector: u8, level: bool, physical_highest: Option<u8>,
+        &self,
+        vector: u8,
+        level: bool,
+        physical_highest: Option<u8>,
     ) -> Result<Capture, IrqError> {
-        if vector < 32 { return Err(IrqError::ReservedVector(vector)); }
+        if vector < 32 {
+            return Err(IrqError::ReservedVector(vector));
+        }
         if physical_highest != Some(vector) {
             return Err(IrqError::PhysicalIsrMismatch { vector, highest: physical_highest });
         }
-        if self.holds(vector) { return Err(IrqError::DuplicatePhysicalSource(vector)); }
+        if self.holds(vector) {
+            return Err(IrqError::DuplicatePhysicalSource(vector));
+        }
         Ok(if level { Capture::Level } else { Capture::Edge })
     }
 
     /// Commit only after successful prepare_capture and virtual IRR ownership
     /// publication, without opening host acceptance between prepare and commit.
     pub fn commit_level_capture(&mut self, vector: u8) -> Result<(), IrqError> {
-        if vector < 32 { return Err(IrqError::ReservedVector(vector)); }
-        if self.holds(vector) { return Err(IrqError::DuplicatePhysicalSource(vector)); }
+        if vector < 32 {
+            return Err(IrqError::ReservedVector(vector));
+        }
+        if self.holds(vector) {
+            return Err(IrqError::DuplicatePhysicalSource(vector));
+        }
         self.held[usize::from(vector / 32)] |= 1 << (vector % 32);
         Ok(())
     }
@@ -130,7 +151,9 @@ impl PhysicalIrqLedger {
     /// Mark a held level source guest-completed. The argument is the vector
     /// whose virtual ISR bit the guest's EOI cleared.
     pub fn complete_level(&mut self, vector: u8) -> Result<(), IrqError> {
-        if !self.holds(vector) { return Err(IrqError::UnownedLevelCompletion(vector)); }
+        if !self.holds(vector) {
+            return Err(IrqError::UnownedLevelCompletion(vector));
+        }
         let word = usize::from(vector / 32);
         let mask = 1 << (vector % 32);
         if self.completed[word] & mask != 0 {
@@ -162,7 +185,10 @@ impl PhysicalIrqLedger {
             return Err(IrqError::UnexpectedPhysicalIsr(vector));
         }
         if let Some(vector) = highest_vector(&missing) {
-            return Err(IrqError::PhysicalIsrMismatch { vector, highest: highest_vector(physical_isr) });
+            return Err(IrqError::PhysicalIsrMismatch {
+                vector,
+                highest: highest_vector(physical_isr),
+            });
         }
         Ok(())
     }
@@ -177,7 +203,9 @@ impl PhysicalIrqLedger {
                 Some(vector) => Err(IrqError::PhysicalIsrMismatch { vector, highest: None }),
             };
         };
-        if !self.holds(vector) { return Err(IrqError::UnexpectedPhysicalIsr(vector)); }
+        if !self.holds(vector) {
+            return Err(IrqError::UnexpectedPhysicalIsr(vector));
+        }
         if let Some(owned) = owned_highest
             && owned != vector
         {
@@ -199,7 +227,11 @@ impl PhysicalIrqLedger {
     }
 }
 
-impl Default for PhysicalIrqLedger { fn default() -> Self { Self::new() } }
+impl Default for PhysicalIrqLedger {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 /// Physical EOI (MSR 80Bh write of zero, Table 16-6 p658).
 fn physical_eoi(physical: &mut impl PhysicalX2Apic) {
@@ -210,9 +242,10 @@ fn physical_eoi(physical: &mut impl PhysicalX2Apic) {
 /// in-service vector (APM2 16.6.4 p652: EOI resets the highest ISR bit).
 /// Bounded: at most 224 sources (vectors 32-255) are held and each round
 /// releases one, so 225 rounds reach the terminating `next_eoi` result.
-pub(crate) fn drain(ledger: &mut PhysicalIrqLedger, physical: &mut impl PhysicalX2Apic)
-    -> Result<(), IrqError>
-{
+pub(crate) fn drain(
+    ledger: &mut PhysicalIrqLedger,
+    physical: &mut impl PhysicalX2Apic,
+) -> Result<(), IrqError> {
     for _ in 0..=224 {
         let Some(vector) = ledger.next_eoi(apic::highest_in_service(physical))? else {
             return Ok(());
@@ -341,9 +374,10 @@ pub fn level_eoi_exit(
 
 /// Guest INIT (D9 commit step 2): complete every held source and drain.
 /// Precondition: `check_retirement` succeeded for the current physical ISR.
-pub(crate) fn retire(ledger: &mut PhysicalIrqLedger, physical: &mut impl PhysicalX2Apic)
-    -> Result<(), IrqError>
-{
+pub(crate) fn retire(
+    ledger: &mut PhysicalIrqLedger,
+    physical: &mut impl PhysicalX2Apic,
+) -> Result<(), IrqError> {
     ledger.retire_all();
     drain(ledger, physical)?;
     if ledger.is_empty() { Ok(()) } else { Err(IrqError::DrainIncomplete) }

@@ -40,30 +40,21 @@ fn every_field_has_the_documented_assembly_offset_without_hidden_padding() {
         offset_of!(GuestRegisters, r14),
         offset_of!(GuestRegisters, r15),
     ];
-    assert_eq!(
-        offsets,
-        [0, 8, 16, 24, 32, 40, 48, 56, 64, 72, 80, 88, 96, 104]
-    );
+    assert_eq!(offsets, [0, 8, 16, 24, 32, 40, 48, 56, 64, 72, 80, 88, 96, 104]);
 }
 
 #[test]
 fn cpuid_inputs_use_only_low_halves_and_leave_the_frame_unchanged() {
     let registers = frame();
     let before = registers;
-    assert_eq!(
-        registers.cpuid_inputs(0xdead_beef_8765_4321),
-        [0x8765_4321, 0x1234_5678]
-    );
+    assert_eq!(registers.cpuid_inputs(0xdead_beef_8765_4321), [0x8765_4321, 0x1234_5678]);
     assert_eq!(registers, before);
     assert_eq!(GuestRegisters::default().cpuid_inputs(0), [0, 0]);
 }
 
 #[test]
 fn cpuid_outputs_zero_extend_and_preserve_every_nonoutput_register() {
-    for output in [
-        [0, 1, 2, 3],
-        [u32::MAX, 0xfedc_ba98, 0x8765_4321, 0x8000_0000],
-    ] {
+    for output in [[0, 1, 2, 3], [u32::MAX, 0xfedc_ba98, 0x8765_4321, 0x8000_0000]] {
         let mut registers = frame();
         let mut expected = registers;
         expected.rbx = u64::from(output[1]);

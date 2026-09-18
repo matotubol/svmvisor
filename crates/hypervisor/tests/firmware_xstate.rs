@@ -1,4 +1,4 @@
-use svmvisor_hypervisor::{boot::xstate::*, arch::x86_64::xstate::*};
+use svmvisor_hypervisor::{arch::x86_64::xstate::*, boot::xstate::*};
 fn evidence(mask: u64) -> FirmwareXstateEvidence {
     FirmwareXstateEvidence {
         max_basic_leaf: 0xd,
@@ -31,10 +31,7 @@ fn original_sse_profile_is_preserved_even_on_avx_capable_cpu() {
     assert_eq!(plan.layout().size(), 576);
     assert_eq!(plan.original_controls(), input.original);
     assert_eq!(plan.capture_controls(), input.original);
-    assert!(
-        plan.obligations()
-            .qualify_x87_exception_pointer_preservation
-    );
+    assert!(plan.obligations().qualify_x87_exception_pointer_preservation);
     assert!(plan.obligations().capture_before_simd_or_fpu_use);
 }
 #[test]
@@ -113,48 +110,27 @@ fn missing_cpuid_control_and_supervisor_observations_fail_closed() {
     let input = evidence(7);
     let mut bad = input;
     bad.max_basic_leaf = 0;
-    assert_eq!(
-        FirmwareXstatePlan::validate(bad),
-        Err(FirmwareXstateError::MissingCpuidEvidence)
-    );
+    assert_eq!(FirmwareXstatePlan::validate(bad), Err(FirmwareXstateError::MissingCpuidEvidence));
     bad = input;
     bad.max_basic_leaf = 0xc;
-    assert_eq!(
-        FirmwareXstatePlan::validate(bad),
-        Err(FirmwareXstateError::MissingCpuidEvidence)
-    );
+    assert_eq!(FirmwareXstatePlan::validate(bad), Err(FirmwareXstateError::MissingCpuidEvidence));
     bad = input;
     bad.original.xcr0 = None;
-    assert_eq!(
-        FirmwareXstatePlan::validate(bad),
-        Err(FirmwareXstateError::MissingOriginalXcr0)
-    );
+    assert_eq!(FirmwareXstatePlan::validate(bad), Err(FirmwareXstateError::MissingOriginalXcr0));
     bad = input;
     bad.original.cr4 &= !(1 << 18);
-    assert_eq!(
-        FirmwareXstatePlan::validate(bad),
-        Err(FirmwareXstateError::InconsistentEnablement)
-    );
+    assert_eq!(FirmwareXstatePlan::validate(bad), Err(FirmwareXstateError::InconsistentEnablement));
     bad = input;
     bad.capabilities.leaf1_ecx &= !(1 << 27);
-    assert_eq!(
-        FirmwareXstatePlan::validate(bad),
-        Err(FirmwareXstateError::InconsistentEnablement)
-    );
+    assert_eq!(FirmwareXstatePlan::validate(bad), Err(FirmwareXstateError::InconsistentEnablement));
     bad = input;
     bad.leaf_d1_eax = 8;
-    assert_eq!(
-        FirmwareXstatePlan::validate(bad),
-        Err(FirmwareXstateError::MissingOriginalXss)
-    );
+    assert_eq!(FirmwareXstatePlan::validate(bad), Err(FirmwareXstateError::MissingOriginalXss));
     bad.original.xss = Some(0);
     bad.supported_xss = 1 << 11;
     assert!(FirmwareXstatePlan::validate(bad).is_ok());
     bad.original.xss = Some(1 << 11);
-    assert_eq!(
-        FirmwareXstatePlan::validate(bad),
-        Err(FirmwareXstateError::SupervisorStateEnabled)
-    );
+    assert_eq!(FirmwareXstatePlan::validate(bad), Err(FirmwareXstateError::SupervisorStateEnabled));
     bad = input;
     bad.original.xss = Some(0);
     assert_eq!(
@@ -199,9 +175,7 @@ fn current_enabled_size_is_validated_without_modifying_xcr0() {
     bad.capabilities.enabled_size = 832;
     assert_eq!(
         FirmwareXstatePlan::validate(bad),
-        Err(FirmwareXstateError::Layout(
-            XstateError::EnabledSizeMismatch
-        ))
+        Err(FirmwareXstateError::Layout(XstateError::EnabledSizeMismatch))
     );
     bad = evidence(7);
     bad.capabilities.avx_offset = 4096;
@@ -213,10 +187,7 @@ fn current_enabled_size_is_validated_without_modifying_xcr0() {
     bad = evidence(3);
     bad.capabilities.supported_xcr0 |= 0xe0;
     bad.capabilities.max_size = 65536;
-    assert_eq!(
-        FirmwareXstatePlan::validate(bad).unwrap().layout().mask(),
-        3
-    );
+    assert_eq!(FirmwareXstatePlan::validate(bad).unwrap().layout().mask(), 3);
 }
 #[test]
 fn original_image_validation_is_read_only_and_does_not_manufacture_capture_proof() {

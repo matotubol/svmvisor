@@ -35,37 +35,15 @@ mod mmio {
         fn read(&mut self, offset: u64) -> Result<u32, Status> {
             let mut word = 0u32;
             let status = unsafe {
-                super::read(
-                    core::ptr::null(),
-                    2,
-                    0,
-                    offset,
-                    1,
-                    (&mut word as *mut u32).cast(),
-                )
+                super::read(core::ptr::null(), 2, 0, offset, 1, (&mut word as *mut u32).cast())
             };
-            if status.is_error() {
-                Err(status)
-            } else {
-                Ok(word)
-            }
+            if status.is_error() { Err(status) } else { Ok(word) }
         }
         fn write(&mut self, offset: u64, mut word: u32) -> Result<(), Status> {
             let status = unsafe {
-                super::write(
-                    core::ptr::null(),
-                    2,
-                    0,
-                    offset,
-                    1,
-                    (&mut word as *mut u32).cast(),
-                )
+                super::write(core::ptr::null(), 2, 0, offset, 1, (&mut word as *mut u32).cast())
             };
-            if status.is_error() {
-                Err(status)
-            } else {
-                Ok(())
-            }
+            if status.is_error() { Err(status) } else { Ok(()) }
         }
     }
 }
@@ -216,25 +194,14 @@ unsafe extern "efiapi" fn close_event(event: Event) -> Status {
     if s.close_failure {
         return Status::DEVICE_ERROR;
     }
-    let found = s
-        .events
-        .iter_mut()
-        .find(|item| item.0 == event as usize)
-        .unwrap();
+    let found = s.events.iter_mut().find(|item| item.0 == event as usize).unwrap();
     assert!(found.3);
     found.3 = false;
     Status::SUCCESS
 }
 
 fn signal(kind: usize) {
-    let event = *STATE
-        .lock()
-        .unwrap()
-        .events
-        .iter()
-        .rev()
-        .find(|e| e.2 == kind && e.3)
-        .unwrap();
+    let event = *STATE.lock().unwrap().events.iter().rev().find(|e| e.2 == kind && e.3).unwrap();
     unsafe {
         (event.1)(event.0 as Event, event.2 as *mut c_void);
     }
@@ -379,10 +346,7 @@ unsafe extern "efiapi" fn open(
             *out = Box::into_raw(loaded).cast();
         }
     } else {
-        assert_eq!(
-            unsafe { *guid },
-            uefi_raw::guid!("4cf5b200-68b8-4ca5-9eec-b23e3f50029a")
-        );
+        assert_eq!(unsafe { *guid }, uefi_raw::guid!("4cf5b200-68b8-4ca5-9eec-b23e3f50029a"));
         assert_eq!((handle, controller, attrs), (owner(), owner(), 0x10));
         let mut s = STATE.lock().unwrap();
         if s.owned {
@@ -442,14 +406,8 @@ fn binding_owner_success_retry_stop_and_fail_closed() {
     assert!(STATE.lock().unwrap().writes.is_empty()); // no hardware writes at entry
     let binding = unsafe { &*(STATE.lock().unwrap().binding as *const DriverBindingProtocol) };
     unsafe {
-        assert_eq!(
-            (binding.supported)(binding, image(), null()),
-            Status::UNSUPPORTED
-        );
-        assert_eq!(
-            (binding.supported)(binding, owner(), null()),
-            Status::SUCCESS
-        );
+        assert_eq!((binding.supported)(binding, image(), null()), Status::UNSUPPORTED);
+        assert_eq!((binding.supported)(binding, owner(), null()), Status::SUCCESS);
         assert!(!STATE.lock().unwrap().owned);
         assert!(STATE.lock().unwrap().writes.is_empty());
         assert_eq!((binding.start)(binding, owner(), null()), Status::SUCCESS);
@@ -460,10 +418,7 @@ fn binding_owner_success_retry_stop_and_fail_closed() {
             assert_eq!(s.last[7], 0x00020013);
             assert_eq!(&s.last[4..6], &[0x4d455844, 0x324b5241]);
         }
-        assert_eq!(
-            (binding.start)(binding, owner(), null()),
-            Status::ALREADY_STARTED
-        );
+        assert_eq!((binding.start)(binding, owner(), null()), Status::ALREADY_STARTED);
         assert_eq!(STATE.lock().unwrap().writes.len(), 18);
         assert_eq!((binding.stop)(binding, owner(), 0, null()), Status::SUCCESS);
         // Memory-off boot now succeeds. Preserve both initial BME values and
@@ -527,11 +482,7 @@ fn binding_owner_success_retry_stop_and_fail_closed() {
                 let mut s = STATE.lock().unwrap();
                 s.writes.clear();
                 s.command = 0;
-                s.identity = if condition == 1 {
-                    0xffffffff
-                } else {
-                    0x066610ee
-                };
+                s.identity = if condition == 1 { 0xffffffff } else { 0x066610ee };
                 s.abi = if condition == 2 { 2 } else { 0x10001 };
             }
             assert!((binding.start)(binding, owner(), null()).is_error());
@@ -558,10 +509,7 @@ fn binding_owner_success_retry_stop_and_fail_closed() {
         // Registration failures release the first event and restore decoding.
         for fail in [0, 1, 2] {
             STATE.lock().unwrap().create_failure = fail;
-            assert_eq!(
-                (binding.start)(binding, owner(), null()),
-                Status::OUT_OF_RESOURCES
-            );
+            assert_eq!((binding.start)(binding, owner(), null()), Status::OUT_OF_RESOURCES);
             let s = STATE.lock().unwrap();
             assert!(!s.owned);
             assert_eq!(s.command, 0);
@@ -570,10 +518,7 @@ fn binding_owner_success_retry_stop_and_fail_closed() {
         STATE.lock().unwrap().create_failure = 255;
         assert_eq!((binding.start)(binding, owner(), null()), Status::SUCCESS);
         STATE.lock().unwrap().close_failure = true;
-        assert_eq!(
-            (binding.stop)(binding, owner(), 0, null()),
-            Status::DEVICE_ERROR
-        );
+        assert_eq!((binding.stop)(binding, owner(), 0, null()), Status::DEVICE_ERROR);
         let writes = STATE.lock().unwrap().writes.len();
         signal(0); // still-registered callbacks are inactive; no use after Stop
         signal(1);
@@ -612,10 +557,7 @@ fn binding_owner_success_retry_stop_and_fail_closed() {
         signal(1); // late AfterReadyToBoot is also ignored
         signal(0); // late ReadyToBoot cannot overwrite ExitBootServices
         assert_eq!(STATE.lock().unwrap().last[7], 0x00040040);
-        assert_eq!(
-            (binding.stop)(binding, owner(), 0, null()),
-            Status::UNSUPPORTED
-        );
+        assert_eq!((binding.stop)(binding, owner(), 0, null()), Status::UNSUPPORTED);
         assert_eq!(STATE.lock().unwrap().firmware_calls, calls);
     }
 }

@@ -1,7 +1,7 @@
 //! Digest-bound PE child delivery through normal UEFI image services.
 //! This module does not relocate PE bytes, change permissions, or admit SVM.
-use crate::diagnostics::resident_boot::ResidentBootOptions;
 use crate::diagnostics::native_result::NativeResult;
+use crate::diagnostics::resident_boot::ResidentBootOptions;
 use core::{ptr, slice};
 use sha2::{Digest, Sha256};
 use uefi_raw::{
@@ -34,11 +34,7 @@ impl ImageKind {
         if self == Self::Returning { 11 } else { 12 }
     }
     fn magic(self) -> &'static [u8; 8] {
-        if self == Self::Returning {
-            b"SVMPE001"
-        } else {
-            b"SVMBPE01"
-        }
+        if self == Self::Returning { b"SVMPE001" } else { b"SVMBPE01" }
     }
     fn flags(self) -> u64 {
         if self == Self::Returning { 2 } else { 4 }
@@ -119,13 +115,7 @@ impl Pin {
             sections: r32(header, 108)?,
         };
         metadata.validate(bytes as usize)?;
-        Ok(Self {
-            header: saved,
-            kind,
-            payload_bytes: bytes as usize,
-            metadata,
-            digest,
-        })
+        Ok(Self { header: saved, kind, payload_bytes: bytes as usize, metadata, digest })
     }
     pub fn verify(&self, pe: &[u8]) -> Result<(), Status> {
         if pe.len() != self.payload_bytes || Sha256::digest(pe).as_slice() != self.digest {
@@ -207,9 +197,7 @@ fn parse_pe_kind(pe: &[u8], kind: ImageKind) -> Result<PeMetadata, Status> {
     let reloc_size = r32(pe, opt + 116 + 5 * 8)?;
     if (reloc == 0) != (reloc_size == 0)
         || (reloc != 0 && reloc_size < 8)
-        || reloc
-            .checked_add(reloc_size)
-            .is_none_or(|e| e > meta.image_bytes)
+        || reloc.checked_add(reloc_size).is_none_or(|e| e > meta.image_bytes)
     {
         return Err(bad());
     }
@@ -234,9 +222,7 @@ fn parse_pe_kind(pe: &[u8], kind: ImageKind) -> Result<PeMetadata, Status> {
             || (raw_size != 0
                 && (raw & 511 != 0
                     || raw < previous_raw
-                    || raw
-                        .checked_add(raw_size)
-                        .is_none_or(|e| e as usize > pe.len())))
+                    || raw.checked_add(raw_size).is_none_or(|e| e as usize > pe.len())))
             || flags & 0xa0000000 == 0xa0000000
         {
             return Err(bad());
@@ -254,11 +240,7 @@ fn parse_pe_kind(pe: &[u8], kind: ImageKind) -> Result<PeMetadata, Status> {
             }
             entry = true;
         }
-        if reloc >= va
-            && reloc
-                .checked_add(reloc_size)
-                .is_some_and(|e| e <= va + raw_size)
-        {
+        if reloc >= va && reloc.checked_add(reloc_size).is_some_and(|e| e <= va + raw_size) {
             relocation = true;
         }
     }
@@ -497,10 +479,7 @@ unsafe fn execute_inner(
         // the aligned result. No external byte pointer is executed directly.
         let buffer = unsafe { slice::from_raw_parts_mut(state.pool, (pin.payload_bytes + 3) & !3) };
         for (i, chunk) in buffer.chunks_exact_mut(4).enumerate() {
-            for (d, s) in chunk
-                .iter_mut()
-                .zip(read((128 + i * 4) as u64)?.to_le_bytes())
-            {
+            for (d, s) in chunk.iter_mut().zip(read((128 + i * 4) as u64)?.to_le_bytes()) {
                 *d = s;
             }
         }
@@ -536,14 +515,7 @@ unsafe fn execute_inner(
             return Err(Status::DEVICE_ERROR);
         }
         unsafe {
-            set_options(
-                bs,
-                parent,
-                state.child,
-                mailbox,
-                pin.metadata.image_bytes,
-                pin.kind,
-            )
+            set_options(bs, parent, state.child, mailbox, pin.metadata.image_bytes, pin.kind)
         }?;
         let mut exit_size = 0;
         let mut exit_data = ptr::null_mut();
@@ -573,10 +545,7 @@ unsafe fn execute_inner(
             // firmware pre-entry denial from auto-unloaded driver errors.
             if started.is_error()
                 && !(observed.rust_entered == 0
-                    && matches!(
-                        started,
-                        Status::SECURITY_VIOLATION | Status::INVALID_PARAMETER
-                    ))
+                    && matches!(started, Status::SECURITY_VIOLATION | Status::INVALID_PARAMETER))
             {
                 state.child = ptr::null_mut();
             }
@@ -596,11 +565,7 @@ unsafe fn execute_inner(
             return Err(bad());
         }
         if started != Status::UNSUPPORTED {
-            return Err(if started == Status::SUCCESS {
-                Status::PROTOCOL_ERROR
-            } else {
-                started
-            });
+            return Err(if started == Status::SUCCESS { Status::PROTOCOL_ERROR } else { started });
         }
         // Unsupported with no Rust marker is an ordinary assembly refusal, not
         // evidence that the child performed a probe or completed restoration.
@@ -627,14 +592,7 @@ unsafe fn set_options(
 ) -> Result<(), Status> {
     let mut raw = ptr::null_mut();
     status(unsafe {
-        (bs.open_protocol)(
-            child,
-            &LoadedImageProtocol::GUID,
-            &mut raw,
-            parent,
-            ptr::null_mut(),
-            2,
-        )
+        (bs.open_protocol)(child, &LoadedImageProtocol::GUID, &mut raw, parent, ptr::null_mut(), 2)
     })?;
     let operation = (|| {
         let loaded =
@@ -737,12 +695,7 @@ unsafe fn copy_path(
         return operation;
     }
     let closed = status(unsafe {
-        (bs.close_protocol)(
-            controller,
-            &DevicePathProtocol::GUID,
-            parent,
-            ptr::null_mut(),
-        )
+        (bs.close_protocol)(controller, &DevicePathProtocol::GUID, parent, ptr::null_mut())
     });
     closed.and(operation)
 }

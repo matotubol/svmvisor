@@ -98,7 +98,9 @@ pub fn package(elf: &[u8], image: &[u8]) -> Result<Vec<u8>, String> {
         if section.entry_size != 24 || section.size % 24 != 0 {
             return Err("Invalid symbol table".into());
         }
-        let strings = sections.get(section.link as usize).ok_or("Symbol table names an absent string table")?;
+        let strings = sections
+            .get(section.link as usize)
+            .ok_or("Symbol table names an absent string table")?;
         let names = checked_slice(elf, strings.offset, strings.size)?;
         let mut table = Vec::new();
         let mut offset = section.offset;
@@ -116,7 +118,8 @@ pub fn package(elf: &[u8], image: &[u8]) -> Result<Vec<u8>, String> {
         }
         symbol_tables.insert(index, table);
     }
-    let symbol = |name: &str| symbols.get(name).copied().ok_or(format!("Missing linker symbol {name}"));
+    let symbol =
+        |name: &str| symbols.get(name).copied().ok_or(format!("Missing linker symbol {name}"));
     if symbols.get("image_start") != Some(&BASE) {
         return Err("Unexpected linked image base".into());
     }
@@ -132,7 +135,9 @@ pub fn package(elf: &[u8], image: &[u8]) -> Result<Vec<u8>, String> {
     for section in &sections {
         if section.flags & 2 != 0 && section.kind != 8 && section.size != 0 {
             let offset = section.address - BASE;
-            if checked_slice(image, offset, section.size)? != checked_slice(elf, section.offset, section.size)? {
+            if checked_slice(image, offset, section.size)?
+                != checked_slice(elf, section.offset, section.size)?
+            {
                 return Err("Flat image differs from ELF section".into());
             }
         }
@@ -147,14 +152,18 @@ pub fn package(elf: &[u8], image: &[u8]) -> Result<Vec<u8>, String> {
         if section.kind != 4 && section.kind != 9 {
             continue;
         }
-        let target = sections.get(section.info as usize).ok_or("Relocation table names an absent target section")?;
+        let target = sections
+            .get(section.info as usize)
+            .ok_or("Relocation table names an absent target section")?;
         if target.flags & 2 == 0 {
             continue;
         }
         if section.kind != 4 || section.entry_size != 24 || section.size % 24 != 0 {
             return Err("Only ELF64 RELA relocation tables are supported".into());
         }
-        let table = symbol_tables.get(&(section.link as usize)).ok_or("Relocation table names an absent symbol table")?;
+        let table = symbol_tables
+            .get(&(section.link as usize))
+            .ok_or("Relocation table names an absent symbol table")?;
         let mut offset = section.offset;
         while offset < section.offset + section.size {
             let raw = checked_slice(elf, offset, 24)?;
@@ -191,9 +200,15 @@ pub fn package(elf: &[u8], image: &[u8]) -> Result<Vec<u8>, String> {
                 }
                 let slot = resolved - BASE;
                 let owned_data = sections.iter().any(|s| {
-                    s.flags & 3 == 3 && s.address <= resolved && resolved + 8 <= s.address + s.size && s.kind != 8
+                    s.flags & 3 == 3
+                        && s.address <= resolved
+                        && resolved + 8 <= s.address + s.size
+                        && s.kind != 8
                 });
-                if resolved.rem_euclid(8) != 0 || !owned_data || unsigned(checked_slice(image, slot, 8)?) != value {
+                if resolved.rem_euclid(8) != 0
+                    || !owned_data
+                    || unsigned(checked_slice(image, slot, 8)?) != value
+                {
                     return Err("GOTPCREL does not resolve to an owned matching GOT slot".into());
                 }
                 relocations.push((slot, 8));
@@ -263,7 +278,17 @@ mod tests {
 
     /// Elf64_Shdr: "<IIQQQQIIQQ".
     #[allow(clippy::too_many_arguments)]
-    fn section(kind: u32, flags: u64, address: u64, offset: u64, size: u64, link: u32, info: u32, align: u64, entry: u64) -> Vec<u8> {
+    fn section(
+        kind: u32,
+        flags: u64,
+        address: u64,
+        offset: u64,
+        size: u64,
+        link: u32,
+        info: u32,
+        align: u64,
+        entry: u64,
+    ) -> Vec<u8> {
         let mut out = Vec::new();
         out.extend_from_slice(&0u32.to_le_bytes());
         out.extend_from_slice(&kind.to_le_bytes());
@@ -277,7 +302,11 @@ mod tests {
         out
     }
 
-    fn fixture(relocations: &[(usize, u64, i64)], target: i64, got_value: Option<i64>) -> (Vec<u8>, Vec<u8>) {
+    fn fixture(
+        relocations: &[(usize, u64, i64)],
+        target: i64,
+        got_value: Option<i64>,
+    ) -> (Vec<u8>, Vec<u8>) {
         let mut image = vec![0u8; 64];
         put(&mut image, 0, &target.to_le_bytes());
         if let Some(value) = got_value {
@@ -286,8 +315,13 @@ mod tests {
         for &(offset, kind, addend) in relocations {
             match kind {
                 2 | 4 | 9 => {
-                    let destination = if kind == 9 && got_value.is_some() { B + 24 } else { target };
-                    put(&mut image, offset, &((destination + addend - (B + offset as i64)) as i32).to_le_bytes());
+                    let destination =
+                        if kind == 9 && got_value.is_some() { B + 24 } else { target };
+                    put(
+                        &mut image,
+                        offset,
+                        &((destination + addend - (B + offset as i64)) as i32).to_le_bytes(),
+                    );
                 }
                 10 | 11 => put(&mut image, offset, &((target + addend) as u32).to_le_bytes()),
                 1 => put(&mut image, offset, &(target + addend).to_le_bytes()),
@@ -295,7 +329,9 @@ mod tests {
             }
         }
         let names: &[u8] = b"\0image_start\0image_load_end\0image_bss_end\0entry_uefi\0target\0";
-        let find = |name: &[u8]| names.windows(name.len()).position(|window| window == name).unwrap() as u32;
+        let find = |name: &[u8]| {
+            names.windows(name.len()).position(|window| window == name).unwrap() as u32
+        };
         let mut syms = vec![0u8; 24];
         for (name, value) in [
             (&b"image_start"[..], B),
@@ -361,10 +397,16 @@ mod tests {
     fn records(result: &[u8]) -> Vec<(u64, u64)> {
         let count = word(result, 48) as usize;
         let size = word(result, 24) as usize;
-        (0..count).map(|i| (word(result, 64 + size + i * 16), word(result, 64 + size + i * 16 + 8))).collect()
+        (0..count)
+            .map(|i| (word(result, 64 + size + i * 16), word(result, 64 + size + i * 16 + 8)))
+            .collect()
     }
 
-    fn run(relocations: &[(usize, u64, i64)], target: i64, got_value: Option<i64>) -> Result<Vec<u8>, String> {
+    fn run(
+        relocations: &[(usize, u64, i64)],
+        target: i64,
+        got_value: Option<i64>,
+    ) -> Result<Vec<u8>, String> {
         let (elf, image) = fixture(relocations, target, got_value);
         package(&elf, &image)
     }

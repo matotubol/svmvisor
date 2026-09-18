@@ -34,10 +34,7 @@ fn exact_ud_encoding_ignores_undefined_info_and_preserves_every_other_byte() {
     let mut expected = *vmcb.bytes();
     expected[0x0a8..0x0b0].copy_from_slice(&[6, 3, 0, 0x80, 0, 0, 0, 0]);
     expected[0x0c0..0x0c4].fill(0);
-    assert_eq!(
-        vmcb.reflect_exception(),
-        Ok(ReflectedException::InvalidOpcode)
-    );
+    assert_eq!(vmcb.reflect_exception(), Ok(ReflectedException::InvalidOpcode));
     assert_eq!(vmcb.bytes(), &expected);
 }
 
@@ -69,10 +66,7 @@ fn pf_encoding_updates_cr2_from_fault_address_and_preserves_rip() {
         expected[0x0c0..0x0c4].fill(0);
         assert_eq!(
             vmcb.reflect_exception(),
-            Ok(ReflectedException::PageFault {
-                error_code: error,
-                address
-            })
+            Ok(ReflectedException::PageFault { error_code: error, address })
         );
         assert_eq!(vmcb.bytes(), &expected);
         assert_eq!(vmcb.guest_cr2(), address);
@@ -83,79 +77,27 @@ fn pf_encoding_updates_cr2_from_fault_address_and_preserves_rip() {
 fn all_refusals_are_transactional_even_for_pf_cr2_and_clean_bits() {
     let cases = [
         (0x4e, 0, 0x8000_0306, 0, ReflectionError::PendingInjection),
-        (
-            0x4e,
-            0,
-            0,
-            0x8000_0b08,
-            ReflectionError::NestedDeliveryUnsupported,
-        ),
-        (
-            0x48,
-            0,
-            0,
-            0,
-            ReflectionError::UnsupportedExit { code: 0x48 },
-        ),
-        (
-            0x400,
-            0,
-            0,
-            0,
-            ReflectionError::UnsupportedExit { code: 0x400 },
-        ),
-        (
-            0x1_0000_0046,
-            0,
-            0,
-            0,
-            ReflectionError::UnsupportedExit {
-                code: 0x1_0000_0046,
-            },
-        ),
+        (0x4e, 0, 0, 0x8000_0b08, ReflectionError::NestedDeliveryUnsupported),
+        (0x48, 0, 0, 0, ReflectionError::UnsupportedExit { code: 0x48 }),
+        (0x400, 0, 0, 0, ReflectionError::UnsupportedExit { code: 0x400 }),
+        (0x1_0000_0046, 0, 0, 0, ReflectionError::UnsupportedExit { code: 0x1_0000_0046 }),
         (
             0x4d,
             0x10000,
             0,
             0,
-            ReflectionError::InvalidGeneralProtectionError {
-                error_code: 0x10000,
-            },
+            ReflectionError::InvalidGeneralProtectionError { error_code: 0x10000 },
         ),
         (
             0x4d,
             1 << 32,
             0,
             0,
-            ReflectionError::InvalidGeneralProtectionError {
-                error_code: 1 << 32,
-            },
+            ReflectionError::InvalidGeneralProtectionError { error_code: 1 << 32 },
         ),
-        (
-            0x4e,
-            0x80,
-            0,
-            0,
-            ReflectionError::UnsupportedPageFaultError { error_code: 0x80 },
-        ),
-        (
-            0x4e,
-            1 << 31,
-            0,
-            0,
-            ReflectionError::UnsupportedPageFaultError {
-                error_code: 1 << 31,
-            },
-        ),
-        (
-            0x4e,
-            1 << 32,
-            0,
-            0,
-            ReflectionError::UnsupportedPageFaultError {
-                error_code: 1 << 32,
-            },
-        ),
+        (0x4e, 0x80, 0, 0, ReflectionError::UnsupportedPageFaultError { error_code: 0x80 }),
+        (0x4e, 1 << 31, 0, 0, ReflectionError::UnsupportedPageFaultError { error_code: 1 << 31 }),
+        (0x4e, 1 << 32, 0, 0, ReflectionError::UnsupportedPageFaultError { error_code: 1 << 32 }),
     ];
     for (code, error, injection, interrupted, refusal) in cases {
         let mut vmcb = stopped(code, error, 0xcafe_f00d);
@@ -172,10 +114,7 @@ fn queued_injection_requires_explicit_completed_exit_retirement() {
     let mut vmcb = stopped(0x46, 0, 0);
     vmcb.reflect_exception().unwrap();
     let before = *vmcb.bytes();
-    assert_eq!(
-        vmcb.reflect_exception(),
-        Err(ReflectionError::PendingInjection)
-    );
+    assert_eq!(vmcb.reflect_exception(), Err(ReflectionError::PendingInjection));
     assert_eq!(vmcb.bytes(), &before);
     hardware_write(&mut vmcb, 0x070, 0x81); // guest handler VMMCALL
     vmcb.clear_event_injection_after_exit().unwrap();
@@ -188,11 +127,7 @@ fn queued_injection_requires_explicit_completed_exit_retirement() {
 fn retirement_refuses_failed_entry_and_interrupted_delivery_without_mutation() {
     for (code, interrupted, refusal) in [
         (u64::MAX, 0, ReflectionError::InvalidEntry),
-        (
-            0x4b,
-            0x8000_0b0e,
-            ReflectionError::NestedDeliveryUnsupported,
-        ),
+        (0x4b, 0x8000_0b0e, ReflectionError::NestedDeliveryUnsupported),
     ] {
         let mut vmcb = stopped(code, 0, 0);
         hardware_write(&mut vmcb, 0x0a8, 0x8000_0b0e);

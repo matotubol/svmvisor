@@ -26,11 +26,21 @@ fn readonly_get_tolerates_hardware_accessed_dirty_updates() {
             }
             self.0.read_entry(address)
         }
-        fn begin_update(&mut self) -> Result<(), Error> { panic!("Get started an update") }
-        fn write_entry(&mut self, _: u64, _: u64) -> Result<(), Error> { panic!("Get wrote a table") }
-        fn allocate_table(&mut self) -> Result<u64, Error> { panic!("Get allocated a table") }
-        fn commit_update(&mut self) -> Result<(), Error> { panic!("Get committed an update") }
-        fn abort_update(&mut self) { panic!("Get aborted an update") }
+        fn begin_update(&mut self) -> Result<(), Error> {
+            panic!("Get started an update")
+        }
+        fn write_entry(&mut self, _: u64, _: u64) -> Result<(), Error> {
+            panic!("Get wrote a table")
+        }
+        fn allocate_table(&mut self) -> Result<u64, Error> {
+            panic!("Get allocated a table")
+        }
+        fn commit_update(&mut self) -> Result<(), Error> {
+            panic!("Get committed an update")
+        }
+        fn abort_update(&mut self) {
+            panic!("Get aborted an update")
+        }
     }
     for mask in [0, READ_ONLY, EXECUTE_PROTECT, READ_ONLY | EXECUTE_PROTECT] {
         let mut original = flat(512);
@@ -117,10 +127,7 @@ impl HostMemory {
     }
 
     fn put(&mut self, address: u64, value: u64) {
-        *self
-            .live
-            .get_mut(&address)
-            .expect("table must be allocated") = value;
+        *self.live.get_mut(&address).expect("table must be allocated") = value;
     }
 
     fn no_backend_access(&self) {
@@ -146,10 +153,8 @@ impl Memory for HostMemory {
     fn begin_update(&mut self) -> Result<(), Error> {
         self.counts.begins += 1;
         assert!(self.transaction.is_none(), "transactions cannot nest");
-        self.transaction = Some(Transaction {
-            entries: self.live.clone(),
-            next_table: self.next_table,
-        });
+        self.transaction =
+            Some(Transaction { entries: self.live.clone(), next_table: self.next_table });
         // A partially initialized failed begin is explicitly abortable.
         if self.faults.begin {
             return Err(Error::AccessDenied);
@@ -163,10 +168,7 @@ impl Memory for HostMemory {
             return Err(Error::DeviceError);
         }
         let transaction = self.transaction.as_mut().expect("writes must be staged");
-        *transaction
-            .entries
-            .get_mut(&address)
-            .ok_or(Error::AccessDenied)? = value;
+        *transaction.entries.get_mut(&address).ok_or(Error::AccessDenied)? = value;
         Ok(())
     }
 
@@ -175,10 +177,7 @@ impl Memory for HostMemory {
         if self.faults.allocation_at == Some(self.counts.allocations) {
             return Err(Error::OutOfResources);
         }
-        let transaction = self
-            .transaction
-            .as_mut()
-            .expect("allocations must be staged");
+        let transaction = self.transaction.as_mut().expect("allocations must be staged");
         let address = transaction.next_table;
         transaction.next_table += PAGE_SIZE;
         for index in 0..512 {
@@ -201,23 +200,12 @@ impl Memory for HostMemory {
 
     fn abort_update(&mut self) {
         self.counts.aborts += 1;
-        assert!(
-            self.transaction.take().is_some(),
-            "abort needs an active transaction"
-        );
+        assert!(self.transaction.take().is_some(), "abort needs an active transaction");
     }
 }
 
 fn provider(memory: HostMemory) -> Provider<HostMemory> {
-    Provider {
-        config: Config {
-            root: ROOT,
-            physical_bits: 48,
-            nxe: true,
-            page1gb: true,
-        },
-        memory,
-    }
+    Provider { config: Config { root: ROOT, physical_bits: 48, nxe: true, page1gb: true }, memory }
 }
 
 fn flat(pages: u64) -> Provider<HostMemory> {
@@ -319,10 +307,7 @@ fn observe(memory: &HostMemory, virtual_address: u64) -> (Observation, u64) {
                 size,
             );
         }
-        assert_ne!(
-            entry, 0,
-            "missing table while independently observing {virtual_address:#x}"
-        );
+        assert_ne!(entry, 0, "missing table while independently observing {virtual_address:#x}");
         table = entry & ADDRESS;
     }
     unreachable!()
@@ -337,10 +322,8 @@ fn every_mask_is_incremental_from_every_existing_mask() {
                 let address = 16 * PAGE_SIZE;
                 let initial_mask = attribute_mask(initial);
                 let requested_mask = attribute_mask(requested);
-                map.memory.put(
-                    PT + 16 * 8,
-                    protect(address | NORMAL | DECORATIONS | HUGE, initial_mask),
-                );
+                map.memory
+                    .put(PT + 16 * 8, protect(address | NORMAL | DECORATIONS | HUGE, initial_mask));
                 let (before, _) = observe(&map.memory, address);
                 let expected = if clear {
                     initial_mask & !requested_mask
@@ -376,10 +359,7 @@ fn every_mask_is_incremental_from_every_existing_mask() {
 fn get_distinguishes_uniform_and_mixed_ranges_without_mutating() {
     let mut map = flat(4);
     for page in 1..3 {
-        map.memory.put(
-            PT + 8 * page,
-            protect((page * PAGE_SIZE) | NORMAL, READ_ONLY),
-        );
+        map.memory.put(PT + 8 * page, protect((page * PAGE_SIZE) | NORMAL, READ_ONLY));
     }
     let before = map.memory.live.clone();
     assert_eq!(map.get(PAGE_SIZE, PAGE_SIZE * 2), Ok(READ_ONLY));
@@ -516,21 +496,12 @@ fn missing_mappings_and_reserved_paging_encodings_are_errors() {
     for (address, value) in corruptions {
         let mut map = flat(4);
         map.memory.put(address, value);
-        assert!(
-            map.get(PAGE_SIZE, PAGE_SIZE).is_err(),
-            "corruption at {address:#x}: {value:#x}"
-        );
+        assert!(map.get(PAGE_SIZE, PAGE_SIZE).is_err(), "corruption at {address:#x}: {value:#x}");
     }
     let mut map = large(TWO_MIB, 1 << 13);
-    assert!(
-        map.get(PAGE_SIZE, PAGE_SIZE).is_err(),
-        "reserved large-page address bit"
-    );
+    assert!(map.get(PAGE_SIZE, PAGE_SIZE).is_err(), "reserved large-page address bit");
     let mut map = large(ONE_GIB, 1 << 21);
-    assert!(
-        map.get(PAGE_SIZE, PAGE_SIZE).is_err(),
-        "reserved 1-GiB address bit"
-    );
+    assert!(map.get(PAGE_SIZE, PAGE_SIZE).is_err(), "reserved 1-GiB address bit");
     let mut map = large(ONE_GIB, 0);
     map.config.page1gb = false;
     assert_eq!(map.get(PAGE_SIZE, PAGE_SIZE), Err(Error::Unsupported));
@@ -569,14 +540,9 @@ fn whole_large_leaves_edit_without_splitting() {
 #[test]
 fn partial_two_mib_split_preserves_every_neighbor_and_leaf_flag() {
     let mut map = large(TWO_MIB, DECORATIONS | LARGE_PAT);
-    let before: Vec<_> = (0..512)
-        .map(|page| observe(&map.memory, page * PAGE_SIZE).0)
-        .collect();
+    let before: Vec<_> = (0..512).map(|page| observe(&map.memory, page * PAGE_SIZE).0).collect();
     let target = 173;
-    assert_eq!(
-        map.set(target * PAGE_SIZE, PAGE_SIZE, READ_ONLY | EXECUTE_PROTECT),
-        Ok(())
-    );
+    assert_eq!(map.set(target * PAGE_SIZE, PAGE_SIZE, READ_ONLY | EXECUTE_PROTECT), Ok(()));
     assert_eq!(map.memory.counts.allocations, 1);
     for page in 0..512 {
         let (after, size) = observe(&map.memory, page * PAGE_SIZE);
@@ -604,10 +570,7 @@ fn partial_one_gib_split_preserves_offsets_and_both_pat_encodings() {
         258 * TWO_MIB,
         ONE_GIB - PAGE_SIZE,
     ];
-    let before: Vec<_> = samples
-        .iter()
-        .map(|&address| observe(&map.memory, address).0)
-        .collect();
+    let before: Vec<_> = samples.iter().map(|&address| observe(&map.memory, address).0).collect();
     assert_eq!(map.set(target, PAGE_SIZE, ACCESS_MASK), Ok(()));
     assert_eq!(map.memory.counts.allocations, 2);
     for (&address, original) in samples.iter().zip(before.iter()) {
@@ -617,14 +580,7 @@ fn partial_one_gib_split_preserves_offsets_and_both_pat_encodings() {
             expected.attributes = ACCESS_MASK;
         }
         assert_eq!(after, expected, "address {address:#x}");
-        assert_eq!(
-            size,
-            if address / TWO_MIB == target / TWO_MIB {
-                PAGE_SIZE
-            } else {
-                TWO_MIB
-            }
-        );
+        assert_eq!(size, if address / TWO_MIB == target / TWO_MIB { PAGE_SIZE } else { TWO_MIB });
     }
     assert_eq!(map.clear(target, PAGE_SIZE, ACCESS_MASK), Ok(()));
     for (&address, original) in samples.iter().zip(before.iter()) {
@@ -657,9 +613,8 @@ fn clearing_inherited_restrictions_preserves_all_neighbors() {
             let attributes = attribute_mask(mask);
             let parent_entry = map.memory.live[&parent];
             map.memory.put(parent, protect(parent_entry, attributes));
-            let before: Vec<_> = (0..512)
-                .map(|page| observe(&map.memory, page * PAGE_SIZE).0)
-                .collect();
+            let before: Vec<_> =
+                (0..512).map(|page| observe(&map.memory, page * PAGE_SIZE).0).collect();
             let target = 173;
             assert_eq!(map.get(target * PAGE_SIZE, PAGE_SIZE), Ok(attributes));
             assert_eq!(
@@ -694,30 +649,18 @@ fn clearing_one_inherited_bit_retains_other_inherited_and_leaf_protections() {
     for page in 0..512 {
         map.memory.put(
             PT + page * 8,
-            protect(
-                (page * PAGE_SIZE) | NORMAL | DECORATIONS,
-                attribute_mask(page % 8),
-            ),
+            protect((page * PAGE_SIZE) | NORMAL | DECORATIONS, attribute_mask(page % 8)),
         );
     }
-    let before: Vec<_> = (0..512)
-        .map(|page| observe(&map.memory, page * PAGE_SIZE).0)
-        .collect();
+    let before: Vec<_> = (0..512).map(|page| observe(&map.memory, page * PAGE_SIZE).0).collect();
     let target = 172;
-    assert_eq!(
-        map.clear(target * PAGE_SIZE, 3 * PAGE_SIZE, READ_ONLY),
-        Ok(())
-    );
+    assert_eq!(map.clear(target * PAGE_SIZE, 3 * PAGE_SIZE, READ_ONLY), Ok(()));
     for page in 0..512 {
         let mut expected = before[page as usize].clone();
         if (target..target + 3).contains(&page) {
             expected.attributes &= !READ_ONLY;
         }
-        assert_eq!(
-            observe(&map.memory, page * PAGE_SIZE).0,
-            expected,
-            "page={page}"
-        );
+        assert_eq!(observe(&map.memory, page * PAGE_SIZE).0, expected, "page={page}");
     }
 }
 
@@ -726,14 +669,8 @@ fn assert_rolled_back(map: &Provider<HostMemory>, before: &BTreeMap<u64, u64>, n
         &map.memory.live, before,
         "failed operation published entry changes or leaked pages"
     );
-    assert_eq!(
-        map.memory.next_table, next_table,
-        "failed operation consumed allocation state"
-    );
-    assert!(
-        map.memory.transaction.is_none(),
-        "failed operation left its transaction active"
-    );
+    assert_eq!(map.memory.next_table, next_table, "failed operation consumed allocation state");
+    assert!(map.memory.transaction.is_none(), "failed operation left its transaction active");
     assert!(map.memory.counts.begins <= 1);
     assert_eq!(map.memory.counts.aborts, map.memory.counts.begins);
 }
@@ -756,10 +693,7 @@ fn second_split_allocation_failure_rolls_back_first_split() {
     map.memory.faults.allocation_at = Some(2);
     let before = map.memory.live.clone();
     let next_table = map.memory.next_table;
-    assert_eq!(
-        map.set(PAGE_SIZE, PAGE_SIZE, READ_ONLY),
-        Err(Error::OutOfResources)
-    );
+    assert_eq!(map.set(PAGE_SIZE, PAGE_SIZE, READ_ONLY), Err(Error::OutOfResources));
     assert_eq!(map.memory.counts.allocations, 2);
     assert_rolled_back(&map, &before, next_table);
     assert_eq!(map.memory.counts.commits, 0);
@@ -771,10 +705,7 @@ fn late_split_write_failure_rolls_back_allocations_and_entries() {
     map.memory.faults.write_at = Some(600);
     let before = map.memory.live.clone();
     let next_table = map.memory.next_table;
-    assert_eq!(
-        map.set(PAGE_SIZE, PAGE_SIZE, READ_ONLY),
-        Err(Error::DeviceError)
-    );
+    assert_eq!(map.set(PAGE_SIZE, PAGE_SIZE, READ_ONLY), Err(Error::DeviceError));
     assert_eq!(map.memory.counts.writes, 600);
     assert_rolled_back(&map, &before, next_table);
     assert_eq!(map.memory.counts.commits, 0);
@@ -787,10 +718,7 @@ fn read_failures_in_preflight_and_transaction_leave_live_state_unchanged() {
         map.memory.faults.read_at = Some(failure_at);
         let before = map.memory.live.clone();
         let next_table = map.memory.next_table;
-        assert_eq!(
-            map.set(PAGE_SIZE, PAGE_SIZE, READ_ONLY),
-            Err(Error::DeviceError)
-        );
+        assert_eq!(map.set(PAGE_SIZE, PAGE_SIZE, READ_ONLY), Err(Error::DeviceError));
         assert_rolled_back(&map, &before, next_table);
         assert_eq!(map.memory.counts.begins, expected_begins);
         assert_eq!(map.memory.counts.commits, 0);
@@ -803,10 +731,7 @@ fn commit_failure_is_abortable_without_visible_changes() {
     map.memory.faults.commit = true;
     let before = map.memory.live.clone();
     let next_table = map.memory.next_table;
-    assert_eq!(
-        map.set(PAGE_SIZE, PAGE_SIZE, READ_ONLY),
-        Err(Error::DeviceError)
-    );
+    assert_eq!(map.set(PAGE_SIZE, PAGE_SIZE, READ_ONLY), Err(Error::DeviceError));
     assert_eq!(map.memory.counts.commits, 1);
     assert_rolled_back(&map, &before, next_table);
 }
@@ -816,10 +741,7 @@ fn denied_begin_aborts_partial_setup_without_publishing_changes() {
     let mut map = flat(4);
     map.memory.faults.begin = true;
     let before = map.memory.live.clone();
-    assert_eq!(
-        map.set(PAGE_SIZE, PAGE_SIZE, READ_ONLY),
-        Err(Error::AccessDenied)
-    );
+    assert_eq!(map.set(PAGE_SIZE, PAGE_SIZE, READ_ONLY), Err(Error::AccessDenied));
     assert_eq!(map.memory.live, before);
     assert_eq!(map.memory.counts.begins, 1);
     assert_eq!(map.memory.counts.writes, 0);
@@ -836,10 +758,7 @@ fn clearing_inherited_permissions_is_atomic_on_child_write_failure() {
     map.memory.faults.write_at = Some(5);
     let before = map.memory.live.clone();
     let next_table = map.memory.next_table;
-    assert_eq!(
-        map.clear(17 * PAGE_SIZE, PAGE_SIZE, ACCESS_MASK),
-        Err(Error::DeviceError)
-    );
+    assert_eq!(map.clear(17 * PAGE_SIZE, PAGE_SIZE, ACCESS_MASK), Err(Error::DeviceError));
     assert_rolled_back(&map, &before, next_table);
     assert_eq!(map.memory.counts.commits, 0);
 }
@@ -881,15 +800,11 @@ fn parent_propagation_refuses_to_erase_a_reference_to_table_zero() {
     map.memory.table(0);
     map.memory.put(0, PT | NORMAL);
     map.memory.put(PDPT, PRESENT | WRITE); // PD physically at zero, with no extra metadata.
-    map.memory
-        .put(ROOT, protect(PDPT | NORMAL, READ_PROTECT | READ_ONLY));
+    map.memory.put(ROOT, protect(PDPT | NORMAL, READ_PROTECT | READ_ONLY));
     let before = map.memory.live.clone();
     let next_table = map.memory.next_table;
     assert_eq!(map.get(PAGE_SIZE, PAGE_SIZE), Ok(READ_PROTECT | READ_ONLY));
-    assert_eq!(
-        map.clear(PAGE_SIZE, PAGE_SIZE, READ_PROTECT | READ_ONLY),
-        Err(Error::Unsupported)
-    );
+    assert_eq!(map.clear(PAGE_SIZE, PAGE_SIZE, READ_PROTECT | READ_ONLY), Err(Error::Unsupported));
     assert_rolled_back(&map, &before, next_table);
 }
 
@@ -899,10 +814,7 @@ fn invalid_split_allocation_addresses_abort_without_leaking() {
         let mut map = large(TWO_MIB, LARGE_PAT);
         map.memory.next_table = allocated_address;
         let before = map.memory.live.clone();
-        assert_eq!(
-            map.set(PAGE_SIZE, PAGE_SIZE, READ_ONLY),
-            Err(Error::Unsupported)
-        );
+        assert_eq!(map.set(PAGE_SIZE, PAGE_SIZE, READ_ONLY), Err(Error::Unsupported));
         assert_rolled_back(&map, &before, allocated_address);
     }
 }
@@ -922,10 +834,7 @@ fn sparse(addresses: &[u64]) -> Provider<HostMemory> {
             }
             table = memory.live[&location] & ADDRESS;
         }
-        memory.put(
-            table + ((address >> 12) & 511) * 8,
-            address | NORMAL | DECORATIONS,
-        );
+        memory.put(table + ((address >> 12) & 511) * 8, address | NORMAL | DECORATIONS);
     }
     provider(memory)
 }
@@ -933,31 +842,16 @@ fn sparse(addresses: &[u64]) -> Provider<HostMemory> {
 #[test]
 fn updates_cross_all_three_page_table_boundaries() {
     for boundary in [TWO_MIB, ONE_GIB, 1 << 39] {
-        let addresses = [
-            boundary - 2 * PAGE_SIZE,
-            boundary - PAGE_SIZE,
-            boundary,
-            boundary + PAGE_SIZE,
-        ];
+        let addresses =
+            [boundary - 2 * PAGE_SIZE, boundary - PAGE_SIZE, boundary, boundary + PAGE_SIZE];
         let mut map = sparse(&addresses);
-        let before: Vec<_> = addresses
-            .iter()
-            .map(|&address| observe(&map.memory, address).0)
-            .collect();
+        let before: Vec<_> =
+            addresses.iter().map(|&address| observe(&map.memory, address).0).collect();
         assert_eq!(map.get(boundary - PAGE_SIZE, 2 * PAGE_SIZE), Ok(0));
-        assert_eq!(
-            map.set(boundary - PAGE_SIZE, 2 * PAGE_SIZE, ACCESS_MASK),
-            Ok(())
-        );
-        assert_eq!(
-            map.get(boundary - PAGE_SIZE, 2 * PAGE_SIZE),
-            Ok(ACCESS_MASK)
-        );
+        assert_eq!(map.set(boundary - PAGE_SIZE, 2 * PAGE_SIZE, ACCESS_MASK), Ok(()));
+        assert_eq!(map.get(boundary - PAGE_SIZE, 2 * PAGE_SIZE), Ok(ACCESS_MASK));
         assert_eq!(map.clear(boundary, PAGE_SIZE, READ_ONLY), Ok(()));
-        assert_eq!(
-            map.get(boundary - PAGE_SIZE, 2 * PAGE_SIZE),
-            Err(Error::NoMapping)
-        );
+        assert_eq!(map.get(boundary - PAGE_SIZE, 2 * PAGE_SIZE), Err(Error::NoMapping));
         for (index, &address) in addresses.iter().enumerate() {
             let mut expected = before[index].clone();
             if index == 1 {
@@ -995,10 +889,7 @@ fn many_small_pages(table_count: u64) -> Provider<HostMemory> {
 fn query_work_budget_is_bounded_without_allocations() {
     let mut map = many_small_pages(256);
     assert_eq!(map.get(0, 256 * TWO_MIB), Err(Error::OutOfResources));
-    assert_eq!(
-        map.memory.counts.reads,
-        svmvisor_memory_attributes::x86::MAX_ENTRY_OPERATIONS
-    );
+    assert_eq!(map.memory.counts.reads, svmvisor_memory_attributes::x86::MAX_ENTRY_OPERATIONS);
     assert_eq!(map.memory.counts.begins, 0);
     assert_eq!(map.memory.counts.writes, 0);
     assert_eq!(map.memory.counts.allocations, 0);
@@ -1009,14 +900,8 @@ fn edit_work_budget_exhaustion_aborts_already_staged_writes() {
     let mut map = many_small_pages(128);
     let before = map.memory.live.clone();
     let next_table = map.memory.next_table;
-    assert_eq!(
-        map.set(0, 128 * TWO_MIB, READ_ONLY),
-        Err(Error::OutOfResources)
-    );
-    assert!(
-        map.memory.counts.writes > 0,
-        "exercise transaction exhaustion, not only preflight"
-    );
+    assert_eq!(map.set(0, 128 * TWO_MIB, READ_ONLY), Err(Error::OutOfResources));
+    assert!(map.memory.counts.writes > 0, "exercise transaction exhaustion, not only preflight");
     assert_eq!(
         map.memory.counts.reads + map.memory.counts.writes + map.memory.counts.allocations,
         svmvisor_memory_attributes::x86::MAX_ENTRY_OPERATIONS

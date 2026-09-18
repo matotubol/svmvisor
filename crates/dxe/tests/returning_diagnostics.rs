@@ -2,10 +2,10 @@
 use svmvisor_dxe::{
     delivery::returning::Delivery,
     diagnostics::native_result::NativeResult,
+    diagnostics::outcome::classify,
     diagnostics::returning::{
         ENCODING_OVERFLOW, INVALID_INNER_HEADER, NON_BOOLEAN_FLAGS, ReturningDiagnostics,
     },
-    diagnostics::outcome::classify,
 };
 use uefi_raw::Status;
 
@@ -23,17 +23,26 @@ fn delivered(inner: NativeResult) -> Delivery {
 #[test]
 fn multi_exit_wire_keeps_complete_and_partial_counts_exact() {
     let completed = NativeResult {
-        rust_entered: 1, rust_completed: 1, cleanup_complete: 1,
-        outcome: 12, attempted_entries: 65, completed_exits: 65,
-        restoration_complete: 1, adapter_checks: 15,
-        canary_observed: 1, canary_called: 1,
+        rust_entered: 1,
+        rust_completed: 1,
+        cleanup_complete: 1,
+        outcome: 12,
+        attempted_entries: 65,
+        completed_exits: 65,
+        restoration_complete: 1,
+        adapter_checks: 15,
+        canary_observed: 1,
+        canary_called: 1,
         ..NativeResult::new()
     };
     let wire = ReturningDiagnostics::capture(&delivered(completed));
     assert_eq!(wire.result_bits(), 0x2000);
     assert_eq!(wire.journal_words([1; 3]), [0, 0x0041_0041, 0x0108_5fcc]);
     let partial = NativeResult {
-        outcome: 7, refusal: 0x4303, attempted_entries: 17, completed_exits: 17,
+        outcome: 7,
+        refusal: 0x4303,
+        attempted_entries: 17,
+        completed_exits: 17,
         adapter_checks: 7,
         ..completed
     };
@@ -54,10 +63,7 @@ fn refusal_is_full_width_and_each_bounded_field_has_an_explicit_overflow_marker(
     };
     let captured = ReturningDiagnostics::capture(&delivered(base));
     assert_eq!(captured.result_bits(), 0x4000);
-    assert_eq!(
-        captured.journal_words([1, 2, 3]),
-        [0x4000_4132, 0, 0x0310_43c1]
-    );
+    assert_eq!(captured.journal_words([1, 2, 3]), [0x4000_4132, 0, 0x0310_43c1]);
 
     let boundaries = delivered(NativeResult {
         outcome: 15,
@@ -73,22 +79,10 @@ fn refusal_is_full_width_and_each_bounded_field_has_an_explicit_overflow_marker(
     assert_eq!(words[2] & ENCODING_OVERFLOW, 0);
 
     for inner in [
-        NativeResult {
-            refusal: 0x1_0000_0000,
-            ..base
-        },
-        NativeResult {
-            outcome: 16,
-            ..base
-        },
-        NativeResult {
-            attempted_entries: 0x1_0000,
-            ..base
-        },
-        NativeResult {
-            completed_exits: 0x1_0000,
-            ..base
-        },
+        NativeResult { refusal: 0x1_0000_0000, ..base },
+        NativeResult { outcome: 16, ..base },
+        NativeResult { attempted_entries: 0x1_0000, ..base },
+        NativeResult { completed_exits: 0x1_0000, ..base },
         NativeResult {
             refusal: u64::MAX,
             outcome: u64::MAX,
@@ -142,22 +136,10 @@ fn non_boolean_markers_never_become_true_and_header_errors_remain_explicit() {
         }
     }
     for inner in [
-        NativeResult {
-            magic: 0,
-            ..NativeResult::new()
-        },
-        NativeResult {
-            version: 2,
-            ..NativeResult::new()
-        },
-        NativeResult {
-            bytes: 0,
-            ..NativeResult::new()
-        },
-        NativeResult {
-            reserved: [0, 1],
-            ..NativeResult::new()
-        },
+        NativeResult { magic: 0, ..NativeResult::new() },
+        NativeResult { version: 2, ..NativeResult::new() },
+        NativeResult { bytes: 0, ..NativeResult::new() },
+        NativeResult { reserved: [0, 1], ..NativeResult::new() },
     ] {
         let captured = ReturningDiagnostics::capture(&delivered(inner));
         assert_eq!(captured.result_bits(), 0x8000);

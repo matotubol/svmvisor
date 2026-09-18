@@ -75,15 +75,12 @@ fn debug_smp_map(
     debug_hex(map.meta().desc_version as u64);
     debug("\n");
     let low = resources.low_page().base();
-    for descriptor in map
-        .entries()
-        .take(svmvisor_hypervisor::boot::ownership::MAX_OWNERSHIP_SMP_DESCRIPTORS)
+    for descriptor in
+        map.entries().take(svmvisor_hypervisor::boot::ownership::MAX_OWNERSHIP_SMP_DESCRIPTORS)
     {
         let start = descriptor.phys_start;
-        let end = descriptor
-            .page_count
-            .checked_mul(4096)
-            .and_then(|bytes| start.checked_add(bytes));
+        let end =
+            descriptor.page_count.checked_mul(4096).and_then(|bytes| start.checked_add(bytes));
         if end.is_some_and(|end| {
             (start < low + 4096 && end > low)
                 || (start < arena_base + ARENA_BYTES as u64 && end > arena_base)
@@ -180,11 +177,7 @@ pub unsafe fn run_initialized(payload: &[u8], entry_offset: usize, reject: bool)
     let mut allocation = None;
     let mut last_status = Status::OUT_OF_RESOURCES;
     for index in 1..=128_u64 {
-        let base = if requested == 0 {
-            index * 0x200000
-        } else {
-            requested
-        };
+        let base = if requested == 0 { index * 0x200000 } else { requested };
         match boot::allocate_pages(
             AllocateType::Address(base),
             MemoryType::LOADER_CODE,

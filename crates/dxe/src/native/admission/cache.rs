@@ -210,9 +210,7 @@ pub fn classify_write_back(
     if allocation_bytes == 0 || allocation_base & 4095 != 0 || allocation_bytes & 4095 != 0 {
         return Err(InvalidAllocation);
     }
-    let allocation_end = allocation_base
-        .checked_add(allocation_bytes)
-        .ok_or(InvalidAllocation)?;
+    let allocation_end = allocation_base.checked_add(allocation_bytes).ok_or(InvalidAllocation)?;
     let pages = usize::try_from(allocation_bytes / 4096).map_err(|_| TooManyPages)?;
     if pages > MAX_PAGES {
         return Err(TooManyPages);
@@ -261,12 +259,8 @@ pub fn classify_write_back(
     }
     let tseg = if snapshot.smm_mask & 2 != 0 {
         Some(
-            decode_range(
-                snapshot.smm_address,
-                snapshot.smm_mask & tseg_address_mask,
-                0,
-            )
-            .ok_or(InvalidSmmRange)?,
+            decode_range(snapshot.smm_address, snapshot.smm_mask & tseg_address_mask, 0)
+                .ok_or(InvalidSmmRange)?,
         )
     } else {
         None
@@ -281,11 +275,7 @@ pub fn classify_write_back(
     // ASeg is [A0000h,C0000h), excluded by the full-leaf lower bound.
     let apic = if snapshot.apic_base & (1 << 11) != 0 {
         let base = snapshot.apic_base & PAGE_MASK;
-        Some(Range {
-            base,
-            end: base.checked_add(4096).ok_or(InvalidMmioWindow)?,
-            memory_type: 0,
-        })
+        Some(Range { base, end: base.checked_add(4096).ok_or(InvalidMmioWindow)?, memory_type: 0 })
     } else {
         None
     };
@@ -300,11 +290,7 @@ pub fn classify_write_back(
         if end > 1 << 48 {
             return Err(InvalidMmioWindow);
         }
-        Some(Range {
-            base,
-            end,
-            memory_type: 0,
-        })
+        Some(Range { base, end, memory_type: 0 })
     } else {
         None
     };
@@ -322,10 +308,8 @@ pub fn classify_write_back(
         {
             return Err(InvalidLeaf);
         }
-        let leaf_end = mapping
-            .leaf_physical_base
-            .checked_add(mapping.leaf_bytes)
-            .ok_or(InvalidLeaf)?;
+        let leaf_end =
+            mapping.leaf_physical_base.checked_add(mapping.leaf_bytes).ok_or(InvalidLeaf)?;
         if mapping.physical_page < mapping.leaf_physical_base || expected_page > leaf_end {
             return Err(InvalidLeaf);
         }
@@ -371,12 +355,7 @@ pub fn classify_write_back(
 fn validate_snapshot(s: &CacheSnapshot) -> Result<(), CacheError> {
     use CacheError::*;
     let sev_supported = s.encryption_eax & 2 != 0;
-    let fields = captured::REQUIRED
-        | if sev_supported {
-            captured::SEV_STATUS
-        } else {
-            0
-        };
+    let fields = captured::REQUIRED | if sev_supported { captured::SEV_STATUS } else { 0 };
     if s.abi_version != ABI_VERSION
         || s.refusal != 0
         || s.captured_fields != fields
@@ -472,11 +451,7 @@ fn decode_range(base: u64, mask: u64, memory_type: u8) -> Option<Range> {
     if end > 1 << 48 {
         return None;
     }
-    Some(Range {
-        base,
-        end,
-        memory_type,
-    })
+    Some(Range { base, end, memory_type })
 }
 
 fn check_uniform_wb(
@@ -574,10 +549,7 @@ mod tests {
         }
     }
     fn pair(base: u64, bytes: u64, kind: u64) -> RegisterPair {
-        RegisterPair {
-            base: base | kind,
-            mask: (PHYSICAL_MASK & !(bytes - 1)) | 0x800,
-        }
+        RegisterPair { base: base | kind, mask: (PHYSICAL_MASK & !(bytes - 1)) | 0x800 }
     }
     fn check(s: &CacheSnapshot) -> Result<WriteBackReport, CacheError> {
         classify_write_back(s, 0x201000, 4096, &[mapping()])
@@ -609,10 +581,7 @@ mod tests {
     fn leaf_pat_selection_uses_actual_leaf_bit_position_and_current_pat_byte() {
         for index in 0..8u8 {
             let low = u64::from(index & 3) << 3;
-            assert_eq!(
-                leaf_pat_index(1 | low | (u64::from(index >> 2) << 7), 4096),
-                Ok(index)
-            );
+            assert_eq!(leaf_pat_index(1 | low | (u64::from(index >> 2) << 7), 4096), Ok(index));
             for bytes in [0x20_0000, 0x4000_0000] {
                 assert_eq!(
                     leaf_pat_index(0x81 | low | (u64::from(index >> 2) << 12), bytes),
@@ -816,12 +785,7 @@ mod tests {
             Err(CacheError::NoncontiguousMapping)
         );
         second.physical_page -= 4096;
-        assert_eq!(
-            classify_write_back(&s, 0x201000, 8192, &[mapping(), second])
-                .unwrap()
-                .pages,
-            2
-        );
+        assert_eq!(classify_write_back(&s, 0x201000, 8192, &[mapping(), second]).unwrap().pages, 2);
         assert_eq!(
             classify_write_back(&s, 0x201000, (MAX_PAGES as u64 + 1) * 4096, &[]),
             Err(CacheError::TooManyPages)

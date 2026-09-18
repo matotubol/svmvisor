@@ -1,10 +1,10 @@
 use svmvisor_hypervisor::{
-    memory::address::EncryptionState,
     arch::x86_64::capabilities::{CapabilityEvidence, CpuVendor, EvidenceFlag, OptionalFeatures},
-    svm::exit::ExitSnapshot,
+    arch::x86_64::xstate::*,
     boot::probe::*,
     boot::xstate::*,
-    arch::x86_64::xstate::*,
+    memory::address::EncryptionState,
+    svm::exit::ExitSnapshot,
 };
 
 static SAVED: XstateArea = XstateArea::new();
@@ -15,15 +15,7 @@ fn typed_plan_and_original_image_validation_cannot_be_skipped() {
     let mut other = e;
     other.original.cr0 ^= 1 << 16;
     assert!(matches!(
-        Transaction::prepare(
-            e,
-            memory(e),
-            captured(e),
-            plan(other),
-            &SAVED,
-            0xffbf,
-            0x1000
-        ),
+        Transaction::prepare(e, memory(e), captured(e), plan(other), &SAVED, 0xffbf, 0x1000),
         Err(Error::Observation)
     ));
     let mut bad = XstateArea::new();
@@ -43,9 +35,7 @@ fn gif_cannot_be_enabled_until_host_environment_and_image_reported_restored() {
     tx.observe_hsave_restored(masked_state()).unwrap();
     assert_eq!(tx.begin_restore_gif(), Err(Error::Order));
     tx.begin_restore_pre_gif_host().unwrap();
-    let ack = || AdapterRestoreAcknowledgement {
-        lease: evidence().original.lease,
-    };
+    let ack = || AdapterRestoreAcknowledgement { lease: evidence().original.lease };
     assert_eq!(
         tx.observe_pre_gif_host_restored(masked_state(), SAVED.bytes(), ack()),
         Err(Error::Observation)
@@ -61,15 +51,11 @@ fn gif_cannot_be_enabled_until_host_environment_and_image_reported_restored() {
         Err(Error::SavedImage)
     );
     assert_eq!(tx.begin_restore_gif(), Err(Error::Order));
-    tx.observe_pre_gif_host_restored(pre_gif_state(), SAVED.bytes(), ack())
-        .unwrap();
+    tx.observe_pre_gif_host_restored(pre_gif_state(), SAVED.bytes(), ack()).unwrap();
     tx.begin_restore_gif().unwrap();
 }
 fn evidence() -> AdmissionEvidence {
-    let lease = CpuLease {
-        cpu_id: 7,
-        generation: 19,
-    };
+    let lease = CpuLease { cpu_id: 7, generation: 19 };
     AdmissionEvidence {
         capabilities: CapabilityEvidence {
             vendor: CpuVendor::Amd,
@@ -80,9 +66,7 @@ fn evidence() -> AdmissionEvidence {
             physical_address_bits: Some(48),
             vm_cr_svmdis: EvidenceFlag::Clear,
             hypervisor_present: EvidenceFlag::Clear,
-            encryption: EncryptionState::Unencrypted {
-                encryption_bit: None,
-            },
+            encryption: EncryptionState::Unencrypted { encryption_bit: None },
             optional: OptionalFeatures::default(),
         },
         context: Context::FirmwareApplication,
@@ -115,11 +99,7 @@ fn memory(e: AdmissionEvidence) -> MemoryEvidence {
     }
 }
 fn captured(e: AdmissionEvidence) -> HostObservation {
-    HostObservation {
-        efer: e.original.efer & !(1 << 14),
-        cr0: e.original.cr0 & !12,
-        ..e.original
-    }
+    HostObservation { efer: e.original.efer & !(1 << 14), cr0: e.original.cr0 & !12, ..e.original }
 }
 fn prepared() -> Transaction<'static> {
     let e = evidence();
@@ -142,13 +122,7 @@ fn return_guest(tx: &mut Transaction<'_>, code: u64) {
     tx.begin_entry().unwrap();
     tx.observe_exit(
         evidence().original.lease,
-        ExitSnapshot {
-            code,
-            info1: 0,
-            info2: 0,
-            rip: 0x1000,
-            nrip: 0,
-        },
+        ExitSnapshot { code, info1: 0, info2: 0, rip: 0x1000, nrip: 0 },
     )
     .unwrap();
 }
@@ -159,8 +133,7 @@ fn restore(tx: &mut Transaction<'_>) {
     tx.begin_restore_gif().unwrap();
     tx.acknowledge_stgi(pre_gif_state()).unwrap();
     tx.begin_restore_host().unwrap();
-    tx.observe_host_restored(evidence().original, SAVED.bytes())
-        .unwrap();
+    tx.observe_host_restored(evidence().original, SAVED.bytes()).unwrap();
 }
 
 #[test]
@@ -173,18 +146,10 @@ fn completed_order_is_distinct_from_preentry_abort() {
         tx.release_memory(evidence().original.lease),
         Ok(Outcome::ExpectedExitAndRestorationObserved)
     );
-    assert_eq!(
-        tx.release_memory(evidence().original.lease),
-        Err(Error::Order)
-    );
+    assert_eq!(tx.release_memory(evidence().original.lease), Err(Error::Order));
     let mut aborted = prepared();
-    aborted
-        .observe_abort_restored(evidence().original, SAVED.bytes())
-        .unwrap();
-    assert_eq!(
-        aborted.release_memory(evidence().original.lease),
-        Ok(Outcome::AbortedBeforeEntry)
-    );
+    aborted.observe_abort_restored(evidence().original, SAVED.bytes()).unwrap();
+    assert_eq!(aborted.release_memory(evidence().original.lease), Ok(Outcome::AbortedBeforeEntry));
 }
 
 #[test]
@@ -235,30 +200,17 @@ fn failed_enable_and_install_readbacks_require_exact_rollback() {
         if during_install {
             tx.observe_enabled(armed_state(0)).unwrap();
             tx.begin_install_hsave().unwrap();
-            assert_eq!(
-                tx.observe_armed(armed_state(0x400000)),
-                Err(Error::Observation)
-            );
+            assert_eq!(tx.observe_armed(armed_state(0x400000)), Err(Error::Observation));
         } else {
-            assert_eq!(
-                tx.observe_enabled(captured(evidence())),
-                Err(Error::Observation)
-            );
+            assert_eq!(tx.observe_enabled(captured(evidence())), Err(Error::Observation));
         }
-        assert_eq!(
-            tx.release_memory(evidence().original.lease),
-            Err(Error::Order)
-        );
+        assert_eq!(tx.release_memory(evidence().original.lease), Err(Error::Order));
         assert_eq!(
             tx.observe_abort_restored(armed_state(0), SAVED.bytes()),
             Err(Error::Observation)
         );
-        tx.observe_abort_restored(evidence().original, SAVED.bytes())
-            .unwrap();
-        assert_eq!(
-            tx.release_memory(evidence().original.lease),
-            Ok(Outcome::AbortedBeforeEntry)
-        );
+        tx.observe_abort_restored(evidence().original, SAVED.bytes()).unwrap();
+        assert_eq!(tx.release_memory(evidence().original.lease), Ok(Outcome::AbortedBeforeEntry));
     }
 }
 
@@ -267,15 +219,9 @@ fn entry_attempt_without_observed_return_never_allows_cleanup_or_free() {
     let mut tx = prepared();
     arm(&mut tx);
     tx.begin_entry().unwrap();
-    assert_eq!(
-        tx.observe_abort_restored(evidence().original, SAVED.bytes()),
-        Err(Error::Order)
-    );
+    assert_eq!(tx.observe_abort_restored(evidence().original, SAVED.bytes()), Err(Error::Order));
     assert_eq!(tx.begin_restore_hsave(), Err(Error::Order));
-    assert_eq!(
-        tx.release_memory(evidence().original.lease),
-        Err(Error::Order)
-    );
+    assert_eq!(tx.release_memory(evidence().original.lease), Err(Error::Order));
 }
 
 #[test]
@@ -285,30 +231,17 @@ fn gif_acknowledgement_must_precede_svme_clear_and_final_restore() {
     return_guest(&mut tx, 0x81);
     assert_eq!(tx.begin_restore_host(), Err(Error::Order));
     tx.begin_restore_hsave().unwrap();
-    assert_eq!(
-        tx.observe_hsave_restored(armed_state(0x200000)),
-        Err(Error::Observation)
-    );
+    assert_eq!(tx.observe_hsave_restored(armed_state(0x200000)), Err(Error::Observation));
     tx.observe_hsave_restored(masked_state()).unwrap();
     assert_eq!(tx.begin_restore_host(), Err(Error::Order));
     pre_gif(&mut tx);
     tx.begin_restore_gif().unwrap();
-    assert_eq!(
-        tx.acknowledge_stgi(captured(evidence())),
-        Err(Error::Observation)
-    );
-    assert_eq!(
-        tx.release_memory(evidence().original.lease),
-        Err(Error::Order)
-    );
+    assert_eq!(tx.acknowledge_stgi(captured(evidence())), Err(Error::Observation));
+    assert_eq!(tx.release_memory(evidence().original.lease), Err(Error::Order));
     tx.acknowledge_stgi(pre_gif_state()).unwrap();
     tx.begin_restore_host().unwrap();
-    assert_eq!(
-        tx.observe_host_restored(armed_state(0), SAVED.bytes()),
-        Err(Error::Observation)
-    );
-    tx.observe_host_restored(evidence().original, SAVED.bytes())
-        .unwrap();
+    assert_eq!(tx.observe_host_restored(armed_state(0), SAVED.bytes()), Err(Error::Observation));
+    tx.observe_host_restored(evidence().original, SAVED.bytes()).unwrap();
 }
 
 #[test]
@@ -335,21 +268,11 @@ fn restoration_checks_control_values_cpu_lease_and_saved_bytes() {
             7 => observed.xcr0 = Some(7),
             _ => observed.xss = Some(1),
         }
-        assert_eq!(
-            tx.observe_host_restored(observed, SAVED.bytes()),
-            Err(Error::Observation)
-        );
+        assert_eq!(tx.observe_host_restored(observed, SAVED.bytes()), Err(Error::Observation));
     }
-    assert_eq!(
-        tx.observe_host_restored(evidence().original, &[0; 512]),
-        Err(Error::SavedImage)
-    );
-    assert_eq!(
-        tx.release_memory(evidence().original.lease),
-        Err(Error::Order)
-    );
-    tx.observe_host_restored(evidence().original, SAVED.bytes())
-        .unwrap();
+    assert_eq!(tx.observe_host_restored(evidence().original, &[0; 512]), Err(Error::SavedImage));
+    assert_eq!(tx.release_memory(evidence().original.lease), Err(Error::Order));
+    tx.observe_host_restored(evidence().original, SAVED.bytes()).unwrap();
 }
 
 #[test]
@@ -371,20 +294,11 @@ fn out_of_order_and_wrong_cpu_events_leave_transaction_unadvanced() {
     assert_eq!(tx.stage(), Stage::Prepared);
     arm(&mut tx);
     tx.begin_entry().unwrap();
-    let lease = CpuLease {
-        cpu_id: 8,
-        ..evidence().original.lease
-    };
+    let lease = CpuLease { cpu_id: 8, ..evidence().original.lease };
     assert_eq!(
         tx.observe_exit(
             lease,
-            ExitSnapshot {
-                code: 0x81,
-                info1: 0,
-                info2: 0,
-                rip: 0x1000,
-                nrip: 0
-            }
+            ExitSnapshot { code: 0x81, info1: 0, info2: 0, rip: 0x1000, nrip: 0 }
         ),
         Err(Error::Ownership)
     );
@@ -415,10 +329,7 @@ fn plan(e: AdmissionEvidence) -> FirmwareXstatePlan {
     .unwrap()
 }
 fn masked_state() -> HostObservation {
-    HostObservation {
-        rflags: evidence().original.rflags & !(1 << 9),
-        ..armed_state(0)
-    }
+    HostObservation { rflags: evidence().original.rflags & !(1 << 9), ..armed_state(0) }
 }
 fn pre_gif_state() -> HostObservation {
     HostObservation {
@@ -432,9 +343,7 @@ fn pre_gif(tx: &mut Transaction<'_>) {
     tx.observe_pre_gif_host_restored(
         pre_gif_state(),
         SAVED.bytes(),
-        AdapterRestoreAcknowledgement {
-            lease: evidence().original.lease,
-        },
+        AdapterRestoreAcknowledgement { lease: evidence().original.lease },
     )
     .unwrap();
 }

@@ -5,19 +5,40 @@ use core::sync::atomic::{AtomicU64, Ordering};
 
 /// One shared table per VM; one-to-one guest/host APIC IDs, no migration.
 #[repr(C, align(4096))]
-pub struct PhysicalIdTable { entries: [AtomicU64; 512] }
-impl Default for PhysicalIdTable { fn default() -> Self { Self::new() } }
+pub struct PhysicalIdTable {
+    entries: [AtomicU64; 512],
+}
+impl Default for PhysicalIdTable {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 impl PhysicalIdTable {
-    pub const fn new() -> Self { Self { entries: [const { AtomicU64::new(0) }; 512] } }
+    pub const fn new() -> Self {
+        Self { entries: [const { AtomicU64::new(0) }; 512] }
+    }
     /// Populate only before table publication. Each backing page must be
     /// initialized and pinned WB before the valid bit becomes visible.
-    pub fn insert_stopped(&mut self, id: u16, backing: u64, policy: &AddressPolicy) -> Result<(), Error> {
-        if id > MAX_ID { return Err(Error::InvalidId); }
-        if backing == 0 { return Err(Error::Address(AddressError::EmptyRange)); }
+    pub fn insert_stopped(
+        &mut self,
+        id: u16,
+        backing: u64,
+        policy: &AddressPolicy,
+    ) -> Result<(), Error> {
+        if id > MAX_ID {
+            return Err(Error::InvalidId);
+        }
+        if backing == 0 {
+            return Err(Error::Address(AddressError::EmptyRange));
+        }
         policy.validate(backing, PAGE_BYTES as u64, PAGE_BYTES as u64).map_err(Error::Address)?;
-        if self.entries[id as usize].load(Ordering::Acquire) != 0 { return Err(Error::Occupied); }
+        if self.entries[id as usize].load(Ordering::Acquire) != 0 {
+            return Err(Error::Occupied);
+        }
         for entry in &self.entries {
-            if entry.load(Ordering::Acquire) & 0x000f_ffff_ffff_f000 == backing { return Err(Error::AliasedPages); }
+            if entry.load(Ordering::Acquire) & 0x000f_ffff_ffff_f000 == backing {
+                return Err(Error::AliasedPages);
+            }
         }
         self.entries[id as usize].store((1 << 63) | backing | id as u64, Ordering::Release);
         Ok(())
@@ -25,9 +46,14 @@ impl PhysicalIdTable {
     /// Assigned-to-core status includes host VM-exit service; clearing this
     /// bit does not itself drain in-flight IPI references.
     pub fn set_running(&self, id: u16, running: bool) -> Result<(), Error> {
-        if id > MAX_ID || self.entries[id as usize].load(Ordering::Acquire) & (1 << 63) == 0 { return Err(Error::InvalidId); }
-        if running { self.entries[id as usize].fetch_or(1 << 62, Ordering::AcqRel); }
-        else { self.entries[id as usize].fetch_and(!(1 << 62), Ordering::AcqRel); }
+        if id > MAX_ID || self.entries[id as usize].load(Ordering::Acquire) & (1 << 63) == 0 {
+            return Err(Error::InvalidId);
+        }
+        if running {
+            self.entries[id as usize].fetch_or(1 << 62, Ordering::AcqRel);
+        } else {
+            self.entries[id as usize].fetch_and(!(1 << 62), Ordering::AcqRel);
+        }
         Ok(())
     }
     pub fn entry(&self, id: u16) -> Result<u64, Error> {

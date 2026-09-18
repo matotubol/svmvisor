@@ -50,11 +50,8 @@ pub fn retain_detailed(
     arena_base: u64,
     smp: Option<SmpResources>,
 ) -> Result<(), RetainError> {
-    let capacity = if smp.is_some() {
-        MAX_OWNERSHIP_SMP_DESCRIPTORS
-    } else {
-        MAX_OWNERSHIP_DESCRIPTORS
-    };
+    let capacity =
+        if smp.is_some() { MAX_OWNERSHIP_SMP_DESCRIPTORS } else { MAX_OWNERSHIP_DESCRIPTORS };
     if map.len() == 0 || map.len() > capacity {
         return Err(RetainError::DescriptorCount);
     }
@@ -88,16 +85,9 @@ pub fn retain_detailed(
         return Err(RetainError::MissingAddressLeaf);
     }
     let bits = __cpuid(0x80000008).eax as u8;
-    let policy = AddressPolicy::new(
-        bits,
-        EncryptionState::Unencrypted {
-            encryption_bit: None,
-        },
-    )
-    .map_err(RetainError::Address)?;
-    let arena = policy
-        .validate(arena_base, 0x100000, 4096)
+    let policy = AddressPolicy::new(bits, EncryptionState::Unencrypted { encryption_bit: None })
         .map_err(RetainError::Address)?;
+    let arena = policy.validate(arena_base, 0x100000, 4096).map_err(RetainError::Address)?;
     OwnershipRecord::encode_with_smp(page, descriptors, arena, bits, map.meta().desc_version, smp)
         .map_err(RetainError::Record)
 }

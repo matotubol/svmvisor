@@ -6,9 +6,9 @@
 //! hardware nor proves that active hidden segment state matches those bytes.
 //! CPU ownership, stable tables, mapping capture and hidden-state correspondence
 //! remain explicit adapter obligations. No descriptor is rewritten or loaded.
-use crate::memory::address::is_canonical_48;
 use crate::arch::x86_64::descriptors::SegmentState;
 use crate::host::descriptors::HostTablePointer;
+use crate::memory::address::is_canonical_48;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum FirmwareSegment {
@@ -85,10 +85,7 @@ pub fn parse_firmware_gdt(
     bytes: &[u8],
 ) -> Result<ParsedFirmwareGdt<'_>, FirmwareDescriptorError> {
     use FirmwareDescriptorError as E;
-    let last = table
-        .base
-        .checked_add(u64::from(table.limit))
-        .ok_or(E::NonCanonicalTable)?;
+    let last = table.base.checked_add(u64::from(table.limit)).ok_or(E::NonCanonicalTable)?;
     if !is_canonical_48(table.base) || !is_canonical_48(last) {
         return Err(E::NonCanonicalTable);
     }
@@ -121,11 +118,8 @@ pub fn parse_firmware_gdt(
             segments[index] = CapturedSegment::Null { selector };
             continue;
         }
-        let raw_bytes: [u8; 8] = bytes
-            .get(offset..offset + 8)
-            .ok_or(E::SelectorOutsideTable(kind))?
-            .try_into()
-            .unwrap();
+        let raw_bytes: [u8; 8] =
+            bytes.get(offset..offset + 8).ok_or(E::SelectorOutsideTable(kind))?.try_into().unwrap();
         let raw = u64::from_le_bytes(raw_bytes);
         let access = ((raw >> 40) & 0xff) as u8;
         let flags = ((raw >> 52) & 0xf) as u8;
@@ -162,11 +156,7 @@ pub fn parse_firmware_gdt(
             }
         }
         let limit = ((raw & 0xffff) | ((raw >> 32) & 0xf0000)) as u32;
-        let limit = if flags & 8 != 0 {
-            (limit << 12) | 0xfff
-        } else {
-            limit
-        };
+        let limit = if flags & 8 != 0 { (limit << 12) | 0xfff } else { limit };
         let base = ((raw >> 16) & 0xffff) | ((raw >> 32) & 0xff) << 16 | ((raw >> 56) & 0xff) << 24;
         segments[index] = CapturedSegment::Descriptor {
             raw,
@@ -183,10 +173,7 @@ pub fn parse_firmware_gdt(
         selectors,
         bytes,
         segments,
-        range: GdtRange {
-            first: table.base,
-            last,
-        },
+        range: GdtRange { first: table.base, last },
     })
 }
 

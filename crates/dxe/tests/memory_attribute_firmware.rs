@@ -18,10 +18,7 @@ const NX: u64 = 1 << 63;
 const BASE: u64 = 0x400000;
 const TWO_MIB: u64 = 1 << 21;
 const ONE_GIB: u64 = 1 << 30;
-const OWNED: &[Range] = &[Range {
-    base: 0,
-    length: 1 << 40,
-}];
+const OWNED: &[Range] = &[Range { base: 0, length: 1 << 40 }];
 
 struct State {
     config: Config,
@@ -41,12 +38,7 @@ struct State {
 impl State {
     fn new() -> Self {
         Self {
-            config: Config {
-                root: 0x1000,
-                physical_bits: 48,
-                nxe: true,
-                page1gb: true,
-            },
+            config: Config { root: 0x1000, physical_bits: 48, nxe: true, page1gb: true },
             entries: BTreeMap::new(),
             calls: Vec::new(),
             reads: 0,
@@ -62,8 +54,7 @@ impl State {
     }
 
     fn map(&mut self, base: u64, size: u64, attributes: u64, extra: u64) -> u64 {
-        self.entries
-            .insert(0x1000 + ((base >> 39) & 511) * 8, 0x2003);
+        self.entries.insert(0x1000 + ((base >> 39) & 511) * 8, 0x2003);
         let pdpt = 0x2000 + ((base >> 30) & 511) * 8;
         let pd = 0x3000 + ((base >> 21) & 511) * 8;
         let slot = match size {
@@ -132,20 +123,12 @@ struct Context(Arc<Mutex<State>>);
 // data. There are no control registers, firmware pointers or hardware side effects.
 unsafe impl QualifiedCpuContext for Context {
     fn verify(&mut self, _: u64, _: u64, _: u64) -> Result<(), Error> {
-        if self.0.lock().unwrap().before_error {
-            Err(Error::AccessDenied)
-        } else {
-            Ok(())
-        }
+        if self.0.lock().unwrap().before_error { Err(Error::AccessDenied) } else { Ok(()) }
     }
     fn verify_after(&mut self) -> Result<(), Error> {
         let mut state = self.0.lock().unwrap();
         state.after_checks += 1;
-        if state.after_error {
-            Err(Error::DeviceError)
-        } else {
-            Ok(())
-        }
+        if state.after_error { Err(Error::DeviceError) } else { Ok(()) }
     }
 }
 
@@ -166,9 +149,7 @@ unsafe extern "efiapi" fn cpu_set(
     let mut state = mock.state.lock().unwrap();
     state.calls.push((base, length, mask));
     if !state.do_nothing {
-        let slot = state
-            .leaf(base)
-            .expect("the bridge must query before its callback");
+        let slot = state.leaf(base).expect("the bridge must query before its callback");
         let value = state.entries.get_mut(&slot).unwrap();
         *value = (*value | 3) & !NX;
         if mask & RP != 0 {
@@ -220,10 +201,7 @@ fn fixture(
 
 #[test]
 fn cpu_protocol_guid_and_slot_layout_match_pi() {
-    assert_eq!(
-        CPU_ARCH_PROTOCOL_GUID,
-        guid!("26baccb1-6f42-11d4-bce7-0080c73c8881")
-    );
+    assert_eq!(CPU_ARCH_PROTOCOL_GUID, guid!("26baccb1-6f42-11d4-bce7-0080c73c8881"));
     assert_eq!(
         std::mem::offset_of!(CpuArchProtocol, set_memory_attributes),
         7 * std::mem::size_of::<usize>()
@@ -247,10 +225,7 @@ fn all_protection_combinations_get_set_clear_through_actual_efi_callback() {
         assert_eq!(bridge.get(BASE, PAGE_SIZE), Ok(mask));
         assert_eq!(bridge.clear(BASE, PAGE_SIZE, mask), Ok(()));
         assert_eq!(bridge.get(BASE, PAGE_SIZE), Ok(0));
-        assert_eq!(
-            state.lock().unwrap().calls,
-            [(BASE, PAGE_SIZE, mask), (BASE, PAGE_SIZE, 0)]
-        );
+        assert_eq!(state.lock().unwrap().calls, [(BASE, PAGE_SIZE, mask), (BASE, PAGE_SIZE, 0)]);
         assert!(!bridge.is_poisoned());
     }
 }
@@ -260,10 +235,7 @@ fn incremental_changes_preserve_unmentioned_protections() {
     let (_cpu, state, mut bridge) = fixture(BASE, PAGE_SIZE, RO, 0, OWNED, &[]);
     bridge.set(BASE, PAGE_SIZE, XP).unwrap();
     bridge.clear(BASE, PAGE_SIZE, RO).unwrap();
-    assert_eq!(
-        state.lock().unwrap().calls,
-        [(BASE, PAGE_SIZE, RO | XP), (BASE, PAGE_SIZE, XP)]
-    );
+    assert_eq!(state.lock().unwrap().calls, [(BASE, PAGE_SIZE, RO | XP), (BASE, PAGE_SIZE, XP)]);
 }
 
 #[test]
@@ -280,10 +252,7 @@ fn whole_large_leaves_preserve_non_access_flags_and_never_request_cache_bits() {
         bridge.set(base, size, RO | XP).unwrap();
         let s = state.lock().unwrap();
         assert_eq!(s.calls, [(base, size, RO | XP)]);
-        assert_eq!(
-            s.entries[&s.leaf(base).unwrap()] & !(NX | 3),
-            before & !(NX | 3)
-        );
+        assert_eq!(s.entries[&s.leaf(base).unwrap()] & !(NX | 3), before & !(NX | 3));
     }
 }
 
@@ -291,10 +260,7 @@ fn whole_large_leaves_preserve_non_access_flags_and_never_request_cache_bits() {
 fn partial_huge_leaf_and_multiple_small_leaves_refuse_changes() {
     let (_cpu, state, mut bridge) = fixture(BASE, TWO_MIB, 0, 0, OWNED, &[]);
     assert_eq!(bridge.set(BASE, PAGE_SIZE, RO), Err(Error::Unsupported));
-    assert_eq!(
-        bridge.set(BASE + PAGE_SIZE, PAGE_SIZE, RO),
-        Err(Error::Unsupported)
-    );
+    assert_eq!(bridge.set(BASE + PAGE_SIZE, PAGE_SIZE, RO), Err(Error::Unsupported));
     assert!(state.lock().unwrap().calls.is_empty());
     let (_cpu, state, mut bridge) = fixture(BASE, PAGE_SIZE, 0, 0, OWNED, &[]);
     state.lock().unwrap().map(BASE + PAGE_SIZE, PAGE_SIZE, 0, 0);
@@ -320,10 +286,7 @@ fn inherited_restrictions_are_reported_but_not_changed() {
             }
         }
         assert_eq!(bridge.get(BASE, PAGE_SIZE), Ok(restriction));
-        assert_eq!(
-            bridge.clear(BASE, PAGE_SIZE, restriction),
-            Err(Error::Unsupported)
-        );
+        assert_eq!(bridge.clear(BASE, PAGE_SIZE, restriction), Err(Error::Unsupported));
         assert_eq!(bridge.set(BASE, PAGE_SIZE, restriction), Ok(()));
         assert!(state.lock().unwrap().calls.is_empty());
     }
@@ -340,16 +303,10 @@ fn noops_need_no_policy_grant_and_may_cover_partial_or_multiple_leaves() {
 #[test]
 fn mixed_permissions_and_absent_mappings_never_reach_firmware() {
     let (_cpu, state, mut bridge) = fixture(BASE, PAGE_SIZE, 0, 0, OWNED, &[]);
-    state
-        .lock()
-        .unwrap()
-        .map(BASE + PAGE_SIZE, PAGE_SIZE, RO, 0);
+    state.lock().unwrap().map(BASE + PAGE_SIZE, PAGE_SIZE, RO, 0);
     assert_eq!(bridge.get(BASE, 2 * PAGE_SIZE), Err(Error::NoMapping));
     assert_eq!(bridge.set(BASE, 2 * PAGE_SIZE, RO), Err(Error::Unsupported));
-    assert_eq!(
-        bridge.set(BASE + 2 * PAGE_SIZE, PAGE_SIZE, RO),
-        Err(Error::Unsupported)
-    );
+    assert_eq!(bridge.set(BASE + 2 * PAGE_SIZE, PAGE_SIZE, RO), Err(Error::Unsupported));
     assert!(state.lock().unwrap().calls.is_empty());
 }
 
@@ -377,16 +334,9 @@ fn nonidentity_reserved_and_unsupported_nx_encodings_are_rejected() {
 
 #[test]
 fn owned_protected_and_source_table_policy_prevents_callback() {
-    for (owned, protected) in [
-        (&[][..], &[][..]),
-        (
-            OWNED,
-            &[Range {
-                base: BASE,
-                length: PAGE_SIZE,
-            }][..],
-        ),
-    ] {
+    for (owned, protected) in
+        [(&[][..], &[][..]), (OWNED, &[Range { base: BASE, length: PAGE_SIZE }][..])]
+    {
         // Leak only small immutable host policy fixtures to match retained policy lifetime.
         let owned = Box::leak(owned.to_vec().into_boxed_slice());
         let protected = Box::leak(protected.to_vec().into_boxed_slice());
@@ -402,24 +352,12 @@ fn owned_protected_and_source_table_policy_prevents_callback() {
 #[test]
 fn policy_rejects_overflow_unaligned_zero_and_overlapping_intervals() {
     let invalid = [
-        vec![Range {
-            base: u64::MAX - 4095,
-            length: PAGE_SIZE,
-        }],
-        vec![Range {
-            base: 1,
-            length: PAGE_SIZE,
-        }],
+        vec![Range { base: u64::MAX - 4095, length: PAGE_SIZE }],
+        vec![Range { base: 1, length: PAGE_SIZE }],
         vec![Range { base: 0, length: 0 }],
         vec![
-            Range {
-                base: BASE,
-                length: 2 * PAGE_SIZE,
-            },
-            Range {
-                base: BASE + PAGE_SIZE,
-                length: PAGE_SIZE,
-            },
+            Range { base: BASE, length: 2 * PAGE_SIZE },
+            Range { base: BASE + PAGE_SIZE, length: PAGE_SIZE },
         ],
     ];
     for policy in invalid {
@@ -446,12 +384,7 @@ fn parameter_failures_happen_before_reads_or_callbacks() {
         (BASE, 0, RO, Error::InvalidParameter),
         (BASE + 1, PAGE_SIZE, RO, Error::Unsupported),
         (BASE, PAGE_SIZE + 1, RO, Error::Unsupported),
-        (
-            u64::MAX - PAGE_SIZE + 1,
-            PAGE_SIZE,
-            RO,
-            Error::InvalidParameter,
-        ),
+        (u64::MAX - PAGE_SIZE + 1, PAGE_SIZE, RO, Error::InvalidParameter),
     ] {
         assert_eq!(bridge.set(base, length, mask), Err(error));
     }
@@ -538,10 +471,7 @@ fn firmware_error_and_context_failure_are_both_retained() {
         s.after_error = true;
     }
     assert_eq!(bridge.set(BASE, PAGE_SIZE, RO), Err(Error::OutOfResources));
-    assert_eq!(
-        bridge.setter().last_status(),
-        Some(Status::OUT_OF_RESOURCES)
-    );
+    assert_eq!(bridge.setter().last_status(), Some(Status::OUT_OF_RESOURCES));
     assert_eq!(bridge.setter().last_after_error(), Some(Error::DeviceError));
     assert!(bridge.is_poisoned());
 }
@@ -553,18 +483,8 @@ fn unsupported_one_gib_and_invalid_root_configuration_prevent_callback() {
     assert_eq!(bridge.set(ONE_GIB, ONE_GIB, RO), Err(Error::Unsupported));
     assert!(state.lock().unwrap().calls.is_empty());
     for config in [
-        Config {
-            root: 0x1001,
-            physical_bits: 48,
-            nxe: true,
-            page1gb: true,
-        },
-        Config {
-            root: 0x1000,
-            physical_bits: 53,
-            nxe: true,
-            page1gb: true,
-        },
+        Config { root: 0x1001, physical_bits: 48, nxe: true, page1gb: true },
+        Config { root: 0x1000, physical_bits: 53, nxe: true, page1gb: true },
     ] {
         let (_cpu, state, mut bridge) = fixture(BASE, PAGE_SIZE, 0, 0, OWNED, &[]);
         state.lock().unwrap().config = config;

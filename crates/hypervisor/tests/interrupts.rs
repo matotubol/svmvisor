@@ -62,10 +62,7 @@ fn irq_encoding_and_virtual_intercept_are_byte_exact() {
 #[test]
 fn vector_and_tpr_validation_preserve_all_bytes() {
     for vector in 0..32 {
-        assert_eq!(
-            PendingExternalInterrupt::new(vector),
-            Err(Error::ReservedVector { vector })
-        );
+        assert_eq!(PendingExternalInterrupt::new(vector), Err(Error::ReservedVector { vector }));
     }
     let (mut vmcb, _) = armed();
     for priority in 16..=255 {
@@ -91,11 +88,7 @@ fn arming_conflicts_preserve_request_and_entire_vmcb() {
         (0x0a8, 0x8000_0306, Error::PendingInjection),
         (0x088, 0x8000_0051, Error::NestedDeliveryUnsupported),
         (0x060, 1 << 8, Error::PendingVirtualInterrupt),
-        (
-            0x060,
-            1 << 20,
-            Error::UnsupportedControl { control: 1 << 20 },
-        ),
+        (0x060, 1 << 20, Error::UnsupportedControl { control: 1 << 20 }),
         (0x090, 3, Error::UnsupportedNestedControl { control: 3 }),
     ];
     for (offset, value, error) in cases {
@@ -125,10 +118,7 @@ fn unsupported_control_bits_are_never_erased_by_arming_or_tpr_edit() {
             vmcb.arm_external_interrupt(&mut request),
             Err(Error::UnsupportedControl { control })
         );
-        assert_eq!(
-            vmcb.set_virtual_interrupt_tpr(0),
-            Err(Error::UnsupportedControl { control })
-        );
+        assert_eq!(vmcb.set_virtual_interrupt_tpr(0), Err(Error::UnsupportedControl { control }));
         assert_eq!(vmcb.bytes(), &before);
         assert_eq!(request.state(), State::Queued);
     }
@@ -139,44 +129,29 @@ fn blocked_and_window_exits_keep_one_request_until_hardware_consumes_it() {
     let (mut vmcb, mut request) = armed();
     // Stopped IF/shadow/priority are diagnostic, not permission for software to
     // discard/reinject. Hardware owns masking; same V_IRQ survives every exit.
-    for (flags, shadow, tpr, code) in [
-        (2, 0, 0, 0x81),
-        (0x202, 1, 0, 0x81),
-        (0x202, 0, 6, 0x81),
-        (0x202, 0, 4, 0x64),
-    ] {
+    for (flags, shadow, tpr, code) in
+        [(2, 0, 0, 0x81), (0x202, 1, 0, 0x81), (0x202, 0, 6, 0x81), (0x202, 0, 4, 0x64)]
+    {
         hardware_write(&mut vmcb, 0x570, flags);
         hardware_write(&mut vmcb, 0x068, shadow);
         hardware_write(&mut vmcb, 0x070, code);
         vmcb.set_virtual_interrupt_tpr(tpr).unwrap();
         let before = *vmcb.bytes();
         assert_eq!(vmcb.interrupt_shadow(), shadow != 0);
-        assert_eq!(
-            vmcb.observe_external_interrupt_after_exit(&mut request),
-            Ok(State::Armed)
-        );
-        assert_eq!(
-            vmcb.arm_external_interrupt(&mut request),
-            Err(Error::RequestNotQueued)
-        );
+        assert_eq!(vmcb.observe_external_interrupt_after_exit(&mut request), Ok(State::Armed));
+        assert_eq!(vmcb.arm_external_interrupt(&mut request), Err(Error::RequestNotQueued));
         assert_eq!(vmcb.bytes(), &before);
     }
     let control = vmcb.virtual_interrupt_control() & !(1 << 8);
     hardware_write(&mut vmcb, 0x060, control);
     hardware_write(&mut vmcb, 0x070, 0x81);
     let before = *vmcb.bytes();
-    assert_eq!(
-        vmcb.observe_external_interrupt_after_exit(&mut request),
-        Ok(State::Consumed)
-    );
+    assert_eq!(vmcb.observe_external_interrupt_after_exit(&mut request), Ok(State::Consumed));
     assert_eq!(
         vmcb.observe_external_interrupt_after_exit(&mut request),
         Err(Error::RequestNotArmed)
     );
-    assert_eq!(
-        vmcb.arm_external_interrupt(&mut request),
-        Err(Error::RequestNotQueued)
-    );
+    assert_eq!(vmcb.arm_external_interrupt(&mut request), Err(Error::RequestNotQueued));
     assert_eq!(vmcb.bytes(), &before);
 }
 
@@ -193,10 +168,7 @@ fn consumed_bit_never_hides_failed_or_interrupted_delivery_or_competing_event() 
         hardware_write(&mut vmcb, 0x060, control);
         hardware_write(&mut vmcb, offset, value);
         let before = *vmcb.bytes();
-        assert_eq!(
-            vmcb.observe_external_interrupt_after_exit(&mut request),
-            Err(error)
-        );
+        assert_eq!(vmcb.observe_external_interrupt_after_exit(&mut request), Err(error));
         assert_eq!(request.state(), State::Armed);
         assert_eq!(vmcb.bytes(), &before);
     }
@@ -210,10 +182,7 @@ fn observation_refuses_changed_vector_priority_masking_and_advanced_modes() {
         hardware_write(&mut vmcb, 0x060, control);
         let before = *vmcb.bytes();
         let result = vmcb.observe_external_interrupt_after_exit(&mut request);
-        assert!(matches!(
-            result,
-            Err(Error::ControlMismatch | Error::UnsupportedControl { .. })
-        ));
+        assert!(matches!(result, Err(Error::ControlMismatch | Error::UnsupportedControl { .. })));
         assert_eq!(request.state(), State::Armed);
         assert_eq!(vmcb.bytes(), &before);
     }
@@ -234,10 +203,7 @@ fn reflection_refuses_reverse_conflict_with_an_armed_irq() {
     hardware_write(&mut vmcb, 0x070, 0x4e);
     hardware_write(&mut vmcb, 0x080, 0xfeed_beef);
     let before = *vmcb.bytes();
-    assert_eq!(
-        vmcb.reflect_exception(),
-        Err(ReflectionError::PendingVirtualInterrupt)
-    );
+    assert_eq!(vmcb.reflect_exception(), Err(ReflectionError::PendingVirtualInterrupt));
     assert_eq!(vmcb.bytes(), &before);
     assert_eq!(request.state(), State::Armed);
 }

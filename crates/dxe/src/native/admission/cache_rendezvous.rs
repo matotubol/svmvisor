@@ -92,27 +92,12 @@ pub enum RendezvousError {
     Bounds,
     Inventory,
     ReusedOrInvalidCallback,
-    Incomplete {
-        processor: usize,
-    },
-    Stale {
-        processor: usize,
-    },
-    Capture {
-        processor: usize,
-        error: CaptureError,
-    },
-    CaptureShape {
-        processor: usize,
-    },
-    PagingRoot {
-        processor: usize,
-        error: PagingRootError,
-    },
-    Mismatch {
-        processor: usize,
-        field: ConfigurationField,
-    },
+    Incomplete { processor: usize },
+    Stale { processor: usize },
+    Capture { processor: usize, error: CaptureError },
+    CaptureShape { processor: usize },
+    PagingRoot { processor: usize, error: PagingRootError },
+    Mismatch { processor: usize, field: ConfigurationField },
     Cleanup(Status),
 }
 
@@ -366,11 +351,7 @@ impl PreparedCacheRendezvous<'_> {
             return 0x52;
         }
         let rejected = (bsp.cr4 ^ ap.cr4) & !AP_CR4_DIFFERENCE;
-        if rejected.is_power_of_two() {
-            0xc0 | rejected.trailing_zeros() as u8
-        } else {
-            0x52
-        }
+        if rejected.is_power_of_two() { 0xc0 | rejected.trailing_zeros() as u8 } else { 0x52 }
     }
 
     fn slot(&self, number: usize) -> Result<&Slot, RendezvousError> {
@@ -385,10 +366,7 @@ impl PreparedCacheRendezvous<'_> {
     /// Pool ownership does not itself qualify current mappings or memory type.
     pub fn storage_range(&self) -> Result<(u64, usize), RendezvousError> {
         let pool = self.pool.ok_or(RendezvousError::Released)?;
-        Ok((
-            pool.as_ptr().addr() as u64,
-            self.report.total_processors * size_of::<Slot>(),
-        ))
+        Ok((pool.as_ptr().addr() as u64, self.report.total_processors * size_of::<Slot>()))
     }
 
     pub fn release(&mut self) -> Result<(), Status> {
@@ -408,10 +386,8 @@ impl PreparedCacheRendezvous<'_> {
             return Err(RendezvousError::Incomplete { processor: number });
         }
         let status = unsafe { *slot.status.get() };
-        decode_status(status).map_err(|error| RendezvousError::Capture {
-            processor: number,
-            error,
-        })?;
+        decode_status(status)
+            .map_err(|error| RendezvousError::Capture { processor: number, error })?;
         let snapshot = unsafe { &*slot.snapshot.get() };
         if snapshot.rflags & UNSUPPORTED_FLAGS != 0 {
             return Err(RendezvousError::Capture {
@@ -435,10 +411,8 @@ impl PreparedCacheRendezvous<'_> {
         // This acquire and the cache checks precede every paging-root read.
         self.completed_snapshot(number)?;
         let slot = self.slot(number)?;
-        unsafe { *slot.paging_root.get() }.map_err(|error| RendezvousError::PagingRoot {
-            processor: number,
-            error,
-        })
+        unsafe { *slot.paging_root.get() }
+            .map_err(|error| RendezvousError::PagingRoot { processor: number, error })
     }
 
     /// Latest completed actual BSP CR3, including its PWT/PCD bits. This value
@@ -480,11 +454,7 @@ impl PreparedCacheRendezvous<'_> {
         }
         // Bind even a single-BSP machine to one scope. Repeated BSP captures
         // are allowed only inside that scope; no old object crosses a new one.
-        bind_bsp_round(
-            &mut self.bsp_rendezvous,
-            guard.rendezvous(),
-            current.bsp_number,
-        )?;
+        bind_bsp_round(&mut self.bsp_rendezvous, guard.rendezvous(), current.bsp_number)?;
         let slot = self.slot(current.bsp_number)?;
         slot.state.store(WRITING, Ordering::Relaxed);
         // &mut self excludes all BSP snapshot references while it is replaced.
@@ -509,10 +479,7 @@ impl PreparedCacheRendezvous<'_> {
                 if field == ConfigurationField::Cr4 {
                     self.cr4_mismatch_processor = Some(number);
                 }
-                return Err(RendezvousError::Mismatch {
-                    processor: number,
-                    field,
-                });
+                return Err(RendezvousError::Mismatch { processor: number, field });
             }
             if self.completed_cr3(number)? != bsp_cr3 {
                 return Err(RendezvousError::Mismatch {
@@ -651,8 +618,7 @@ pub unsafe fn prepare<'a>(
         return Err(RendezvousError::Bounds);
     }
     // Verify CPU storage is live before creating a second allocation.
-    cpus.processor_information(report.bsp_number)
-        .map_err(RendezvousError::Cpu)?;
+    cpus.processor_information(report.bsp_number).map_err(RendezvousError::Cpu)?;
     let mut raw = ptr::null_mut();
     let status = unsafe {
         (services.allocate_pool)(
@@ -692,9 +658,7 @@ fn initialize(
         return Err(RendezvousError::Layout);
     }
     for number in 0..owned.report.total_processors {
-        let information = cpus
-            .processor_information(number)
-            .map_err(RendezvousError::Cpu)?;
+        let information = cpus.processor_information(number).map_err(RendezvousError::Cpu)?;
         unsafe {
             pool.as_ptr().add(number).write(Slot {
                 information,
@@ -737,12 +701,8 @@ fn bind_bsp_round(
 
 fn complete_shape(snapshot: &CacheSnapshot) -> bool {
     let sev = snapshot.encryption_eax & 2 != 0;
-    let fields = native_cache::captured::REQUIRED
-        | if sev {
-            native_cache::captured::SEV_STATUS
-        } else {
-            0
-        };
+    let fields =
+        native_cache::captured::REQUIRED | if sev { native_cache::captured::SEV_STATUS } else { 0 };
     let count = snapshot.mtrr_cap & 255;
     snapshot.abi_version == native_cache::ABI_VERSION
         && snapshot.refusal == 0
@@ -818,16 +778,10 @@ mod tests {
     #[test]
     fn bsp_binding_rejects_a_new_round_even_without_any_ap_slot() {
         let mut bound = 0;
-        assert_eq!(
-            bind_bsp_round(&mut bound, 0, 0),
-            Err(RendezvousError::Stale { processor: 0 })
-        );
+        assert_eq!(bind_bsp_round(&mut bound, 0, 0), Err(RendezvousError::Stale { processor: 0 }));
         assert_eq!(bind_bsp_round(&mut bound, 7, 0), Ok(()));
         assert_eq!(bind_bsp_round(&mut bound, 7, 0), Ok(()));
-        assert_eq!(
-            bind_bsp_round(&mut bound, 8, 0),
-            Err(RendezvousError::Stale { processor: 0 })
-        );
+        assert_eq!(bind_bsp_round(&mut bound, 8, 0), Err(RendezvousError::Stale { processor: 0 }));
         assert_eq!(bound, 7);
     }
 }

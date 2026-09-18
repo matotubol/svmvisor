@@ -36,54 +36,18 @@ fn completed() -> NativeResult {
 fn delivery_never_substitutes_for_complete_probe_evidence() {
     assert_eq!(classify(&delivered(completed())), Completed);
     for changed in [
-        NativeResult {
-            attempted_entries: 0,
-            ..completed()
-        },
-        NativeResult {
-            attempted_entries: 2,
-            ..completed()
-        },
-        NativeResult {
-            completed_exits: 0,
-            ..completed()
-        },
-        NativeResult {
-            restoration_complete: 0,
-            ..completed()
-        },
-        NativeResult {
-            cleanup_complete: 0,
-            ..completed()
-        },
-        NativeResult {
-            adapter_checks: 7,
-            ..completed()
-        },
-        NativeResult {
-            canary_failures: 1,
-            ..completed()
-        },
-        NativeResult {
-            canary_observed: 0,
-            ..completed()
-        },
-        NativeResult {
-            canary_called: 0,
-            ..completed()
-        },
-        NativeResult {
-            rust_completed: 0,
-            ..completed()
-        },
-        NativeResult {
-            outcome: 3,
-            ..completed()
-        },
-        NativeResult {
-            reserved: [1, 0],
-            ..completed()
-        },
+        NativeResult { attempted_entries: 0, ..completed() },
+        NativeResult { attempted_entries: 2, ..completed() },
+        NativeResult { completed_exits: 0, ..completed() },
+        NativeResult { restoration_complete: 0, ..completed() },
+        NativeResult { cleanup_complete: 0, ..completed() },
+        NativeResult { adapter_checks: 7, ..completed() },
+        NativeResult { canary_failures: 1, ..completed() },
+        NativeResult { canary_observed: 0, ..completed() },
+        NativeResult { canary_called: 0, ..completed() },
+        NativeResult { rust_completed: 0, ..completed() },
+        NativeResult { outcome: 3, ..completed() },
+        NativeResult { reserved: [1, 0], ..completed() },
     ] {
         assert_eq!(classify(&delivered(changed)), Failed, "{changed:?}");
     }
@@ -111,47 +75,18 @@ fn refusal_requires_zero_entries_and_consistent_inner_canary_markers() {
     };
     assert_eq!(classify(&delivered(refused)), Refused);
     assert_eq!(
-        classify(&delivered(NativeResult {
-            canary_called: 1,
-            canary_observed: 1,
-            ..refused
-        })),
+        classify(&delivered(NativeResult { canary_called: 1, canary_observed: 1, ..refused })),
         Refused
     );
     for changed in [
-        NativeResult {
-            attempted_entries: 1,
-            ..refused
-        },
-        NativeResult {
-            attempted_entries: u64::MAX,
-            ..refused
-        },
-        NativeResult {
-            canary_called: 1,
-            ..refused
-        },
-        NativeResult {
-            canary_called: 2,
-            canary_observed: 1,
-            ..refused
-        },
-        NativeResult {
-            canary_observed: 1,
-            ..refused
-        },
-        NativeResult {
-            canary_failures: 1,
-            ..refused
-        },
-        NativeResult {
-            cleanup_complete: 0,
-            ..refused
-        },
-        NativeResult {
-            rust_entered: 0,
-            ..refused
-        },
+        NativeResult { attempted_entries: 1, ..refused },
+        NativeResult { attempted_entries: u64::MAX, ..refused },
+        NativeResult { canary_called: 1, ..refused },
+        NativeResult { canary_called: 2, canary_observed: 1, ..refused },
+        NativeResult { canary_observed: 1, ..refused },
+        NativeResult { canary_failures: 1, ..refused },
+        NativeResult { cleanup_complete: 0, ..refused },
+        NativeResult { rust_entered: 0, ..refused },
     ] {
         assert_eq!(classify(&delivered(changed)), Failed, "{changed:?}");
     }
@@ -160,20 +95,13 @@ fn refusal_requires_zero_entries_and_consistent_inner_canary_markers() {
 #[test]
 fn multi_exit_completion_requires_the_whole_fixed_run_and_valid_return() {
     // Independent wire values: a single-entry success cannot satisfy this profile.
-    let multi = NativeResult {
-        outcome: 12,
-        attempted_entries: 65,
-        completed_exits: 65,
-        ..completed()
-    };
+    let multi =
+        NativeResult { outcome: 12, attempted_entries: 65, completed_exits: 65, ..completed() };
     assert_eq!(classify(&delivered(multi)), Completed);
     for entries in 0..=66 {
         for exits in 0..=66 {
-            let candidate = NativeResult {
-                attempted_entries: entries,
-                completed_exits: exits,
-                ..multi
-            };
+            let candidate =
+                NativeResult { attempted_entries: entries, completed_exits: exits, ..multi };
             assert_eq!(
                 classify(&delivered(candidate)),
                 if entries == 65 && exits == 65 { Completed } else { Failed },
@@ -212,8 +140,14 @@ fn multi_exit_completion_requires_the_whole_fixed_run_and_valid_return() {
     delivery.cleanup_status = Status::DEVICE_ERROR;
     assert_eq!(classify(&delivery), Failed);
     // Partial execution cannot be relabeled as a refusal with no guest execution.
-    assert_eq!(classify(&delivered(NativeResult {
-        outcome: 1, refusal: 0x4301, attempted_entries: 17, completed_exits: 17,
-        ..multi
-    })), Failed);
+    assert_eq!(
+        classify(&delivered(NativeResult {
+            outcome: 1,
+            refusal: 0x4301,
+            attempted_entries: 17,
+            completed_exits: 17,
+            ..multi
+        })),
+        Failed
+    );
 }

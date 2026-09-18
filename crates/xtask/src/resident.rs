@@ -13,14 +13,25 @@ use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 
 /// Files and directories whose exact bytes define a resident build.
-const SOURCE_FILES: [&str; 4] = ["Cargo.toml", "Cargo.lock", ".cargo/config.toml", "rust-toolchain.toml"];
-const SOURCE_DIRECTORIES: [&str; 6] = ["crates/hypervisor", "crates/dxe", "crates/memory-attributes",
-    "crates/resident-payload", "crates/firmware-handoff", "crates/xtask"];
+const SOURCE_FILES: [&str; 4] =
+    ["Cargo.toml", "Cargo.lock", ".cargo/config.toml", "rust-toolchain.toml"];
+const SOURCE_DIRECTORIES: [&str; 6] = [
+    "crates/hypervisor",
+    "crates/dxe",
+    "crates/memory-attributes",
+    "crates/resident-payload",
+    "crates/firmware-handoff",
+    "crates/xtask",
+];
 const SKIPPED_DIRECTORIES: [&str; 2] = ["target", "__pycache__"];
 
 /// The repository root: this crate lives at `crates/xtask`.
 pub fn root() -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR")).parent().and_then(Path::parent).expect("crates/xtask lives two levels below the root").to_path_buf()
+    Path::new(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .and_then(Path::parent)
+        .expect("crates/xtask lives two levels below the root")
+        .to_path_buf()
 }
 
 fn io<T>(result: std::io::Result<T>, what: &str, path: &Path) -> Result<T, String> {
@@ -35,7 +46,10 @@ pub fn sha(path: &Path) -> Result<String, String> {
 fn walk(directory: &Path, relative: &str, found: &mut Vec<String>) -> Result<(), String> {
     for entry in io(fs::read_dir(directory), "list", directory)? {
         let entry = io(entry, "list", directory)?;
-        let name = entry.file_name().into_string().map_err(|name| format!("non-Unicode source name {name:?}"))?;
+        let name = entry
+            .file_name()
+            .into_string()
+            .map_err(|name| format!("non-Unicode source name {name:?}"))?;
         let path = entry.path();
         let child = format!("{relative}/{name}");
         // Follows links like the original's Path.is_file()/rglob.
@@ -59,7 +73,9 @@ pub fn sources(root: &Path) -> Result<Vec<(String, String)>, String> {
         walk(&root.join(directory), directory, &mut names)?;
     }
     let key = |name: &String| -> Vec<String> {
-        name.split('/').map(|part| if cfg!(windows) { part.to_lowercase() } else { part.to_string() }).collect()
+        name.split('/')
+            .map(|part| if cfg!(windows) { part.to_lowercase() } else { part.to_string() })
+            .collect()
     };
     names.sort_by_key(key);
     names.dedup();
@@ -67,14 +83,17 @@ pub fn sources(root: &Path) -> Result<Vec<(String, String)>, String> {
 }
 
 pub fn manifest_json(manifest: &[(String, String)]) -> String {
-    Value::Map(manifest.iter().map(|(name, hash)| (name.clone(), Value::str(hash))).collect()).dump()
+    Value::Map(manifest.iter().map(|(name, hash)| (name.clone(), Value::str(hash))).collect())
+        .dump()
 }
 
 /// PATH lookup with the platform's executable extensions.
 pub(crate) fn which(tool: &str) -> Option<PathBuf> {
     let extensions: Vec<OsString> = if cfg!(windows) {
         let listed = std::env::var_os("PATHEXT").unwrap_or_else(|| ".COM;.EXE;.BAT;.CMD".into());
-        std::iter::once(OsString::new()).chain(std::env::split_paths(&listed).map(PathBuf::into_os_string)).collect()
+        std::iter::once(OsString::new())
+            .chain(std::env::split_paths(&listed).map(PathBuf::into_os_string))
+            .collect()
     } else {
         vec![OsString::new()]
     };
@@ -96,7 +115,12 @@ struct Build {
 impl Build {
     /// Run one tool from the repository root; `<name>.log` keeps its merged
     /// stdout and stderr whether or not it succeeds.
-    fn command(&self, args: &[&OsStr], name: &str, env: &[(&str, &OsStr)]) -> Result<String, String> {
+    fn command(
+        &self,
+        args: &[&OsStr],
+        name: &str,
+        env: &[(&str, &OsStr)],
+    ) -> Result<String, String> {
         let tool = args[0].to_string_lossy();
         let executable = which(&tool).ok_or(format!("missing tool {tool}"))?;
         let log = self.out.join(format!("{name}.log"));
@@ -110,7 +134,8 @@ impl Build {
             .stderr(sink)
             .status()
             .map_err(|error| format!("{name}: cannot run {}: {error}", executable.display()))?;
-        let output = String::from_utf8_lossy(&io(fs::read(&log), "read", &log)?).replace("\r\n", "\n");
+        let output =
+            String::from_utf8_lossy(&io(fs::read(&log), "read", &log)?).replace("\r\n", "\n");
         if !status.success() {
             let tail: String = {
                 let characters: Vec<char> = output.chars().collect();
@@ -124,7 +149,9 @@ impl Build {
 }
 
 fn copy(from: &Path, to: &Path) -> Result<(), String> {
-    fs::copy(from, to).map(drop).map_err(|error| format!("copy {} to {}: {error}", from.display(), to.display()))
+    fs::copy(from, to)
+        .map(drop)
+        .map_err(|error| format!("copy {} to {}: {error}", from.display(), to.display()))
 }
 
 /// Build the one supported native profile: SMP guest startup behind the
@@ -157,23 +184,76 @@ pub fn build(out: &Path, low_runtime: bool) -> Result<(), String> {
     let resident = "crates/dxe/src/native/resident";
 
     let payload_manifest = path("crates/resident-payload/Cargo.toml");
-    build.command(&["cargo".as_ref(), "rustc".as_ref(), "--manifest-path".as_ref(), &payload_manifest,
-        "--target".as_ref(), "x86_64-unknown-none".as_ref(), "--target-dir".as_ref(), target.as_os_str(),
-        "--release".as_ref(), "--".as_ref(), "-C".as_ref(), "relocation-model=static".as_ref(),
-        "-C".as_ref(), "code-model=small".as_ref()], "payload-cargo", &[])?;
-    copy(&target.join("x86_64-unknown-none/release/libsvmvisor_resident_payload.a"), &out.join("payload.a"))?;
+    build.command(
+        &[
+            "cargo".as_ref(),
+            "rustc".as_ref(),
+            "--manifest-path".as_ref(),
+            &payload_manifest,
+            "--target".as_ref(),
+            "x86_64-unknown-none".as_ref(),
+            "--target-dir".as_ref(),
+            target.as_os_str(),
+            "--release".as_ref(),
+            "--".as_ref(),
+            "-C".as_ref(),
+            "relocation-model=static".as_ref(),
+            "-C".as_ref(),
+            "code-model=small".as_ref(),
+        ],
+        "payload-cargo",
+        &[],
+    )?;
+    copy(
+        &target.join("x86_64-unknown-none/release/libsvmvisor_resident_payload.a"),
+        &out.join("payload.a"),
+    )?;
     for name in ["runtime", "irq", "fault"] {
         let source = path(&format!("{resident}/{name}.S"));
         let object = artifact(&format!("{name}.o"));
-        build.command(&["clang".as_ref(), "--target=x86_64-unknown-none".as_ref(), "-c".as_ref(), &source,
-            "-o".as_ref(), &object], &format!("{name}-compile"), &[])?;
+        build.command(
+            &[
+                "clang".as_ref(),
+                "--target=x86_64-unknown-none".as_ref(),
+                "-c".as_ref(),
+                &source,
+                "-o".as_ref(),
+                &object,
+            ],
+            &format!("{name}-compile"),
+            &[],
+        )?;
     }
-    let (script, elf, image, package) = (path("crates/resident-payload/payload.ld"), artifact("payload.elf"),
-        artifact("payload.bin"), out.join("payload.reloc"));
-    build.command(&["ld.lld".as_ref(), "-m".as_ref(), "elf_x86_64".as_ref(), "--gc-sections".as_ref(),
-        "--emit-relocs".as_ref(), "-T".as_ref(), &script, &artifact("runtime.o"), &artifact("irq.o"),
-        &artifact("fault.o"), &artifact("payload.a"), "-o".as_ref(), &elf], "payload-link", &[])?;
-    build.command(&["llvm-objcopy".as_ref(), "-O".as_ref(), "binary".as_ref(), &elf, &image], "payload-flat", &[])?;
+    let (script, elf, image, package) = (
+        path("crates/resident-payload/payload.ld"),
+        artifact("payload.elf"),
+        artifact("payload.bin"),
+        out.join("payload.reloc"),
+    );
+    build.command(
+        &[
+            "ld.lld".as_ref(),
+            "-m".as_ref(),
+            "elf_x86_64".as_ref(),
+            "--gc-sections".as_ref(),
+            "--emit-relocs".as_ref(),
+            "-T".as_ref(),
+            &script,
+            &artifact("runtime.o"),
+            &artifact("irq.o"),
+            &artifact("fault.o"),
+            &artifact("payload.a"),
+            "-o".as_ref(),
+            &elf,
+        ],
+        "payload-link",
+        &[],
+    )?;
+    build.command(
+        &["llvm-objcopy".as_ref(), "-O".as_ref(), "binary".as_ref(), &elf, &image],
+        "payload-flat",
+        &[],
+    )?;
 
     let relocation_log = out.join("payload-relocations.log");
     let packaged = relocations::package(
@@ -181,42 +261,99 @@ pub fn build(out: &Path, low_runtime: bool) -> Result<(), String> {
         &io(fs::read(&image), "read", Path::new(&image))?,
     );
     let message = match &packaged {
-        Ok(bytes) => format!("Packaged {} runtime relocations: {}\n", relocations::relocation_count(bytes), package.display()),
+        Ok(bytes) => format!(
+            "Packaged {} runtime relocations: {}\n",
+            relocations::relocation_count(bytes),
+            package.display()
+        ),
         Err(error) => format!("{error}\n"),
     };
     io(fs::write(&relocation_log, &message), "write", &relocation_log)?;
     let packaged = packaged.map_err(|error| format!("payload-relocations: {error}"))?;
     io(fs::write(&package, packaged), "write", &package)?;
 
-    let undefined = build.command(&["llvm-nm".as_ref(), "--undefined-only".as_ref(), &elf], "undefined", &[])?;
+    let undefined = build.command(
+        &["llvm-nm".as_ref(), "--undefined-only".as_ref(), &elf],
+        "undefined",
+        &[],
+    )?;
     if !undefined.trim().is_empty() {
         return Err("resident payload has external symbol dependencies".into());
     }
-    let text = build.command(&["llvm-objdump".as_ref(), "-d".as_ref(), "--no-show-raw-insn".as_ref(), &elf],
-        "disassembly", &[])?;
+    let text = build.command(
+        &["llvm-objdump".as_ref(), "-d".as_ref(), "--no-show-raw-insn".as_ref(), &elf],
+        "disassembly",
+        &[],
+    )?;
     let debug_reset_audit = audit::audit_debug_reset(&text)?;
     let host_fault_audit = audit::audit_host_fault(&text)?;
     let count = audit::audit_extended_state(&text)?;
 
-    let feature = if low_runtime { "native-resident-boot,native-resident-low-runtime" } else { "native-resident-boot" };
-    build.command(&["cargo".as_ref(), "build".as_ref(), "--locked".as_ref(), "-p".as_ref(), "svmvisor-dxe".as_ref(),
-        "--target".as_ref(), "x86_64-unknown-uefi".as_ref(), "--target-dir".as_ref(), target.as_os_str(),
-        "--release".as_ref(), "--features".as_ref(), feature.as_ref()], "dxe-cargo",
-        &[("SVMVISOR_RESIDENT_PAYLOAD", package.as_os_str())])?;
+    let feature = if low_runtime {
+        "native-resident-boot,native-resident-low-runtime"
+    } else {
+        "native-resident-boot"
+    };
+    build.command(
+        &[
+            "cargo".as_ref(),
+            "build".as_ref(),
+            "--locked".as_ref(),
+            "-p".as_ref(),
+            "svmvisor-dxe".as_ref(),
+            "--target".as_ref(),
+            "x86_64-unknown-uefi".as_ref(),
+            "--target-dir".as_ref(),
+            target.as_os_str(),
+            "--release".as_ref(),
+            "--features".as_ref(),
+            feature.as_ref(),
+        ],
+        "dxe-cargo",
+        &[("SVMVISOR_RESIDENT_PAYLOAD", package.as_os_str())],
+    )?;
     let driver = out.join("driver.efi");
     copy(&target.join("x86_64-unknown-uefi/release/svmvisor-dxe.efi"), &driver)?;
     audit::audit_runtime_driver(&io(fs::read(&driver), "read", &driver)?)?;
 
     let object = out.join("physical-audit.obj");
-    build.command(&["clang".as_ref(), "--target=x86_64-pc-windows-msvc".as_ref(), "-c".as_ref(),
-        &path(&format!("{resident}/physical.S")), "-o".as_ref(), object.as_os_str()], "physical-audit-compile", &[])?;
-    let listing = build.command(&["llvm-objdump".as_ref(), "-t".as_ref(), "-r".as_ref(), object.as_os_str()],
-        "physical-audit-relocations", &[])?;
-    let bootstrap_audit = audit::audit_copied_ap_wait(&io(fs::read(&object), "read", &object)?, &listing)?;
+    build.command(
+        &[
+            "clang".as_ref(),
+            "--target=x86_64-pc-windows-msvc".as_ref(),
+            "-c".as_ref(),
+            &path(&format!("{resident}/physical.S")),
+            "-o".as_ref(),
+            object.as_os_str(),
+        ],
+        "physical-audit-compile",
+        &[],
+    )?;
+    let listing = build.command(
+        &["llvm-objdump".as_ref(), "-t".as_ref(), "-r".as_ref(), object.as_os_str()],
+        "physical-audit-relocations",
+        &[],
+    )?;
+    let bootstrap_audit =
+        audit::audit_copied_ap_wait(&io(fs::read(&object), "read", &object)?, &listing)?;
     let boot_object = artifact("boot-audit.obj");
-    build.command(&["clang".as_ref(), "--target=x86_64-pc-windows-msvc".as_ref(), "-c".as_ref(),
-        &path(&format!("{resident}/boot.S")), "-o".as_ref(), &boot_object], "boot-audit-compile", &[])?;
-    build.command(&["llvm-objdump".as_ref(), "-d".as_ref(), "-r".as_ref(), &boot_object], "boot-audit-disassembly", &[])?;
+    build.command(
+        &[
+            "clang".as_ref(),
+            "--target=x86_64-pc-windows-msvc".as_ref(),
+            "-c".as_ref(),
+            &path(&format!("{resident}/boot.S")),
+            "-o".as_ref(),
+            &boot_object,
+        ],
+        "boot-audit-compile",
+        &[],
+    )?;
+    build.command(
+        &["llvm-objdump".as_ref(), "-d".as_ref(), "-r".as_ref(), &boot_object],
+        "boot-audit-disassembly",
+        &[],
+    )?;
 
     if sources(&root)? != manifest {
         return Err("source changed during build; retry from a stable snapshot".into());
@@ -225,7 +362,10 @@ pub fn build(out: &Path, low_runtime: bool) -> Result<(), String> {
     for entry in io(fs::read_dir(&out), "list", &out)? {
         let entry = io(entry, "list", &out)?;
         if io(fs::metadata(entry.path()), "inspect", &entry.path())?.is_file() {
-            artifacts.insert(entry.file_name().to_string_lossy().into_owned(), Value::Str(sha(&entry.path())?));
+            artifacts.insert(
+                entry.file_name().to_string_lossy().into_owned(),
+                Value::Str(sha(&entry.path())?),
+            );
         }
     }
     // verify-resident-build.py requires these fixed profile fields.

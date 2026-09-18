@@ -28,10 +28,7 @@ fn owned_sparse_root_covers_low_code_and_high_pool_without_firmware_reads() {
         let t = paging::translate(config(), page + 127, |address| tables.read(address)).unwrap();
         assert_eq!(t.physical_address, page + 127);
         assert_eq!(t.page_bytes, 4096);
-        assert_eq!(
-            (t.writable, t.executable, t.pat_index),
-            (write, execute, 0)
-        );
+        assert_eq!((t.writable, t.executable, t.pat_index), (write, execute, 0));
         assert!(!t.user);
     }
     assert!(matches!(
@@ -48,10 +45,7 @@ fn address_and_conflicting_mapping_refusals_preserve_existing_leaf() {
     assert_eq!(tables.initialize(0x200001), Err(Error::Address));
     tables.initialize(config().cr3).unwrap();
     tables.map_page(0x5000, false, true).unwrap();
-    assert_eq!(
-        tables.map_page(0x5000, true, false),
-        Err(Error::Conflict)
-    );
+    assert_eq!(tables.map_page(0x5000, true, false), Err(Error::Conflict));
     assert_eq!(tables.map_page(1 << 40, true, true), Err(Error::Address));
     assert_eq!(tables.map_page(0x5001, true, true), Err(Error::Address));
     let t = paging::translate(config(), 0x5000, |a| tables.read(a)).unwrap();
@@ -75,9 +69,7 @@ fn exhausted_table_budget_refuses_without_damaging_published_leaves() {
     assert!(mapped > 0 && mapped < 64);
     for index in 0..mapped {
         assert_eq!(
-            paging::translate(config(), index << 30, |a| tables.read(a))
-                .unwrap()
-                .physical_address,
+            paging::translate(config(), index << 30, |a| tables.read(a)).unwrap().physical_address,
             index << 30
         );
     }

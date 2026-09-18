@@ -28,14 +28,31 @@ pub(crate) enum MsrInstruction<'a> {
     Hardware { exit: ExitSnapshot, next: ResumeCandidate },
 }
 impl<'a> MsrInstruction<'a> {
-    pub(crate) fn hardware(exit: ExitSnapshot, caps: &ValidatedCapabilities) -> Result<Self, ResumeError> {
-        if exit.code != 0x7c || exit.info1 > 1 { return Err(ResumeError::ExitDoesNotPermitCandidate); }
-        if !caps.optional_features().nrip_save { return Err(ResumeError::NripNotEstablished); }
-        if !crate::memory::address::is_canonical_48(exit.rip) { return Err(ResumeError::NonCanonicalRip); }
-        if !crate::memory::address::is_canonical_48(exit.nrip) { return Err(ResumeError::NonCanonicalNrip); }
-        let length = exit.nrip.checked_sub(exit.rip).filter(|n| (2..=15).contains(n))
+    pub(crate) fn hardware(
+        exit: ExitSnapshot,
+        caps: &ValidatedCapabilities,
+    ) -> Result<Self, ResumeError> {
+        if exit.code != 0x7c || exit.info1 > 1 {
+            return Err(ResumeError::ExitDoesNotPermitCandidate);
+        }
+        if !caps.optional_features().nrip_save {
+            return Err(ResumeError::NripNotEstablished);
+        }
+        if !crate::memory::address::is_canonical_48(exit.rip) {
+            return Err(ResumeError::NonCanonicalRip);
+        }
+        if !crate::memory::address::is_canonical_48(exit.nrip) {
+            return Err(ResumeError::NonCanonicalNrip);
+        }
+        let length = exit
+            .nrip
+            .checked_sub(exit.rip)
+            .filter(|n| (2..=15).contains(n))
             .ok_or(ResumeError::InvalidInstructionLength)?;
-        Ok(Self::Hardware { exit, next: ResumeCandidate { address: exit.nrip, instruction_bytes: length as u8 } })
+        Ok(Self::Hardware {
+            exit,
+            next: ResumeCandidate { address: exit.nrip, instruction_bytes: length as u8 },
+        })
     }
     pub(crate) fn validate(self, stopped: ExitSnapshot) -> Result<(), ResumeError> {
         match self {
@@ -45,11 +62,20 @@ impl<'a> MsrInstruction<'a> {
         }
     }
     pub(crate) fn length(self) -> usize {
-        match self { Self::Bytes(b) => b.len(), Self::Hardware { next, .. } => next.instruction_bytes as usize }
+        match self {
+            Self::Bytes(b) => b.len(),
+            Self::Hardware { next, .. } => next.instruction_bytes as usize,
+        }
     }
-    pub(crate) fn continuation(self, stopped: ExitSnapshot) -> Result<ResumeCandidate, ResumeError> {
+    pub(crate) fn continuation(
+        self,
+        stopped: ExitSnapshot,
+    ) -> Result<ResumeCandidate, ResumeError> {
         self.validate(stopped)?;
-        match self { Self::Bytes(b) => stopped.msr_continuation(b), Self::Hardware { next, .. } => Ok(next) }
+        match self {
+            Self::Bytes(b) => stopped.msr_continuation(b),
+            Self::Hardware { next, .. } => Ok(next),
+        }
     }
 }
 
@@ -120,11 +146,7 @@ impl IoIntercept {
         (self.info >> 16) as u16
     }
     pub const fn direction(self) -> IoDirection {
-        if self.input() {
-            IoDirection::In
-        } else {
-            IoDirection::Out
-        }
+        if self.input() { IoDirection::In } else { IoDirection::Out }
     }
     pub const fn input(self) -> bool {
         self.info & 1 != 0
@@ -209,21 +231,27 @@ impl ExitSnapshot {
             4 => IoWidth::Dword,
             _ => return Err(IoDecodeError::InvalidOperandSize),
         };
-        Ok(IoIntercept {
-            info: self.info1,
-            width,
-        })
+        Ok(IoIntercept { info: self.info1, width })
     }
 
     /// Actual scalar IOIO exit only: APM2 15.10.2 supplies the next RIP in
     /// EXITINFO2 independently of NRIPS. The native config owner must validate
     /// mode, events and operands before executing hardware and committing it.
     pub(crate) fn ioio_continuation(self) -> Result<ResumeCandidate, ResumeError> {
-        if self.code != 0x7b { return Err(ResumeError::ExitDoesNotPermitCandidate); }
-        if !crate::memory::address::is_canonical_48(self.rip) { return Err(ResumeError::NonCanonicalRip); }
-        if !crate::memory::address::is_canonical_48(self.info2) { return Err(ResumeError::NonCanonicalNrip); }
-        let length = self.info2.checked_sub(self.rip)
-            .filter(|n| (1..=15).contains(n)).ok_or(ResumeError::InvalidInstructionLength)?;
+        if self.code != 0x7b {
+            return Err(ResumeError::ExitDoesNotPermitCandidate);
+        }
+        if !crate::memory::address::is_canonical_48(self.rip) {
+            return Err(ResumeError::NonCanonicalRip);
+        }
+        if !crate::memory::address::is_canonical_48(self.info2) {
+            return Err(ResumeError::NonCanonicalNrip);
+        }
+        let length = self
+            .info2
+            .checked_sub(self.rip)
+            .filter(|n| (1..=15).contains(n))
+            .ok_or(ResumeError::InvalidInstructionLength)?;
         Ok(ResumeCandidate { address: self.info2, instruction_bytes: length as u8 })
     }
 
@@ -297,10 +325,7 @@ impl ExitSnapshot {
         if !crate::memory::address::is_canonical_48(address) {
             return Err(ResumeError::NonCanonicalNrip);
         }
-        Ok(ResumeCandidate {
-            address,
-            instruction_bytes: expected.len() as u8,
-        })
+        Ok(ResumeCandidate { address, instruction_bytes: expected.len() as u8 })
     }
 
     /// Decode the reviewed Appendix B fields from an inert VMCB page image.
@@ -366,10 +391,7 @@ impl ExitSnapshot {
             .checked_sub(self.rip)
             .filter(|length| (1..=15).contains(length))
             .ok_or(ResumeError::InvalidInstructionLength)?;
-        Ok(ResumeCandidate {
-            address: self.nrip,
-            instruction_bytes: bytes as u8,
-        })
+        Ok(ResumeCandidate { address: self.nrip, instruction_bytes: bytes as u8 })
     }
 }
 
@@ -430,11 +452,18 @@ mod msr_evidence_tests {
     use super::*;
     #[test]
     fn retained_hardware_evidence_rejects_stale_exit_before_fault_or_completion() {
-        let exit=ExitSnapshot { code:0x7c,info1:1,info2:0,rip:0x2000,nrip:0x2003 };
-        let evidence=MsrInstruction::Hardware { exit,next:ResumeCandidate { address:0x2003,instruction_bytes:3 } };
+        let exit = ExitSnapshot { code: 0x7c, info1: 1, info2: 0, rip: 0x2000, nrip: 0x2003 };
+        let evidence = MsrInstruction::Hardware {
+            exit,
+            next: ResumeCandidate { address: 0x2003, instruction_bytes: 3 },
+        };
         assert!(evidence.validate(exit).is_ok());
-        for changed in [ExitSnapshot { nrip:0x2004,..exit },ExitSnapshot { rip:0x2001,..exit },
-            ExitSnapshot { info1:0,..exit },ExitSnapshot { code:0x72,..exit }] {
+        for changed in [
+            ExitSnapshot { nrip: 0x2004, ..exit },
+            ExitSnapshot { rip: 0x2001, ..exit },
+            ExitSnapshot { info1: 0, ..exit },
+            ExitSnapshot { code: 0x72, ..exit },
+        ] {
             assert!(evidence.validate(changed).is_err());
             assert!(evidence.continuation(changed).is_err());
         }

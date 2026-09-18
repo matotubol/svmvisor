@@ -10,7 +10,9 @@ use svmvisor_hypervisor::{
         x2avic::{
             BackingPage, Error, GUEST_APIC_VERSION,
             irq::{self, Capture, IrqError, PhysicalIrqLedger},
-            registers::{self, CaptureRefusal, CapturedInterface, Emulation, GuestX2Apic, InitError, Refusal},
+            registers::{
+                self, CaptureRefusal, CapturedInterface, Emulation, GuestX2Apic, InitError, Refusal,
+            },
         },
     },
 };
@@ -52,8 +54,11 @@ impl FakeApic {
 
     fn isr(&self) -> Vec<u8> {
         (0..=255u8)
-            .filter(|v| self.registers.get(&(0x810 + u32::from(v / 32)))
-                .is_some_and(|bank| bank & (1 << (v % 32)) != 0))
+            .filter(|v| {
+                self.registers
+                    .get(&(0x810 + u32::from(v / 32)))
+                    .is_some_and(|bank| bank & (1 << (v % 32)) != 0)
+            })
             .collect()
     }
 
@@ -105,7 +110,9 @@ fn set_vector(page: &BackingPage, base: u16, vector: u8) {
 
 fn vectors(page: &BackingPage, base: u16) -> Vec<u8> {
     (0..=255u8)
-        .filter(|v| page.read_register(base + u16::from(v / 32) * 16).unwrap() & (1 << (v % 32)) != 0)
+        .filter(|v| {
+            page.read_register(base + u16::from(v / 32) * 16).unwrap() & (1 << (v % 32)) != 0
+        })
         .collect()
 }
 
@@ -335,7 +342,11 @@ fn unmasked_fixed_lvt_below_vector_16_is_stored_but_physically_masked() {
             if (16..32).contains(&vector) {
                 // Exception vectors: the host IDT cannot accept them, so an
                 // unmasked fixed entry is a stopped refusal (review F3).
-                assert_eq!(env.write(msr, vector), refused(Refusal::ExceptionVector, vector), "{msr:#x} {vector}");
+                assert_eq!(
+                    env.write(msr, vector),
+                    refused(Refusal::ExceptionVector, vector),
+                    "{msr:#x} {vector}"
+                );
                 assert_eq!(snapshot(&env.page), before);
                 assert!(env.apic.writes.is_empty());
             } else {
@@ -358,8 +369,14 @@ fn unmasked_fixed_lvt_below_vector_16_is_stored_but_physically_masked() {
 #[test]
 fn software_disable_forces_every_lvt_mask_and_reenable_keeps_them() {
     let mut env = Env::new();
-    let entries = [(0x832u32, 0x2_00efu64), (0x833, 0x0041), (0x834, 0x0400), (0x835, 0x8030),
-        (0x836, 0x0400), (0x837, 0x00fe)];
+    let entries = [
+        (0x832u32, 0x2_00efu64),
+        (0x833, 0x0041),
+        (0x834, 0x0400),
+        (0x835, 0x8030),
+        (0x836, 0x0400),
+        (0x837, 0x00fe),
+    ];
     for (msr, value) in entries {
         assert_eq!(env.write(msr, value), WRITTEN);
     }
@@ -541,8 +558,12 @@ fn apr_read_takes_the_highest_class_and_keeps_tps_only_for_the_tpr_class() {
     for (tpr, in_service, pending, apr) in cases {
         let mut env = Env::new();
         env.set(apic::TPR, tpr);
-        for &vector in in_service { set_vector(&env.page, apic::ISR, vector) }
-        for &vector in pending { set_vector(&env.page, apic::IRR, vector) }
+        for &vector in in_service {
+            set_vector(&env.page, apic::ISR, vector)
+        }
+        for &vector in pending {
+            set_vector(&env.page, apic::IRR, vector)
+        }
         let before = snapshot(&env.page);
         assert_eq!(env.read(0x809), Emulation::Read(apr), "{tpr:#x} {in_service:?} {pending:?}");
         assert_eq!(snapshot(&env.page), before);
@@ -563,10 +584,23 @@ fn apic_base_admission_requires_enabled_x2apic_at_the_reset_base() {
         env.guest = GuestX2Apic::admit(base, &policy(48)).unwrap();
         assert_eq!(env.read(0x1b), Emulation::Read(base));
     }
-    for base in [0xfee0_0800u64, 0xfee0_0900, 0xfee0_0400, 0xfee0_0000, 0xfed0_0c00, 0xfee0_0e00,
-        0xfee0_0c01, 0x1_fee0_0c00, 0xfee0_1c00, 0]
-    {
-        assert_eq!(GuestX2Apic::admit(base, &policy(48)), Err(Error::UnsupportedApicBase), "{base:#x}");
+    for base in [
+        0xfee0_0800u64,
+        0xfee0_0900,
+        0xfee0_0400,
+        0xfee0_0000,
+        0xfed0_0c00,
+        0xfee0_0e00,
+        0xfee0_0c01,
+        0x1_fee0_0c00,
+        0xfee0_1c00,
+        0,
+    ] {
+        assert_eq!(
+            GuestX2Apic::admit(base, &policy(48)),
+            Err(Error::UnsupportedApicBase),
+            "{base:#x}"
+        );
     }
 }
 
@@ -575,23 +609,23 @@ fn apic_base_writes_follow_the_x2apic_transition_rules_and_never_change_the_shad
     let mut env = Env::new();
     assert_eq!(env.read(0x1b), Emulation::Read(BSP_BASE));
     let mut cases = vec![
-        (0xfee0_0d00u64, WRITTEN),                                      // 11 -> 11
-        (0xfee0_0c00, WRITTEN),                                         // BSC ignored
-        (0xfee0_0900, GP),                                              // 11 -> 10
+        (0xfee0_0d00u64, WRITTEN), // 11 -> 11
+        (0xfee0_0c00, WRITTEN),    // BSC ignored
+        (0xfee0_0900, GP),         // 11 -> 10
         (0xfee0_0800, GP),
-        (0xfee0_0500, GP),                                              // 01 invalid
+        (0xfee0_0500, GP), // 01 invalid
         (0xfee0_0400, GP),
-        (0xfee0_0100, refused(Refusal::ApicDisable, 0xfee0_0100)),      // 11 -> 00
+        (0xfee0_0100, refused(Refusal::ApicDisable, 0xfee0_0100)), // 11 -> 00
         (0xfee0_0000, refused(Refusal::ApicDisable, 0xfee0_0000)),
-        (0xfed0_0d00, refused(Refusal::ApicRelocation, 0xfed0_0d00)),   // base change
+        (0xfed0_0d00, refused(Refusal::ApicRelocation, 0xfed0_0d00)), // base change
         (0x0000_0000_0000_0c00, refused(Refusal::ApicRelocation, 0xc00)),
         (0x0000_8000_fee0_0d00, refused(Refusal::ApicRelocation, 0x0000_8000_fee0_0d00)),
-        (0x0001_0000_fee0_0d00, GP),                                    // bit 48: beyond width
+        (0x0001_0000_fee0_0d00, GP), // bit 48: beyond width
         (0x000f_0000_fee0_0d00, GP),
-        (0x0010_0000_fee0_0d00, GP),                                    // bits 63:52
+        (0x0010_0000_fee0_0d00, GP), // bits 63:52
         (0x8000_0000_fee0_0d00, GP),
-        (0xfee0_0f00, GP),                                              // bit 9
-        (0xfee0_0101, GP),                                              // reserved before mode
+        (0xfee0_0f00, GP), // bit 9
+        (0xfee0_0101, GP), // reserved before mode
         (0x0001_0000_fee0_0100, GP),
     ];
     for bit in 0..8 {
@@ -607,19 +641,29 @@ fn apic_base_writes_follow_the_x2apic_transition_rules_and_never_change_the_shad
     let mut physical = FakeApic::host();
     let mut wide = GuestX2Apic::admit(0xfee0_0c00, &policy(52)).unwrap();
     let value = 0x000f_0000_fee0_0c00;
-    assert_eq!(wide.emulate(0x1b, Some(value), &env.page, &mut irq, &mut physical),
-        refused(Refusal::ApicRelocation, value));
-    assert_eq!(wide.emulate(0x1b, Some(0x0010_0000_fee0_0c00), &env.page, &mut irq, &mut physical), GP);
+    assert_eq!(
+        wide.emulate(0x1b, Some(value), &env.page, &mut irq, &mut physical),
+        refused(Refusal::ApicRelocation, value)
+    );
+    assert_eq!(
+        wide.emulate(0x1b, Some(0x0010_0000_fee0_0c00), &env.page, &mut irq, &mut physical),
+        GP
+    );
     let mut narrow = GuestX2Apic::admit(0xfee0_0c00, &policy(32)).unwrap();
     assert_eq!(narrow.emulate(0x1b, Some(0x1_fee0_0c00), &env.page, &mut irq, &mut physical), GP);
-    assert_eq!(narrow.emulate(0x1b, Some(0xfee0_0c00), &env.page, &mut irq, &mut physical), WRITTEN);
+    assert_eq!(
+        narrow.emulate(0x1b, Some(0xfee0_0c00), &env.page, &mut irq, &mut physical),
+        WRITTEN
+    );
 }
 
 #[test]
 fn edge_software_eoi_clears_the_highest_isr_and_recomputes_ppr() {
     let mut env = Env::new();
     env.set(apic::TPR, 0x3b);
-    for vector in [0x42, 0x61] { set_vector(&env.page, apic::ISR, vector) }
+    for vector in [0x42, 0x61] {
+        set_vector(&env.page, apic::ISR, vector)
+    }
     env.page.enqueue(0x90, false).unwrap();
     assert_eq!(env.write(0x80b, 0), WRITTEN);
     assert_eq!(vectors(&env.page, apic::ISR), [0x42]);
@@ -637,13 +681,16 @@ fn edge_software_eoi_clears_the_highest_isr_and_recomputes_ppr() {
     assert!(env.apic.writes.is_empty() && env.irq.is_empty());
     // PPS is kept when the ISR class equals TP.
     env.set(apic::TPR, 0x6b);
-    for vector in [0x61, 0x72] { set_vector(&env.page, apic::ISR, vector) }
+    for vector in [0x61, 0x72] {
+        set_vector(&env.page, apic::ISR, vector)
+    }
     assert_eq!(env.write(0x80b, 0), WRITTEN);
     assert_eq!(env.reg(apic::PPR), 0x6b);
 }
 
 #[test]
-fn held_level_eoi_waits_for_a_higher_physical_source_even_when_the_guest_completes_the_lower_first() {
+fn held_level_eoi_waits_for_a_higher_physical_source_even_when_the_guest_completes_the_lower_first()
+{
     let mut env = Env::new();
     // The guest priority blocks 80h for now.
     env.set(apic::TPR, 0x90);
@@ -713,8 +760,10 @@ fn a_failed_level_completion_is_terminal_evidence() {
     // Inconsistent: held, but the physical ISR is empty.
     env.irq.commit_level_capture(0x40).unwrap();
     set_vector(&env.page, apic::ISR, 0x40);
-    assert_eq!(env.write(0x80b, 0),
-        Emulation::EoiFailed(IrqError::PhysicalIsrMismatch { vector: 0x40, highest: None }));
+    assert_eq!(
+        env.write(0x80b, 0),
+        Emulation::EoiFailed(IrqError::PhysicalIsrMismatch { vector: 0x40, highest: None })
+    );
     // The virtual EOI had already happened.
     assert!(!env.page.is_in_service(0x40));
     assert!(env.apic.writes.is_empty());
@@ -756,8 +805,10 @@ fn level_eoi_exit_fallback_handles_both_isr_states() {
     accept(&env.page, 0x62);
     set_vector(&env.page, apic::ISR, 0x70);
     let (before, ledger) = (snapshot(&env.page), env.irq);
-    assert_eq!(irq::level_eoi_exit(0x62, 0x1000, &env.page, &mut env.irq, &mut env.apic),
-        Err(IrqError::VirtualIsrMismatch { vector: 0x62, highest: Some(0x70) }));
+    assert_eq!(
+        irq::level_eoi_exit(0x62, 0x1000, &env.page, &mut env.irq, &mut env.apic),
+        Err(IrqError::VirtualIsrMismatch { vector: 0x62, highest: Some(0x70) })
+    );
     assert_eq!((snapshot(&env.page), env.irq), (before, ledger));
 
     // Not held: a stale TMR bit is cleared unless the vector is pending.
@@ -803,8 +854,10 @@ fn capture_publishes_edges_holds_levels_and_ignores_spurious_interrupts() {
     env.apic.raise(0x43, false);
     env.apic.raise(0x50, false);
     let before = snapshot(&env.page);
-    assert_eq!(irq::capture(0x43, &env.page, &mut env.irq, &mut env.apic),
-        Err(IrqError::PhysicalIsrMismatch { vector: 0x43, highest: Some(0x50) }));
+    assert_eq!(
+        irq::capture(0x43, &env.page, &mut env.irq, &mut env.apic),
+        Err(IrqError::PhysicalIsrMismatch { vector: 0x43, highest: Some(0x50) })
+    );
     assert_eq!(snapshot(&env.page), before);
     assert!(env.apic.writes.is_empty());
 
@@ -855,8 +908,11 @@ fn an_accepted_vector_without_physical_isr_is_the_extint_signature() {
             env.apic.raise(other, true);
         }
         let before = snapshot(&env.page);
-        assert_eq!(irq::capture(vector, &env.page, &mut env.irq, &mut env.apic),
-            Err(IrqError::NotInService(vector)), "{vector:#x}");
+        assert_eq!(
+            irq::capture(vector, &env.page, &mut env.irq, &mut env.apic),
+            Err(IrqError::NotInService(vector)),
+            "{vector:#x}"
+        );
         assert_eq!(snapshot(&env.page), before);
         assert!(env.apic.writes.is_empty() && env.irq.is_empty());
     }
@@ -936,7 +992,10 @@ fn captured_software_disable_and_illegal_vectors_mask_the_physical_mirror() {
     for (offset, value) in apic::LVTS.into_iter().zip(lvts) {
         assert_eq!(u64::from(page.read_register(offset).unwrap()), value | MASK, "{offset:#x}");
     }
-    assert_eq!(apic.writes, [(0x832, 0x1_00ef), (0x834, 0x1_0400), (0x835, 0x1_0700), (0x837, 0x1_00fe)]);
+    assert_eq!(
+        apic.writes,
+        [(0x832, 0x1_00ef), (0x834, 0x1_0400), (0x835, 0x1_0700), (0x837, 0x1_00fe)]
+    );
     assert_eq!(page.read_register(apic::SVR), Ok(0x0ff));
     // An unmasked fixed entry with an illegal vector is stored as captured;
     // only its physical mirror is masked. NMI ignores its vector. Vector 32
@@ -954,16 +1013,16 @@ fn captured_software_disable_and_illegal_vectors_mask_the_physical_mirror() {
 fn captured_state_outside_the_register_model_is_refused_without_effects() {
     let clean = [0x1_0000; 6];
     let mut cases: Vec<(u32, u64)> = vec![
-        (0x808, 0x100),            // TPR 63:8
-        (0x80f, 0x13ff),           // SVR bit 12
+        (0x808, 0x100),  // TPR 63:8
+        (0x80f, 0x13ff), // SVR bit 12
         (0x80f, 1 << 32),
-        (0x838, 1 << 32),          // initial count 63:32
-        (0x83e, 0x4),              // divide bit 2
+        (0x838, 1 << 32), // initial count 63:32
+        (0x83e, 0x4),     // divide bit 2
         (0x83e, 0x10),
-        (0x832, 0x1_0100),         // timer message type bits
-        (0x832, 0x5_0000),         // timer bit 18 (no TSC deadline)
-        (0x833, 0x1_0800),         // thermal bit 11
-        (0x835, 0x1_2000),         // LINT0 bit 13 (no polarity bit)
+        (0x832, 0x1_0100), // timer message type bits
+        (0x832, 0x5_0000), // timer bit 18 (no TSC deadline)
+        (0x833, 0x1_0800), // thermal bit 11
+        (0x835, 0x1_2000), // LINT0 bit 13 (no polarity bit)
         (0x836, 1 << 32),
     ];
     // Reserved message types: LINT 1/3/5/6, other LVTs also ExtINT.
@@ -982,16 +1041,25 @@ fn captured_state_outside_the_register_model_is_refused_without_effects() {
     for (msr, value) in cases {
         let mut apic = loader_apic(0x1ff, clean);
         apic.registers.insert(msr, value);
-        assert_eq!(CapturedInterface::capture(&mut apic, 0), Err(CaptureRefusal { msr, value }), "{msr:#x}");
+        assert_eq!(
+            CapturedInterface::capture(&mut apic, 0),
+            Err(CaptureRefusal { msr, value }),
+            "{msr:#x}"
+        );
         assert!(apic.writes.is_empty());
     }
     // ICR: every reserved bit but the delivery status refuses.
     for bit in [13u64, 16, 17, 20, 31] {
         let icr = 0x0000_0001_0000_10ef | (1 << bit);
-        assert_eq!(CapturedInterface::capture(&mut loader_apic(0x1ff, clean), icr),
-            Err(CaptureRefusal { msr: 0x830, value: icr }), "bit {bit}");
+        assert_eq!(
+            CapturedInterface::capture(&mut loader_apic(0x1ff, clean), icr),
+            Err(CaptureRefusal { msr: 0x830, value: icr }),
+            "bit {bit}"
+        );
     }
-    assert!(CapturedInterface::capture(&mut loader_apic(0x1ff, clean), 0xffff_ffff_000c_16ff).is_ok());
+    assert!(
+        CapturedInterface::capture(&mut loader_apic(0x1ff, clean), 0xffff_ffff_000c_16ff).is_ok()
+    );
 }
 
 fn busy_init_env() -> (Env, Msrpm) {
@@ -1009,7 +1077,9 @@ fn busy_init_env() -> (Env, Msrpm) {
     accept(&env.page, 0x80);
     // Guest register state that INIT resets.
     env.set(apic::TPR, 0x6b);
-    for (msr, value) in [(0x832, 0x2_00ef), (0x838, 1000), (0x83e, 0xb), (0x836, 0x0400), (0x80f, 0x3f0)] {
+    for (msr, value) in
+        [(0x832, 0x2_00ef), (0x838, 1000), (0x83e, 0xb), (0x836, 0x0400), (0x80f, 0x3f0)]
+    {
         assert_eq!(env.write(msr, value), WRITTEN);
     }
     env.set(apic::ICR, 0x4ef);
@@ -1034,8 +1104,19 @@ fn init_preparation_is_read_only_and_commit_resets_physical_sources_msrpm_and_ba
 
     assert_eq!(registers::commit_init(&env.page, &mut env.irq, &mut env.apic, &mut msrpm), Ok(()));
     // Step 1: timer masked and stopped, divide 0, every other LVT masked.
-    assert_eq!(env.apic.writes[..8], [(0x832, MASK), (0x838, 0), (0x83e, 0), (0x833, MASK),
-        (0x834, MASK), (0x835, MASK), (0x836, MASK), (0x837, MASK)]);
+    assert_eq!(
+        env.apic.writes[..8],
+        [
+            (0x832, MASK),
+            (0x838, 0),
+            (0x83e, 0),
+            (0x833, MASK),
+            (0x834, MASK),
+            (0x835, MASK),
+            (0x836, MASK),
+            (0x837, MASK)
+        ]
+    );
     // Step 2: three physical EOIs, highest first, and nothing held.
     assert_eq!(env.apic.writes[8..], [(0x80b, 0); 3]);
     assert!(env.apic.isr().is_empty() && env.irq.is_empty());
@@ -1047,12 +1128,16 @@ fn init_preparation_is_read_only_and_commit_resets_physical_sources_msrpm_and_ba
     assert_eq!(msrpm.bytes(), reference.bytes());
     // Step 4: Table 16-2 values; ID and version kept; LDR derived for ID 3.
     let mut expected: BTreeMap<u16, u32> = BTreeMap::new();
-    for offset in (0..0x1000u16).step_by(16) { expected.insert(offset, 0); }
+    for offset in (0..0x1000u16).step_by(16) {
+        expected.insert(offset, 0);
+    }
     expected.insert(apic::ID, 3);
     expected.insert(apic::VERSION, GUEST_APIC_VERSION);
     expected.insert(apic::LDR, 1 << 3);
     expected.insert(apic::SVR, 0xff);
-    for offset in apic::LVTS { expected.insert(offset, 0x1_0000); }
+    for offset in apic::LVTS {
+        expected.insert(offset, 0x1_0000);
+    }
     let after: BTreeMap<u16, u32> = (0..0x1000u16).step_by(16).zip(snapshot(&env.page)).collect();
     assert_eq!(after, expected);
     // INIT keeps the APIC_BASE shadow.
@@ -1063,22 +1148,30 @@ fn init_preparation_is_read_only_and_commit_resets_physical_sources_msrpm_and_ba
 fn init_preparation_refuses_foreign_or_missing_sources_and_foreign_identity() {
     let mut env = Env::new();
     env.apic.raise(0x70, false);
-    assert_eq!(registers::prepare_init(&env.page, &env.irq, &mut env.apic),
-        Err(InitError::Irq(IrqError::UnexpectedPhysicalIsr(0x70))));
+    assert_eq!(
+        registers::prepare_init(&env.page, &env.irq, &mut env.apic),
+        Err(InitError::Irq(IrqError::UnexpectedPhysicalIsr(0x70)))
+    );
 
     let mut env = Env::new();
     env.irq.commit_level_capture(0x41).unwrap();
-    assert_eq!(registers::prepare_init(&env.page, &env.irq, &mut env.apic),
-        Err(InitError::Irq(IrqError::PhysicalIsrMismatch { vector: 0x41, highest: None })));
+    assert_eq!(
+        registers::prepare_init(&env.page, &env.irq, &mut env.apic),
+        Err(InitError::Irq(IrqError::PhysicalIsrMismatch { vector: 0x41, highest: None }))
+    );
 
     let mut env = Env::new();
     env.set(apic::ID, 512);
-    assert_eq!(registers::prepare_init(&env.page, &env.irq, &mut env.apic),
-        Err(InitError::Backing(Error::InvalidId)));
+    assert_eq!(
+        registers::prepare_init(&env.page, &env.irq, &mut env.apic),
+        Err(InitError::Backing(Error::InvalidId))
+    );
     env.set(apic::ID, 3);
     env.set(apic::VERSION, 0x8005_0010);
-    assert_eq!(registers::prepare_init(&env.page, &env.irq, &mut env.apic),
-        Err(InitError::Backing(Error::UnsupportedVersion)));
+    assert_eq!(
+        registers::prepare_init(&env.page, &env.irq, &mut env.apic),
+        Err(InitError::Backing(Error::UnsupportedVersion))
+    );
     assert!(env.apic.writes.is_empty());
 }
 
@@ -1090,8 +1183,10 @@ fn an_init_commit_without_preparation_stops_after_its_physical_reset() {
     env.irq.commit_level_capture(0x41).unwrap();
     assert!(msrpm.update_x2apic_eoi_intercept(&env.irq));
     env.set(apic::TPR, 0x20);
-    assert_eq!(registers::commit_init(&env.page, &mut env.irq, &mut env.apic, &mut msrpm),
-        Err(InitError::Irq(IrqError::PhysicalIsrMismatch { vector: 0x41, highest: None })));
+    assert_eq!(
+        registers::commit_init(&env.page, &mut env.irq, &mut env.apic, &mut msrpm),
+        Err(InitError::Irq(IrqError::PhysicalIsrMismatch { vector: 0x41, highest: None }))
+    );
     // The physical reset happened; the backing reset and MSRPM change did not.
     assert_eq!(env.apic.writes.len(), 8);
     assert_eq!(env.reg(apic::TPR), 0x20);

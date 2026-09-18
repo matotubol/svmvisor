@@ -17,15 +17,9 @@ fn capabilities() -> XstateCapabilities {
 #[test]
 fn selects_avx_without_requiring_os_to_have_already_enabled_it() {
     let layout = XstateLayout::detect(capabilities()).unwrap();
-    assert_eq!(
-        (layout.mask(), layout.size(), layout.avx_offset()),
-        (7, 832, Some(576))
-    );
+    assert_eq!((layout.mask(), layout.size(), layout.avx_offset()), (7, 832, Some(576)));
     assert!(layout.uses_xsave());
-    assert_eq!(
-        layout.validate_enabled_size(576),
-        Err(XstateError::EnabledSizeMismatch)
-    );
+    assert_eq!(layout.validate_enabled_size(576), Err(XstateError::EnabledSizeMismatch));
     assert_eq!(layout.validate_enabled_size(832), Ok(()));
 }
 
@@ -37,10 +31,7 @@ fn fx_fallback_ignores_absent_leaf_d() {
     caps.max_size = 0;
     let layout = XstateLayout::detect(caps).unwrap();
     assert!(!layout.uses_xsave());
-    assert_eq!(
-        (layout.mask(), layout.size(), layout.avx_offset()),
-        (3, 512, None)
-    );
+    assert_eq!((layout.mask(), layout.size(), layout.avx_offset()), (3, 512, None));
 }
 
 #[test]
@@ -51,10 +42,7 @@ fn xsave_without_avx_has_only_legacy_components_and_header() {
     caps.max_size = 576;
     let layout = XstateLayout::detect(caps).unwrap();
     assert!(layout.uses_xsave());
-    assert_eq!(
-        (layout.mask(), layout.size(), layout.avx_offset()),
-        (3, 576, None)
-    );
+    assert_eq!((layout.mask(), layout.size(), layout.avx_offset()), (3, 576, None));
 }
 
 #[test]
@@ -62,18 +50,12 @@ fn every_required_legacy_feature_and_component_is_checked() {
     for bit in [0, 23, 24, 25, 26] {
         let mut caps = capabilities();
         caps.leaf1_edx &= !(1 << bit);
-        assert_eq!(
-            XstateLayout::detect(caps),
-            Err(XstateError::MissingLegacyFeatures)
-        );
+        assert_eq!(XstateLayout::detect(caps), Err(XstateError::MissingLegacyFeatures));
     }
     for bit in [0, 1, 2] {
         let mut caps = capabilities();
         caps.supported_xcr0 &= !(1 << bit);
-        assert_eq!(
-            XstateLayout::detect(caps),
-            Err(XstateError::UnsupportedMask)
-        );
+        assert_eq!(XstateLayout::detect(caps), Err(XstateError::UnsupportedMask));
     }
 }
 
@@ -129,10 +111,7 @@ fn immutable_xcr0_profile_rejects_subsets_dependencies_and_extra_components() {
     let layout = XstateLayout::detect(capabilities()).unwrap();
     assert_eq!(layout.validate_xcr0(7), Ok(()));
     for mask in [0, 1, 3, 4, 5, 6, 0xff, 1 << 63] {
-        assert_eq!(
-            layout.validate_xcr0(mask),
-            Err(XstateError::UnsupportedMask)
-        );
+        assert_eq!(layout.validate_xcr0(mask), Err(XstateError::UnsupportedMask));
     }
 }
 
@@ -180,11 +159,7 @@ fn guest_xsetbv_faults_obey_availability_privilege_and_index() {
             );
             assert_eq!(
                 layout.validate_guest_xcr0(1 << 18, cpl, ecx, 3),
-                if cpl == 0 && ecx == 0 {
-                    Ok(())
-                } else {
-                    Err(XsetbvFault::GeneralProtection)
-                }
+                if cpl == 0 && ecx == 0 { Ok(()) } else { Err(XsetbvFault::GeneralProtection) }
             );
         }
     }
@@ -193,10 +168,7 @@ fn guest_xsetbv_faults_obey_availability_privilege_and_index() {
     let fx = XstateLayout::detect(caps).unwrap();
     // Setting OSXSAVE in supplied stopped state cannot invent XSAVE support.
     for cr4 in [0, 1 << 18] {
-        assert_eq!(
-            fx.validate_guest_xcr0(cr4, 0, 0, 1),
-            Err(XsetbvFault::UndefinedOpcode)
-        );
+        assert_eq!(fx.validate_guest_xcr0(cr4, 0, 0, 1), Err(XsetbvFault::UndefinedOpcode));
     }
 }
 
@@ -224,10 +196,7 @@ fn mxcsr_masks_and_reserved_values_fail_before_restore() {
     assert_eq!(effective_mxcsr_mask(0xffff), Ok(0xffff));
     assert_eq!(effective_mxcsr_mask(0x2ffff), Ok(0x2ffff));
     for mask in [1, 0x1f00, 0x1ffff, 0x3ffff, 0x6ffff, 0x8002ffff] {
-        assert_eq!(
-            effective_mxcsr_mask(mask),
-            Err(XstateError::InvalidMxcsrMask)
-        );
+        assert_eq!(effective_mxcsr_mask(mask), Err(XstateError::InvalidMxcsrMask));
     }
     let layout = XstateLayout::detect(capabilities()).unwrap();
     let mut area = XstateArea::new();
@@ -241,10 +210,7 @@ fn mxcsr_masks_and_reserved_values_fail_before_restore() {
     assert_eq!(area.validate(layout, 0x2ffff), Ok(()));
     assert_eq!(area.validate(layout, 0xffff), Err(XstateError::InvalidMxcsr));
     area.bytes_mut()[27] = 1;
-    assert_eq!(
-        area.validate(layout, 0xffff),
-        Err(XstateError::InvalidMxcsr)
-    );
+    assert_eq!(area.validate(layout, 0xffff), Err(XstateError::InvalidMxcsr));
 }
 
 #[test]

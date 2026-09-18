@@ -107,11 +107,7 @@ impl SmpResources {
         if returned_ap_callbacks != 1 {
             return Err(OwnershipError::SmpCallbackCount);
         }
-        Ok(Self {
-            low_page,
-            cpus,
-            returned_ap_callbacks,
-        })
+        Ok(Self { low_page, cpus, returned_ap_callbacks })
     }
     pub const fn low_page(self) -> PhysicalRange {
         self.low_page
@@ -148,14 +144,7 @@ impl<'a> OwnershipRecord<'a> {
         physical_bits: u8,
         descriptor_version: u32,
     ) -> Result<(), OwnershipError> {
-        Self::encode_with_smp(
-            page,
-            descriptors,
-            arena,
-            physical_bits,
-            descriptor_version,
-            None,
-        )
+        Self::encode_with_smp(page, descriptors, arena, physical_bits, descriptor_version, None)
     }
 
     /// Version 2 additionally retains supplied CPU identities and an owned SIPI
@@ -172,16 +161,10 @@ impl<'a> OwnershipRecord<'a> {
         if page.len() != HANDOFF_PAGE_BYTES {
             return Err(OwnershipError::Size);
         }
-        let header_bytes = if smp.is_some() {
-            OWNERSHIP_SMP_HEADER_BYTES
-        } else {
-            OWNERSHIP_HEADER_BYTES
-        };
-        let entry_bytes = if smp.is_some() {
-            OWNERSHIP_SMP_ENTRY_BYTES
-        } else {
-            OWNERSHIP_ENTRY_BYTES
-        };
+        let header_bytes =
+            if smp.is_some() { OWNERSHIP_SMP_HEADER_BYTES } else { OWNERSHIP_HEADER_BYTES };
+        let entry_bytes =
+            if smp.is_some() { OWNERSHIP_SMP_ENTRY_BYTES } else { OWNERSHIP_ENTRY_BYTES };
         check_count(descriptors.len(), header_bytes, entry_bytes)?;
         if descriptor_version != 1 {
             return Err(OwnershipError::DescriptorVersion);
@@ -190,15 +173,10 @@ impl<'a> OwnershipRecord<'a> {
             return Err(OwnershipError::ArenaSize);
         }
         ValidatedMemoryMap::new(descriptors, physical_bits).map_err(OwnershipError::Map)?;
-        AddressPolicy::new(
-            physical_bits,
-            EncryptionState::Unencrypted {
-                encryption_bit: None,
-            },
-        )
-        .map_err(OwnershipError::Address)?
-        .validate(arena.base(), arena.len(), 4096)
-        .map_err(OwnershipError::Address)?;
+        AddressPolicy::new(physical_bits, EncryptionState::Unencrypted { encryption_bit: None })
+            .map_err(OwnershipError::Address)?
+            .validate(arena.base(), arena.len(), 4096)
+            .map_err(OwnershipError::Address)?;
         coverage(descriptors.iter().copied(), arena)?;
         if let Some(smp) = smp {
             smp_coverage(descriptors.iter().copied(), arena, smp, physical_bits)?;
@@ -206,15 +184,7 @@ impl<'a> OwnershipRecord<'a> {
         let record = &mut page[OWNERSHIP_OFFSET..];
         record.fill(0);
         record[..8].copy_from_slice(&OWNERSHIP_MAGIC);
-        put16(
-            record,
-            8,
-            if smp.is_some() {
-                OWNERSHIP_SMP_VERSION
-            } else {
-                OWNERSHIP_VERSION
-            },
-        );
+        put16(record, 8, if smp.is_some() { OWNERSHIP_SMP_VERSION } else { OWNERSHIP_VERSION });
         put16(record, 10, header_bytes as u16);
         put16(record, 12, entry_bytes as u16);
         put16(record, 14, descriptors.len() as u16);
@@ -234,9 +204,8 @@ impl<'a> OwnershipRecord<'a> {
                 record[offset + 16..offset + 28].copy_from_slice(&cpu.vendor);
             }
         }
-        for (slot, descriptor) in record[header_bytes..]
-            .chunks_exact_mut(entry_bytes)
-            .zip(descriptors)
+        for (slot, descriptor) in
+            record[header_bytes..].chunks_exact_mut(entry_bytes).zip(descriptors)
         {
             put32(slot, 0, descriptor.memory_type);
             let base_offset = entry_bytes - 24;
@@ -308,12 +277,7 @@ impl<'a> OwnershipRecord<'a> {
         } else {
             None
         };
-        let result = Self {
-            entries: &record[header_bytes..used],
-            entry_bytes,
-            arena,
-            smp,
-        };
+        let result = Self { entries: &record[header_bytes..used], entry_bytes, arena, smp };
         let mut previous_end = 0;
         for slot in result.entries.chunks_exact(entry_bytes) {
             if entry_bytes == OWNERSHIP_ENTRY_BYTES && get32(slot, 4) != 0 {
@@ -324,11 +288,7 @@ impl<'a> OwnershipRecord<'a> {
             ValidatedMemoryMap::new(core::slice::from_ref(&descriptor), policy.physical_bits())
                 .map_err(OwnershipError::Map)?;
             policy
-                .validate(
-                    descriptor.physical_start,
-                    descriptor.page_count * 4096,
-                    4096,
-                )
+                .validate(descriptor.physical_start, descriptor.page_count * 4096, 4096)
                 .map_err(OwnershipError::Address)?;
             if descriptor.physical_start < previous_end {
                 return Err(OwnershipError::Map(MemoryError::UnsortedOrOverlapping));
@@ -352,9 +312,7 @@ impl<'a> OwnershipRecord<'a> {
         self.entries.len() / self.entry_bytes
     }
     pub fn descriptors(&self) -> impl Iterator<Item = MemoryDescriptor> + '_ {
-        self.entries
-            .chunks_exact(self.entry_bytes)
-            .map(decode_entry)
+        self.entries.chunks_exact(self.entry_bytes).map(decode_entry)
     }
     /// Project an identity-addressed guest allocation map: preserve all bytes,
     /// types and attributes outside monitor storage, and reserve the complete
@@ -380,11 +338,7 @@ fn check_count(
     entry_bytes: usize,
 ) -> Result<(), OwnershipError> {
     let maximum = (HANDOFF_PAGE_BYTES - OWNERSHIP_OFFSET - header_bytes) / entry_bytes;
-    if count == 0 || count > maximum {
-        Err(OwnershipError::DescriptorCount)
-    } else {
-        Ok(())
-    }
+    if count == 0 || count > maximum { Err(OwnershipError::DescriptorCount) } else { Ok(()) }
 }
 fn overlaps(left: PhysicalRange, right: PhysicalRange) -> bool {
     left.base() <= right.last_byte() && right.base() <= left.last_byte()

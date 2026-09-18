@@ -86,10 +86,7 @@ fn live_storage_range(
     allocation_bytes: usize,
 ) -> Result<StorageRange, MemoryMapError> {
     let pool = pool.ok_or(MemoryMapError::Released)?;
-    Ok(StorageRange {
-        base: pool.as_ptr() as u64,
-        bytes: allocation_bytes as u64,
-    })
+    Ok(StorageRange { base: pool.as_ptr() as u64, bytes: allocation_bytes as u64 })
 }
 impl Drop for MemoryMapSnapshot<'_> {
     fn drop(&mut self) {
@@ -205,10 +202,7 @@ pub unsafe fn collect(services: &BootServices) -> Result<MemoryMapSnapshot<'_>, 
                 core::slice::from_raw_parts(raw.add(index * metadata.descriptor_size), 40)
             };
             unsafe {
-                raw.add(map_capacity)
-                    .cast::<MemoryDescriptor>()
-                    .add(index)
-                    .write(decode(bytes));
+                raw.add(map_capacity).cast::<MemoryDescriptor>().add(index).write(decode(bytes));
             }
         }
         let records = unsafe {
@@ -237,10 +231,7 @@ fn sort_records(records: &mut [MemoryDescriptor]) -> Result<(), MemoryMapError> 
         let value = records.get(index).copied().ok_or(MemoryMapError::Bounds)?;
         let mut position = index;
         while position > 0 {
-            let previous = records
-                .get(position - 1)
-                .copied()
-                .ok_or(MemoryMapError::Bounds)?;
+            let previous = records.get(position - 1).copied().ok_or(MemoryMapError::Bounds)?;
             if previous.physical_start <= value.physical_start {
                 break;
             }
@@ -261,15 +252,9 @@ mod tests {
         let (_, total) = capacity(481, 48).unwrap();
         assert_eq!(
             live_storage_range(pointer, total),
-            Ok(StorageRange {
-                base: 0x1003,
-                bytes: total as u64
-            })
+            Ok(StorageRange { base: 0x1003, bytes: total as u64 })
         );
-        assert_eq!(
-            live_storage_range(None, total),
-            Err(MemoryMapError::Released)
-        );
+        assert_eq!(live_storage_range(None, total), Err(MemoryMapError::Released));
         assert_eq!(MAX_STORAGE_COVERING_PAGES, 289);
     }
     #[test]
@@ -291,13 +276,9 @@ mod tests {
         assert_eq!(map % 8, 0);
         assert!(map >= 481 + 8 * 48);
         assert_eq!(total - map, MAX_DESCRIPTORS * size_of::<MemoryDescriptor>());
-        for (required, stride) in [
-            (0, 48),
-            (40, 39),
-            (MAX_MAP_BYTES, 48),
-            (usize::MAX, 48),
-            (4096, usize::MAX),
-        ] {
+        for (required, stride) in
+            [(0, 48), (40, 39), (MAX_MAP_BYTES, 48), (usize::MAX, 48), (4096, usize::MAX)]
+        {
             assert_eq!(capacity(required, stride), Err(MemoryMapError::Bounds));
         }
     }
@@ -307,41 +288,15 @@ mod tests {
 #[test]
 fn sorting_preserves_full_records_including_duplicate_keys() {
     let mut records = [
-        MemoryDescriptor {
-            physical_start: 0x3000,
-            memory_type: 1,
-            page_count: 3,
-            attributes: 8,
-        },
-        MemoryDescriptor {
-            physical_start: 0x1000,
-            memory_type: 2,
-            page_count: 1,
-            attributes: 9,
-        },
-        MemoryDescriptor {
-            physical_start: 0x2000,
-            memory_type: 3,
-            page_count: 2,
-            attributes: 10,
-        },
-        MemoryDescriptor {
-            physical_start: 0x1000,
-            memory_type: 4,
-            page_count: 4,
-            attributes: 11,
-        },
+        MemoryDescriptor { physical_start: 0x3000, memory_type: 1, page_count: 3, attributes: 8 },
+        MemoryDescriptor { physical_start: 0x1000, memory_type: 2, page_count: 1, attributes: 9 },
+        MemoryDescriptor { physical_start: 0x2000, memory_type: 3, page_count: 2, attributes: 10 },
+        MemoryDescriptor { physical_start: 0x1000, memory_type: 4, page_count: 4, attributes: 11 },
     ];
     let original = records;
     assert_eq!(sort_records(&mut records), Ok(()));
-    assert_eq!(
-        records,
-        [original[1], original[3], original[2], original[0]]
-    );
+    assert_eq!(records, [original[1], original[3], original[2], original[0]]);
     assert_eq!(sort_records(&mut records), Ok(()));
-    assert_eq!(
-        records,
-        [original[1], original[3], original[2], original[0]]
-    );
+    assert_eq!(records, [original[1], original[3], original[2], original[0]]);
     assert_eq!(sort_records(&mut []), Ok(()));
 }

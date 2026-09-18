@@ -33,10 +33,7 @@ impl Display for RomError {
                 write!(formatter, "PCI class code exceeds 24 bits: 0x{value:x}")
             }
             Self::ImageTooLarge(size) => {
-                write!(
-                    formatter,
-                    "option ROM exceeds the 16 MiB limit: {size} bytes"
-                )
+                write!(formatter, "option ROM exceeds the 16 MiB limit: {size} bytes")
             }
             Self::InvalidMemorySize(size) => {
                 write!(
@@ -45,10 +42,7 @@ impl Display for RomError {
                 )
             }
             Self::InvalidPe(reason) => write!(formatter, "invalid EFI PE image: {reason}"),
-            Self::RomDoesNotFit {
-                rom_size,
-                memory_size,
-            } => write!(
+            Self::RomDoesNotFit { rom_size, memory_size } => write!(
                 formatter,
                 "option ROM is {rom_size} bytes and does not fit in the {memory_size}-byte Expansion ROM BAR"
             ),
@@ -68,9 +62,8 @@ pub fn build_uefi_option_rom(efi_image: &[u8], config: RomConfig) -> Result<Vec<
     }
 
     let pe = PeMetadata::parse(efi_image)?;
-    let unaligned_size = HEADER_SIZE
-        .checked_add(efi_image.len())
-        .ok_or(RomError::ImageTooLarge(usize::MAX))?;
+    let unaligned_size =
+        HEADER_SIZE.checked_add(efi_image.len()).ok_or(RomError::ImageTooLarge(usize::MAX))?;
     let total_size = unaligned_size
         .checked_add(IMAGE_UNIT - 1)
         .map(|size| size & !(IMAGE_UNIT - 1))
@@ -131,10 +124,7 @@ pub fn build_readmemh(rom: &[u8], memory_size: usize) -> Result<String, RomError
         return Err(RomError::InvalidMemorySize(memory_size));
     }
     if rom.len() > memory_size {
-        return Err(RomError::RomDoesNotFit {
-            rom_size: rom.len(),
-            memory_size,
-        });
+        return Err(RomError::RomDoesNotFit { rom_size: rom.len(), memory_size });
     }
 
     let mut contents = String::with_capacity(memory_size / 4 * 9);
@@ -178,9 +168,8 @@ impl PeMetadata {
             return Err(RomError::InvalidPe("optional header is too small"));
         }
 
-        let optional_header = pe_offset
-            .checked_add(24)
-            .ok_or(RomError::InvalidPe("PE header offset overflow"))?;
+        let optional_header =
+            pe_offset.checked_add(24).ok_or(RomError::InvalidPe("PE header offset overflow"))?;
         let optional_magic = read_u16(image, optional_header)
             .ok_or(RomError::InvalidPe("truncated optional header"))?;
         if !matches!(optional_magic, 0x010b | 0x020b) {
@@ -219,11 +208,7 @@ mod tests {
     #[test]
     fn packages_a_pci_3_uefi_image() {
         let efi = synthetic_pe32_plus(3072, 0x8664, 11);
-        let config = RomConfig {
-            vendor_id: 0x10ee,
-            device_id: 0x0666,
-            class_code: 0x020000,
-        };
+        let config = RomConfig { vendor_id: 0x10ee, device_id: 0x0666, class_code: 0x020000 };
 
         let rom = build_uefi_option_rom(&efi, config).unwrap();
 
@@ -249,11 +234,7 @@ mod tests {
     fn rejects_a_non_pe_image() {
         let error = build_uefi_option_rom(
             &[0; 128],
-            RomConfig {
-                vendor_id: 0x10ee,
-                device_id: 0x0666,
-                class_code: 0x020000,
-            },
+            RomConfig { vendor_id: 0x10ee, device_id: 0x0666, class_code: 0x020000 },
         )
         .unwrap_err();
 
@@ -275,13 +256,7 @@ mod tests {
     fn rejects_a_rom_larger_than_its_bar() {
         let error = build_readmemh(&[0; 4097], 4096).unwrap_err();
 
-        assert_eq!(
-            error,
-            RomError::RomDoesNotFit {
-                rom_size: 4097,
-                memory_size: 4096,
-            }
-        );
+        assert_eq!(error, RomError::RomDoesNotFit { rom_size: 4097, memory_size: 4096 });
     }
 
     fn synthetic_pe32_plus(size: usize, machine: u16, subsystem: u16) -> Vec<u8> {

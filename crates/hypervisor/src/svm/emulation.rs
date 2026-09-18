@@ -53,9 +53,7 @@ pub enum HypercallAction {
 /// This function returns policy only; the caller owns stop/resume handling.
 pub const fn hypercall(opcode: u64) -> HypercallAction {
     match opcode {
-        HYPERCALL_QUERY => HypercallAction::Query {
-            abi_version: ABI_VERSION as u64,
-        },
+        HYPERCALL_QUERY => HypercallAction::Query { abi_version: ABI_VERSION as u64 },
         HYPERCALL_STOP => HypercallAction::Stop,
         _ => HypercallAction::Unsupported { opcode },
     }

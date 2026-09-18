@@ -41,21 +41,10 @@ impl MapBytes {
     }
 }
 fn policy() -> AddressPolicy {
-    AddressPolicy::new(
-        52,
-        EncryptionState::Unencrypted {
-            encryption_bit: None,
-        },
-    )
-    .unwrap()
+    AddressPolicy::new(52, EncryptionState::Unencrypted { encryption_bit: None }).unwrap()
 }
 fn descriptor(start: u64, pages: u64, kind: u32) -> MemoryDescriptor {
-    MemoryDescriptor {
-        memory_type: kind,
-        physical_start: start,
-        page_count: pages,
-        attributes: 8,
-    }
+    MemoryDescriptor { memory_type: kind, physical_start: start, page_count: pages, attributes: 8 }
 }
 
 #[test]
@@ -70,11 +59,7 @@ fn unsorted_stride48_map_is_normalized_without_padding_or_extensions() {
     let record = OwnershipRecord::decode(&page, &policy()).unwrap();
     assert_eq!(
         record.descriptors().collect::<Vec<_>>(),
-        vec![
-            descriptor(0, 256, 0),
-            descriptor(0x100000, 256, 1),
-            descriptor(0x200000, 256, 7)
-        ]
+        vec![descriptor(0, 256, 0), descriptor(0x100000, 256, 1), descriptor(0x200000, 256, 7)]
     );
     for slot in page[128..224].chunks_exact(32) {
         assert_eq!(&slot[4..8], &[0; 4]);
@@ -96,10 +81,7 @@ fn fragmented_contiguous_arena_is_accepted_and_projected_entirely_reserved() {
     );
     bytes.entry(0, 1, 0x181000, 127);
     let before = page;
-    assert_eq!(
-        ownership::retain(&bytes.map(2, 1), &mut page, 0x100000),
-        Err(())
-    );
+    assert_eq!(ownership::retain(&bytes.map(2, 1), &mut page, 0x100000), Err(()));
     assert_eq!(page, before);
 }
 
@@ -108,16 +90,10 @@ fn virtual_mapping_and_unknown_version_refuse_without_changing_page() {
     let mut bytes = MapBytes::new();
     bytes.entry(0, 1, 0x100000, 256);
     let mut page = [0xcc; 4096];
-    assert_eq!(
-        ownership::retain(&bytes.map(1, 2), &mut page, 0x100000),
-        Err(())
-    );
+    assert_eq!(ownership::retain(&bytes.map(1, 2), &mut page, 0x100000), Err(()));
     assert_eq!(page, [0xcc; 4096]);
     bytes.0[16..24].copy_from_slice(&0x100000u64.to_le_bytes());
-    assert_eq!(
-        ownership::retain(&bytes.map(1, 1), &mut page, 0x100000),
-        Err(())
-    );
+    assert_eq!(ownership::retain(&bytes.map(1, 1), &mut page, 0x100000), Err(()));
     assert_eq!(page, [0xcc; 4096]);
 }
 
@@ -130,29 +106,15 @@ fn overcapacity_and_empty_maps_refuse_without_omission_or_page_mutation() {
     }
     let mut page = [0xcc; 4096];
     assert_eq!(
-        ownership::retain(
-            &bytes.map(MAX_OWNERSHIP_DESCRIPTORS + 1, 1),
-            &mut page,
-            0x100000
-        ),
+        ownership::retain(&bytes.map(MAX_OWNERSHIP_DESCRIPTORS + 1, 1), &mut page, 0x100000),
         Err(())
     );
     assert_eq!(page, [0xcc; 4096]);
-    assert_eq!(
-        ownership::retain(&bytes.map(0, 1), &mut page, 0x100000),
-        Err(())
-    );
+    assert_eq!(ownership::retain(&bytes.map(0, 1), &mut page, 0x100000), Err(()));
     assert_eq!(page, [0xcc; 4096]);
-    ownership::retain(
-        &bytes.map(MAX_OWNERSHIP_DESCRIPTORS, 1),
-        &mut page,
-        0x100000,
-    )
-    .unwrap();
+    ownership::retain(&bytes.map(MAX_OWNERSHIP_DESCRIPTORS, 1), &mut page, 0x100000).unwrap();
     assert_eq!(
-        OwnershipRecord::decode(&page, &policy())
-            .unwrap()
-            .descriptor_count(),
+        OwnershipRecord::decode(&page, &policy()).unwrap().descriptor_count(),
         MAX_OWNERSHIP_DESCRIPTORS
     );
 }

@@ -193,10 +193,7 @@ pub fn validate_source(
     let mut previous_end = 0;
     let mut covered = false;
     for extent in extents {
-        let end = extent
-            .base
-            .checked_add(extent.length)
-            .ok_or(ProbeError::InvalidProfile)?;
+        let end = extent.base.checked_add(extent.length).ok_or(ProbeError::InvalidProfile)?;
         if extent.length == 0
             || extent.base & (PAGE_SIZE - 1) != 0
             || extent.length & (PAGE_SIZE - 1) != 0
@@ -208,11 +205,7 @@ pub fn validate_source(
         previous_end = end;
         covered |= page >= extent.base && page_end <= end;
     }
-    if covered {
-        Ok(())
-    } else {
-        Err(ProbeError::SourceOutsideRam)
-    }
+    if covered { Ok(()) } else { Err(ProbeError::SourceOutsideRam) }
 }
 
 #[inline(always)]
@@ -331,9 +324,7 @@ impl Default for RegistrationMachine {
 
 impl RegistrationMachine {
     pub const fn new() -> Self {
-        Self {
-            state: RegistrationState::Unregistered,
-        }
+        Self { state: RegistrationState::Unregistered }
     }
 
     pub fn state(&self) -> RegistrationState {
@@ -406,20 +397,13 @@ const _: () = assert!(core::mem::size_of::<CpuArchProtocol>() == 0x48);
 const _: () = assert!(core::mem::offset_of!(CpuArchProtocol, register_interrupt_handler) == 0x28);
 const _: () = assert!(core::mem::size_of::<ProbeFrame>() == 136);
 
-#[cfg(all(
-    target_os = "uefi",
-    target_arch = "x86_64",
-    feature = "memory-attribute-probe"
-))]
+#[cfg(all(target_os = "uefi", target_arch = "x86_64", feature = "memory-attribute-probe"))]
 mod native {
     use super::*;
     use core::cell::UnsafeCell;
     use core::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 
-    core::arch::global_asm!(
-        include_str!("probe.S"),
-        options(att_syntax)
-    );
+    core::arch::global_asm!(include_str!("probe.S"), options(att_syntax));
 
     const IDLE: u64 = 1;
     const ARMED: u64 = 2;
@@ -495,10 +479,7 @@ mod native {
 
     #[unsafe(no_mangle)]
     unsafe extern "efiapi" fn svmvisor_memory_probe_handler(vector: isize, system: SystemContext) {
-        if SLOT
-            .stage
-            .compare_exchange(ARMED, HANDLING, Ordering::SeqCst, Ordering::SeqCst)
-            .is_err()
+        if SLOT.stage.compare_exchange(ARMED, HANDLING, Ordering::SeqCst, Ordering::SeqCst).is_err()
         {
             fail_stop();
         }
@@ -515,9 +496,8 @@ mod native {
         // SAFETY: the constructor's independently audited dispatcher contract
         // supplies the exact valid, writable, unique context and callback stack.
         // No requested source is touched anywhere in this callback.
-        let recovered = recover_fault(true, vector, current_apic_id(), frame, unsafe {
-            &mut *context
-        });
+        let recovered =
+            recover_fault(true, vector, current_apic_id(), frame, unsafe { &mut *context });
         if !recovered {
             fail_stop();
         }
@@ -532,11 +512,7 @@ mod native {
     impl HandlerRegistration for CpuRegistration {
         fn install(&mut self) -> Status {
             unsafe {
-                (self.method)(
-                    self.cpu,
-                    PAGE_FAULT_VECTOR,
-                    Some(svmvisor_memory_probe_handler),
-                )
+                (self.method)(self.cpu, PAGE_FAULT_VECTOR, Some(svmvisor_memory_probe_handler))
             }
         }
         fn remove(&mut self) -> Status {
@@ -633,13 +609,7 @@ mod native {
                 CLAIMED.store(false, Ordering::SeqCst);
                 return Err(error);
             }
-            Ok(Self {
-                registration,
-                machine,
-                profile,
-                extents,
-                reads: 0,
-            })
+            Ok(Self { registration, machine, profile, extents, reads: 0 })
         }
 
         /// Execute one bounded, aligned load. This requires the constructor's
@@ -721,17 +691,16 @@ mod native {
             physical_address: u64,
         ) -> Result<u64, svmvisor_memory_attributes::Error> {
             use svmvisor_memory_attributes::Error;
-            self.read_u64(physical_address)
-                .map_err(|error| match error {
-                    ProbeError::Capacity => Error::OutOfResources,
-                    ProbeError::Busy | ProbeError::WrongCpu => Error::AccessDenied,
-                    ProbeError::ReaderFault => Error::Unsupported,
-                    ProbeError::Registration(_) | ProbeError::Removal(_) => Error::DeviceError,
-                    ProbeError::InvalidProfile
-                    | ProbeError::InvalidSource
-                    | ProbeError::SourceOutsideRam
-                    | ProbeError::ControlState => Error::Unsupported,
-                })
+            self.read_u64(physical_address).map_err(|error| match error {
+                ProbeError::Capacity => Error::OutOfResources,
+                ProbeError::Busy | ProbeError::WrongCpu => Error::AccessDenied,
+                ProbeError::ReaderFault => Error::Unsupported,
+                ProbeError::Registration(_) | ProbeError::Removal(_) => Error::DeviceError,
+                ProbeError::InvalidProfile
+                | ProbeError::InvalidSource
+                | ProbeError::SourceOutsideRam
+                | ProbeError::ControlState => Error::Unsupported,
+            })
         }
     }
 
@@ -750,9 +719,5 @@ mod native {
     const _: () = assert!(core::mem::offset_of!(ProbeFrame, status) == 128);
 }
 
-#[cfg(all(
-    target_os = "uefi",
-    target_arch = "x86_64",
-    feature = "memory-attribute-probe"
-))]
+#[cfg(all(target_os = "uefi", target_arch = "x86_64", feature = "memory-attribute-probe"))]
 pub use native::NativeProbe;

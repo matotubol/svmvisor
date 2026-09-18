@@ -35,10 +35,7 @@ impl ClockCapabilities {
         if leaf1_edx & ((1 << 4) | (1 << 5)) != (1 << 4) | (1 << 5) {
             return Err(ClockError::MissingTscOrMsr);
         }
-        Ok(Self {
-            rdtscp: extended1_edx & (1 << 27) != 0,
-            scaling: svm_edx & (1 << 4) != 0,
-        })
+        Ok(Self { rdtscp: extended1_edx & (1 << 27) != 0, scaling: svm_edx & (1 << 4) != 0 })
     }
     pub const fn rdtscp(self) -> bool {
         self.rdtscp
@@ -90,11 +87,7 @@ impl ClockPlan {
             capabilities,
             host_aux,
             host_ratio,
-            guest_aux: if capabilities.rdtscp() {
-                Some(guest_aux as u64)
-            } else {
-                None
-            },
+            guest_aux: if capabilities.rdtscp() { Some(guest_aux as u64) } else { None },
         })
     }
     pub const fn capabilities(&self) -> ClockCapabilities {
@@ -110,11 +103,7 @@ impl ClockPlan {
         self.guest_aux
     }
     pub const fn guest_ratio(&self) -> Option<u64> {
-        if self.capabilities.scaling() {
-            Some(IDENTITY_TSC_RATIO)
-        } else {
-            None
-        }
+        if self.capabilities.scaling() { Some(IDENTITY_TSC_RATIO) } else { None }
     }
     pub const fn tsc_offset(&self) -> u64 {
         0

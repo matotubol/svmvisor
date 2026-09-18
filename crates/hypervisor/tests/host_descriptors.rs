@@ -29,9 +29,7 @@ fn every_gate_has_exact_target_selector_privilege_and_reserved_bits() {
     }
     assert_eq!(
         &image.idt()[128..144],
-        &[
-            0x80, 0, 8, 0, 1, 0x8e, 0x32, 0x54, 0x76, 0x98, 0xff, 0xff, 0, 0, 0, 0
-        ]
+        &[0x80, 0, 8, 0, 1, 0x8e, 0x32, 0x54, 0x76, 0x98, 0xff, 0xff, 0, 0, 0, 0]
     );
     assert_eq!((image.idtr().base, image.idtr().limit), (0x3000, 4095));
 }
@@ -53,128 +51,64 @@ fn available_tss_and_flat_segments_have_exact_image_layout() {
     expected[102] = 104;
     assert_eq!(image.tss(), &expected);
     assert_eq!((image.gdtr().base, image.gdtr().limit), (0x1000, 39));
-    assert_eq!(
-        (
-            image.code_selector(),
-            image.data_selector(),
-            image.tss_selector()
-        ),
-        (8, 16, 24)
-    );
+    assert_eq!((image.code_selector(), image.data_selector(), image.tss_selector()), (8, 16, 24));
 }
 
 #[test]
 fn rejects_invalid_ranges_and_all_table_overlap_pairs() {
-    for base in [
-        0x8000_0000_0000,
-        0xffff_7fff_ffff_ffff,
-        0x7fff_ffff_fff0,
-        u64::MAX - 1,
-    ] {
+    for base in [0x8000_0000_0000, 0xffff_7fff_ffff_ffff, 0x7fff_ffff_fff0, u64::MAX - 1] {
         assert_eq!(
-            HostDescriptorRequest {
-                gdt_base: base,
-                ..request()
-            }
-            .validate(),
+            HostDescriptorRequest { gdt_base: base, ..request() }.validate(),
             Err(Error::InvalidGdtRange)
         );
         assert_eq!(
-            HostDescriptorRequest {
-                tss_base: base,
-                ..request()
-            }
-            .validate(),
+            HostDescriptorRequest { tss_base: base, ..request() }.validate(),
             Err(Error::InvalidTssRange)
         );
         assert_eq!(
-            HostDescriptorRequest {
-                idt_base: base,
-                ..request()
-            }
-            .validate(),
+            HostDescriptorRequest { idt_base: base, ..request() }.validate(),
             Err(Error::InvalidIdtRange)
         );
     }
     assert_eq!(
-        HostDescriptorRequest {
-            tss_base: 0x1027,
-            ..request()
-        }
-        .validate(),
+        HostDescriptorRequest { tss_base: 0x1027, ..request() }.validate(),
         Err(Error::OverlappingTables)
     );
     assert_eq!(
-        HostDescriptorRequest {
-            idt_base: 0x1027,
-            ..request()
-        }
-        .validate(),
+        HostDescriptorRequest { idt_base: 0x1027, ..request() }.validate(),
         Err(Error::OverlappingTables)
     );
     assert_eq!(
-        HostDescriptorRequest {
-            idt_base: 0x2067,
-            ..request()
-        }
-        .validate(),
+        HostDescriptorRequest { idt_base: 0x2067, ..request() }.validate(),
         Err(Error::OverlappingTables)
     );
     assert!(
-        HostDescriptorRequest {
-            tss_base: 0x1028,
-            idt_base: 0x1090,
-            ..request()
-        }
-        .validate()
-        .is_ok()
+        HostDescriptorRequest { tss_base: 0x1028, idt_base: 0x1090, ..request() }
+            .validate()
+            .is_ok()
     );
-    assert!(
-        HostDescriptorRequest {
-            idt_base: u64::MAX - 4095,
-            ..request()
-        }
-        .validate()
-        .is_ok()
-    );
+    assert!(HostDescriptorRequest { idt_base: u64::MAX - 4095, ..request() }.validate().is_ok());
 }
 
 #[test]
 fn rejects_null_and_noncanonical_stacks_or_any_handler_including_last_vector() {
     for pointer in [0, 0x8000_0000_0000, 0xffff_7fff_ffff_ffff] {
         assert_eq!(
-            HostDescriptorRequest {
-                rsp0: pointer,
-                ..request()
-            }
-            .validate(),
+            HostDescriptorRequest { rsp0: pointer, ..request() }.validate(),
             Err(Error::InvalidRsp0)
         );
         assert_eq!(
-            HostDescriptorRequest {
-                ist1: pointer,
-                ..request()
-            }
-            .validate(),
+            HostDescriptorRequest { ist1: pointer, ..request() }.validate(),
             Err(Error::InvalidIst1)
         );
         assert_eq!(
-            HostDescriptorRequest {
-                ist2: pointer,
-                ..request()
-            }
-            .validate(),
+            HostDescriptorRequest { ist2: pointer, ..request() }.validate(),
             Err(Error::InvalidIst2)
         );
         for vector in [0, 8, 255] {
             let mut request = request();
             request.handlers[vector] = pointer;
-            assert_eq!(
-                request.validate(),
-                Err(Error::InvalidHandler {
-                    vector: vector as u8
-                })
-            );
+            assert_eq!(request.validate(), Err(Error::InvalidHandler { vector: vector as u8 }));
         }
     }
 }

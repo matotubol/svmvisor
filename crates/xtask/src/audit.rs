@@ -54,7 +54,8 @@ fn normalized(value: &str) -> String {
 fn names_debug_register(value: &str) -> bool {
     value.match_indices("%dr").any(|(index, _)| {
         let mut rest = value[index + 3..].chars();
-        matches!(rest.next(), Some('0'..='7')) && !rest.next().is_some_and(|next| next.is_alphanumeric() || next == '_')
+        matches!(rest.next(), Some('0'..='7'))
+            && !rest.next().is_some_and(|next| next.is_alphanumeric() || next == '_')
     })
 }
 
@@ -106,8 +107,15 @@ fn matches(pattern: &[Token], mut line: &str) -> bool {
 
 /// `{prefix}-?0x[0-9a-f]+\(%rip\) # 0x[0-9a-f]+ <{symbol}>`
 fn rip_operand(prefix: String, symbol: &str) -> Vec<Token> {
-    vec![literal(prefix), Token::Optional("-"), literal("0x"), Token::Hex, literal("(%rip) # 0x"), Token::Hex,
-        literal(format!(" <{symbol}>"))]
+    vec![
+        literal(prefix),
+        Token::Optional("-"),
+        literal("0x"),
+        Token::Hex,
+        literal("(%rip) # 0x"),
+        Token::Hex,
+        literal(format!(" <{symbol}>")),
+    ]
 }
 
 /// `{mnemonic} 0x[0-9a-f]+ <{symbol}>`
@@ -119,9 +127,9 @@ fn branch(mnemonic: &str, symbol: &str) -> Vec<Token> {
 fn is_padding(line: &str) -> bool {
     let tail = |rest: &str| rest.is_empty() || rest.starts_with(' ');
     line == "int3"
-        || line.strip_prefix("nop").is_some_and(|rest| {
-            tail(rest) || rest.strip_prefix(['l', 'w']).is_some_and(tail)
-        })
+        || line
+            .strip_prefix("nop")
+            .is_some_and(|rest| tail(rest) || rest.strip_prefix(['l', 'w']).is_some_and(tail))
 }
 
 fn python_list(body: Option<&[String]>) -> String {
@@ -157,9 +165,18 @@ pub fn audit_debug_reset(text: &str) -> Result<Value, String> {
             body.push(value);
         }
     }
-    let expected = ["xorl %eax, %eax", "movq %rax, %dr0", "movq %rax, %dr1", "movq %rax, %dr2", "movq %rax, %dr3", "retq"];
+    let expected = [
+        "xorl %eax, %eax",
+        "movq %rax, %dr0",
+        "movq %rax, %dr1",
+        "movq %rax, %dr2",
+        "movq %rax, %dr3",
+        "retq",
+    ];
     if body != expected {
-        return Err(format!("guest debug reset helper differs from audited zero-only sequence: {body:?}"));
+        return Err(format!(
+            "guest debug reset helper differs from audited zero-only sequence: {body:?}"
+        ));
     }
     Ok(Value::Map(vec![
         ("symbol".into(), Value::str(SYMBOL)),
@@ -215,23 +232,41 @@ pub fn audit_host_fault(text: &str) -> Result<Value, String> {
         }
         pushes.push(format!("pushq $0x{vector:x}"));
         let sound = body.is_some_and(|body| {
-            body.split_last().is_some_and(|(last, frame)| frame == pushes.as_slice() && matches(&to_common, last))
+            body.split_last().is_some_and(|(last, frame)| {
+                frame == pushes.as_slice() && matches(&to_common, last)
+            })
         });
         if !sound {
-            return Err(format!("host fault vector{vector} frame mismatch: {}", python_list(body.map(Vec::as_slice))));
+            return Err(format!(
+                "host fault vector{vector} frame mismatch: {}",
+                python_list(body.map(Vec::as_slice))
+            ));
         }
     }
     let empty = Vec::new();
     let common = bodies.get("svmvisor_resident_fault_common").unwrap_or(&empty);
-    let checks = ["cli", "clgi", "cld", "movb $0x1, %al", "testb %al, %al",
-        "movq %cr2, %r8", "movq %cr3, %r9", "movq %rsp, %rsi",
-        "movl $0x7, %ecx", "rep movsq (%rsi), %es:(%rdi)",
-        "movq %r8, (%rdi)", "movq %r9, 0x8(%rdi)", "movq %r8, %rsi",
-        "movq %r9, %rdx", "andq $-0x10, %rsp"];
+    let checks = [
+        "cli",
+        "clgi",
+        "cld",
+        "movb $0x1, %al",
+        "testb %al, %al",
+        "movq %cr2, %r8",
+        "movq %cr3, %r9",
+        "movq %rsp, %rsi",
+        "movl $0x7, %ecx",
+        "rep movsq (%rsi), %es:(%rdi)",
+        "movq %r8, (%rdi)",
+        "movq %r9, 0x8(%rdi)",
+        "movq %r8, %rsi",
+        "movq %r9, %rdx",
+        "andq $-0x10, %rsp",
+    ];
     if checks.iter().any(|item| !common.iter().any(|line| line == item)) || common.len() != 20 {
         return Err(format!("host fault capture sequence mismatch: {common:?}"));
     }
-    if !(common[4].contains("xchgb %al,") && common[4].contains("svmvisor_resident_fault_latched")
+    if !(common[4].contains("xchgb %al,")
+        && common[4].contains("svmvisor_resident_fault_latched")
         && common[6].ends_with("<svmvisor_resident_fault_stop>")
         && [10, 15].iter().all(|&index| common[index].contains("svmvisor_resident_fault_record"))
         && common[19].ends_with("<svmvisor_resident_host_fault>"))
@@ -240,8 +275,10 @@ pub fn audit_host_fault(text: &str) -> Result<Value, String> {
     }
     // Far-return local label may split the symbol in some objdump versions.
     let ordered = lines(text).collect::<Vec<_>>().join("\n");
-    let begin = ordered.find("<svmvisor_resident_enter>:").ok_or("missing svmvisor_resident_enter")?;
-    let end = ordered.find("<svmvisor_resident_vmrun>:").ok_or("missing svmvisor_resident_vmrun")?;
+    let begin =
+        ordered.find("<svmvisor_resident_enter>:").ok_or("missing svmvisor_resident_enter")?;
+    let end =
+        ordered.find("<svmvisor_resident_vmrun>:").ok_or("missing svmvisor_resident_vmrun")?;
     let setup = ordered.get(begin..end).unwrap_or("");
     let load_tss = setup.find("ltr").ok_or("private TSS is never loaded before VMRUN")?;
     let load_idt = setup.find("lidt").ok_or("private IDT is never loaded before VMRUN")?;
@@ -254,7 +291,8 @@ pub fn audit_host_fault(text: &str) -> Result<Value, String> {
     // the #SX gate when the first stack word is not the INIT error code 1.
     let shaped = |body: Option<&[String]>, expected: &[Vec<Token>]| {
         body.is_some_and(|body| {
-            body.len() == expected.len() && expected.iter().zip(body).all(|(pattern, line)| matches(pattern, line))
+            body.len() == expected.len()
+                && expected.iter().zip(body).all(|(pattern, line)| matches(pattern, line))
         })
     };
     let gates: Vec<u32> = (16..256).filter(|&vector| vector != 18).collect();
@@ -270,7 +308,10 @@ pub fn audit_host_fault(text: &str) -> Result<Value, String> {
         ];
         let body = returning(&bodies, &format!("svmvisor_resident_irq_{vector}"));
         if !shaped(body, &expected) {
-            return Err(format!("IRQ gate vector{vector} differs from the window check: {}", python_list(body)));
+            return Err(format!(
+                "IRQ gate vector{vector} differs from the window check: {}",
+                python_list(body)
+            ));
         }
     }
     if bodies.contains_key("svmvisor_resident_irq_18") {
@@ -287,7 +328,9 @@ pub fn audit_host_fault(text: &str) -> Result<Value, String> {
         vec![literal("iretq")],
     ];
     if !shaped(Some(sx), &expected) {
-        return Err(format!("unexpected #SX bypasses the window check and host fault reporter: {sx:?}"));
+        return Err(format!(
+            "unexpected #SX bypasses the window check and host fault reporter: {sx:?}"
+        ));
     }
     // Returning NMI gate (irq.S): the IDT names it for vector 2 in place of
     // the terminal stub, which stays linked (fault.S offsets table) and is
@@ -299,11 +342,17 @@ pub fn audit_host_fault(text: &str) -> Result<Value, String> {
         vec![literal("iretq")],
     ];
     if !shaped(nmi, &expected) {
-        return Err(format!("NMI gate differs from the flag-and-return sequence: {}", python_list(nmi)));
+        return Err(format!(
+            "NMI gate differs from the flag-and-return sequence: {}",
+            python_list(nmi)
+        ));
     }
     Ok(Value::Map(vec![
         ("vectors".into(), Value::Int(256)),
-        ("hardware_error_vectors".into(), Value::ints(ERROR_CODE_VECTORS.iter().map(|&vector| vector as i64))),
+        (
+            "hardware_error_vectors".into(),
+            Value::ints(ERROR_CODE_VECTORS.iter().map(|&vector| vector as i64)),
+        ),
         ("copied_frame_qwords".into(), Value::Int(7)),
         ("copied_control_registers".into(), Value::strs(&["CR2", "CR3"])),
         ("private_tss_loaded_before_idt".into(), Value::Bool(true)),
@@ -311,12 +360,18 @@ pub fn audit_host_fault(text: &str) -> Result<Value, String> {
         ("irq_window_gates".into(), Value::Int(gates.len() as i64)),
         ("irq_window_gate_vectors".into(), Value::ints([16, 255])),
         ("terminal_only_vectors_below_32".into(), Value::ints(terminal_only_vectors_below_32())),
-        ("returning_nmi_gate".into(), Value::Map(vec![
-            ("vector".into(), Value::Int(NMI_VECTOR)),
-            ("symbol".into(), Value::str(NMI_GATE)),
-            ("flag".into(), Value::str(NMI_FLAG)),
-        ])),
-        ("sx_non_init_path".into(), Value::strs(&["svmvisor_resident_irq_30", "svmvisor_resident_fault_30"])),
+        (
+            "returning_nmi_gate".into(),
+            Value::Map(vec![
+                ("vector".into(), Value::Int(NMI_VECTOR)),
+                ("symbol".into(), Value::str(NMI_GATE)),
+                ("flag".into(), Value::str(NMI_FLAG)),
+            ]),
+        ),
+        (
+            "sx_non_init_path".into(),
+            Value::strs(&["svmvisor_resident_irq_30", "svmvisor_resident_fault_30"]),
+        ),
     ]))
 }
 
@@ -328,7 +383,9 @@ pub fn audit_extended_state(text: &str) -> Result<u64, String> {
         let mnemonic = instruction.split_whitespace().next().ok_or("malformed disassembly line")?;
         count += 1;
         if (names_extended_state_register(instruction)
-            || ["f", "v", "xsave", "xrstor", "xsetbv"].iter().any(|prefix| mnemonic.starts_with(prefix)))
+            || ["f", "v", "xsave", "xrstor", "xsetbv"]
+                .iter()
+                .any(|prefix| mnemonic.starts_with(prefix)))
             && !["vmrun", "vmload", "vmsave"].contains(&mnemonic)
         {
             return Err(format!("unowned extended-state instruction: {instruction}"));
@@ -381,7 +438,8 @@ fn coff_symbol(listing: &str, name: &str) -> Result<(u64, u64), String> {
 pub fn audit_copied_ap_wait(object: &[u8], listing: &str) -> Result<Value, String> {
     let short = "truncated COFF object";
     let u16_at = |offset: usize| -> Result<usize, String> {
-        Ok(u16::from_le_bytes(object.get(offset..offset + 2).ok_or(short)?.try_into().unwrap()) as usize)
+        Ok(u16::from_le_bytes(object.get(offset..offset + 2).ok_or(short)?.try_into().unwrap())
+            as usize)
     };
     let section_count = u16_at(2)?;
     let optional_size = u16_at(16)?;
@@ -399,7 +457,11 @@ pub fn audit_copied_ap_wait(object: &[u8], listing: &str) -> Result<Value, Strin
     }
     let (section, start) = coff_symbol(listing, "svmvisor_ap_wait")?;
     let (end_section, end) = coff_symbol(listing, "svmvisor_ap_wait_end")?;
-    if !copied_sections.contains(&section) || end_section != section || end <= start || end - start > 3840 {
+    if !copied_sections.contains(&section)
+        || end_section != section
+        || end <= start
+        || end - start > 3840
+    {
         return Err("invalid copied AP wait span".into());
     }
     Ok(Value::Map(vec![
@@ -416,7 +478,10 @@ mod tests {
 
     #[test]
     fn line_grammar_matches_the_original_expressions() {
-        assert_eq!(label("0000000000100010 <svmvisor_resident_enter>:"), Some("svmvisor_resident_enter"));
+        assert_eq!(
+            label("0000000000100010 <svmvisor_resident_enter>:"),
+            Some("svmvisor_resident_enter")
+        );
         assert_eq!(label("  10 <a>: "), None);
         assert_eq!(label("  10 <>:"), None);
         assert_eq!(label("  10: <a>:"), None);
@@ -433,7 +498,12 @@ mod tests {
         assert!(names_extended_state_register("fld %st(1)"));
         assert!(names_extended_state_register("movq %mm0, %rax"));
         assert!(!names_extended_state_register("movq %rax, %rbx"));
-        assert!(is_padding("int3") && is_padding("nop") && is_padding("nopw %cs:(%rax,%rax)") && is_padding("nopl (%rax)"));
+        assert!(
+            is_padding("int3")
+                && is_padding("nop")
+                && is_padding("nopw %cs:(%rax,%rax)")
+                && is_padding("nopl (%rax)")
+        );
         assert!(!is_padding("nopx") && !is_padding("int3 ") && !is_padding("clgi"));
     }
 
@@ -441,9 +511,20 @@ mod tests {
     fn extended_state_audit_counts_and_rejects() {
         let ok = "  10: \tvmrun\n  13: \tvmsave\n  16: \tmovq\t%rax, %rbx\n";
         assert_eq!(audit_extended_state(ok), Ok(3));
-        for bad in ["  10: \tmovaps\t%xmm0, %xmm1\n", "  10: \tfninit\n", "  10: \txsave\t(%rax)\n",
-            "  10: \tvzeroupper\n", "  10: \txsetbv\n", "  10: \tmovq\t%mm0, %rax\n"] {
-            assert!(audit_extended_state(bad).unwrap_err().starts_with("unowned extended-state instruction"), "{bad}");
+        for bad in [
+            "  10: \tmovaps\t%xmm0, %xmm1\n",
+            "  10: \tfninit\n",
+            "  10: \txsave\t(%rax)\n",
+            "  10: \tvzeroupper\n",
+            "  10: \txsetbv\n",
+            "  10: \tmovq\t%mm0, %rax\n",
+        ] {
+            assert!(
+                audit_extended_state(bad)
+                    .unwrap_err()
+                    .starts_with("unowned extended-state instruction"),
+                "{bad}"
+            );
         }
         assert_eq!(audit_extended_state("\n"), Err("empty disassembly".into()));
     }
@@ -458,16 +539,28 @@ mod tests {
             data[60 + 32..60 + 34].copy_from_slice(&relocations.to_le_bytes());
             data
         }
-        let listing = |section: u32, end: u32| format!(
-            "SYMBOL TABLE:\n[ 4](sec  {section})(fl 0x00)(ty   0)(scl   2) (nx 0) 0x00000010 svmvisor_ap_wait\n\
-             [ 5](sec  2)(fl 0x00)(ty   0)(scl   2) (nx 0) 0x{end:08x} svmvisor_ap_wait_end\n");
+        let listing = |section: u32, end: u32| {
+            format!(
+                "SYMBOL TABLE:\n[ 4](sec  {section})(fl 0x00)(ty   0)(scl   2) (nx 0) 0x00000010 svmvisor_ap_wait\n\
+             [ 5](sec  2)(fl 0x00)(ty   0)(scl   2) (nx 0) 0x{end:08x} svmvisor_ap_wait_end\n"
+            )
+        };
         let result = audit_copied_ap_wait(&object(0), &listing(2, 0x110)).unwrap();
         assert_eq!(result.get("copied_wait_bytes"), Some(&Value::Int(0x100)));
-        assert_eq!(audit_copied_ap_wait(&object(1), &listing(2, 0x110)), Err("copied AP code has COFF relocations".into()));
+        assert_eq!(
+            audit_copied_ap_wait(&object(1), &listing(2, 0x110)),
+            Err("copied AP code has COFF relocations".into())
+        );
         for bad in [listing(1, 0x110), listing(2, 0x10), listing(2, 0x10 + 3841)] {
-            assert_eq!(audit_copied_ap_wait(&object(0), &bad), Err("invalid copied AP wait span".into()));
+            assert_eq!(
+                audit_copied_ap_wait(&object(0), &bad),
+                Err("invalid copied AP wait span".into())
+            );
         }
-        assert_eq!(audit_copied_ap_wait(&object(0), "SYMBOL TABLE:\n"), Err("missing AP audit symbol svmvisor_ap_wait".into()));
+        assert_eq!(
+            audit_copied_ap_wait(&object(0), "SYMBOL TABLE:\n"),
+            Err("missing AP audit symbol svmvisor_ap_wait".into())
+        );
         assert!(audit_runtime_driver(&[0; 16]).is_err());
     }
 
@@ -486,7 +579,10 @@ mod tests {
     #[test]
     fn exact_zero_only_helper_passes() {
         let result = audit_debug_reset(BODY).unwrap();
-        assert_eq!(result.get("zeroed_live_registers"), Some(&Value::strs(&["DR0", "DR1", "DR2", "DR3"])));
+        assert_eq!(
+            result.get("zeroed_live_registers"),
+            Some(&Value::strs(&["DR0", "DR1", "DR2", "DR3"]))
+        );
     }
 
     #[test]
@@ -528,14 +624,16 @@ mod tests {
 ";
 
     fn gate_to(vector: u32, fault: u32) -> String {
-        format!("0000000000100{vector:03x} <svmvisor_resident_irq_{vector}>:\n\
+        format!(
+            "0000000000100{vector:03x} <svmvisor_resident_irq_{vector}>:\n\
   1002d3:      \tclgi\n\
   1002d6:      \tcmpl\t$0x1, 0x22d27(%rip)     # 0x123004 <svmvisor_resident_irq_window>\n\
   1002dd:      \tjne\t0x102d0d <svmvisor_resident_fault_{fault}>\n\
   1002e3:      \tmovl\t$0x0, 0x22d17(%rip)     # 0x123004 <svmvisor_resident_irq_window>\n\
   1002ed:      \tmovl\t$0x{vector:x}, 0x22d09(%rip)    # 0x123000 <svmvisor_resident_irq_vector>\n\
   1002f7:      \tandq\t$-0x201, 0x10(%rsp)     # imm = 0xFDFF\n\
-  100300:      \tiretq\n\n")
+  100300:      \tiretq\n\n"
+        )
     }
 
     fn gate(vector: u32) -> String {
@@ -543,21 +641,24 @@ mod tests {
     }
 
     fn sx(target: &str) -> String {
-        format!("0000000000100277 <svmvisor_resident_sx>:\n\
+        format!(
+            "0000000000100277 <svmvisor_resident_sx>:\n\
   100277:      \tclgi\n\
   10027a:      \tcmpq\t$0x1, (%rsp)\n\
   10027f:      \tjne\t0x102cfd <{target}>\n\
   100285:      \tlock\n\
   100286:      \tincq\t0x7ae33(%rip)           # 0x17b0c0 <svmvisor_resident_init_acks>\n\
   10028d:      \taddq\t$0x8, %rsp\n\
-  100291:      \tiretq\n\n")
+  100291:      \tiretq\n\n"
+        )
     }
 
     fn nmi() -> String {
         "00000000001002c0 <svmvisor_resident_nmi>:\n\
   1002c0:      \tclgi\n\
   1002c3:      \tmovl\t$0x1, 0x7adf3(%rip)     # 0x17b0c0 <svmvisor_resident_nmi_pending>\n\
-  1002cd:      \tiretq\n\n".into()
+  1002cd:      \tiretq\n\n"
+            .into()
     }
 
     fn nmi_with(needle: &str, replacement: &str) -> String {
@@ -565,8 +666,10 @@ mod tests {
     }
 
     fn image_with(gates: &[u32], sx_body: &str) -> String {
-        let mut text = String::from("0000000000100010 <svmvisor_resident_enter>:\n  100071:      \tltrw\t%ax\n  100078:      \tlidtq\t(%rax)\n\n\
-000000000010011b <svmvisor_resident_vmrun>:\n  10011b:      \tvmrun\n\n");
+        let mut text = String::from(
+            "0000000000100010 <svmvisor_resident_enter>:\n  100071:      \tltrw\t%ax\n  100078:      \tlidtq\t(%rax)\n\n\
+000000000010011b <svmvisor_resident_vmrun>:\n  10011b:      \tvmrun\n\n",
+        );
         text.push_str(sx_body);
         text.push_str(&nmi());
         for &vector in gates {
@@ -575,7 +678,9 @@ mod tests {
             }
         }
         for vector in 0..256u32 {
-            text.push_str(&format!("0000000000102{vector:03x} <svmvisor_resident_fault_{vector}>:\n"));
+            text.push_str(&format!(
+                "0000000000102{vector:03x} <svmvisor_resident_fault_{vector}>:\n"
+            ));
             if !ERROR_CODE_VECTORS.contains(&vector) {
                 text.push_str("  102c01:      \tpushq\t$0x0\n");
             }
@@ -600,19 +705,29 @@ mod tests {
     fn window_gates_and_sx_chain_pass() {
         let result = audit_host_fault(&image()).unwrap();
         assert_eq!(result.get("irq_window_gates"), Some(&Value::Int(239)));
-        assert_eq!(result.get("terminal_only_vectors_below_32"), Some(&Value::ints((0..2).chain(3..16).chain([18]))));
-        assert_eq!(result.get("returning_nmi_gate"), Some(&Value::Map(vec![
-            ("vector".into(), Value::Int(2)),
-            ("symbol".into(), Value::str("svmvisor_resident_nmi")),
-            ("flag".into(), Value::str("svmvisor_resident_nmi_pending")),
-        ])));
-        assert_eq!(result.get("sx_non_init_path"), Some(&Value::strs(&["svmvisor_resident_irq_30", "svmvisor_resident_fault_30"])));
+        assert_eq!(
+            result.get("terminal_only_vectors_below_32"),
+            Some(&Value::ints((0..2).chain(3..16).chain([18])))
+        );
+        assert_eq!(
+            result.get("returning_nmi_gate"),
+            Some(&Value::Map(vec![
+                ("vector".into(), Value::Int(2)),
+                ("symbol".into(), Value::str("svmvisor_resident_nmi")),
+                ("flag".into(), Value::str("svmvisor_resident_nmi_pending")),
+            ]))
+        );
+        assert_eq!(
+            result.get("sx_non_init_path"),
+            Some(&Value::strs(&["svmvisor_resident_irq_30", "svmvisor_resident_fault_30"]))
+        );
     }
 
     #[test]
     fn alignment_padding_after_the_last_gate_is_ignored() {
         let tail = "\tiretq\n";
-        let padded = gate(255).replace(tail, &format!("{tail}  100301:      \tint3\n  100302:      \tnop\n"));
+        let padded = gate(255)
+            .replace(tail, &format!("{tail}  100301:      \tint3\n  100302:      \tnop\n"));
         let result = audit_host_fault(&image().replace(&gate(255), &padded)).unwrap();
         assert_eq!(result.get("irq_window_gates"), Some(&Value::Int(239)));
         // Code after the gate's IRETQ is not padding.
@@ -626,7 +741,10 @@ mod tests {
         let default_sx = sx("svmvisor_resident_irq_30");
         let cases = [
             // vector 17 left as a bare stub
-            image_with(&all_gates().into_iter().filter(|&v| v != 17).collect::<Vec<_>>(), &default_sx),
+            image_with(
+                &all_gates().into_iter().filter(|&v| v != 17).collect::<Vec<_>>(),
+                &default_sx,
+            ),
             // the old 32-255 set
             image_with(&(32..256).collect::<Vec<_>>(), &default_sx),
             // wrong fallthrough stub
@@ -674,22 +792,40 @@ mod tests {
         for (index, text) in cases.iter().enumerate() {
             assert_ne!(text, &good, "case {index} did not mutate the image");
             let error = audit_host_fault(text).unwrap_err();
-            assert!(error.starts_with("NMI gate differs from the flag-and-return sequence"), "case {index}: {error}");
+            assert!(
+                error.starts_with("NMI gate differs from the flag-and-return sequence"),
+                "case {index}: {error}"
+            );
         }
         // The unused vector-2 terminal stub stays linked and checked.
         let stub = "  102c01:      \tpushq\t$0x0\n  102c03:      \tpushq\t$0x2\n";
-        assert!(audit_host_fault(&good.replacen(stub, "  102c03:      \tpushq\t$0x2\n", 1)).unwrap_err()
-            .starts_with("host fault vector2 frame mismatch"));
+        assert!(
+            audit_host_fault(&good.replacen(stub, "  102c03:      \tpushq\t$0x2\n", 1))
+                .unwrap_err()
+                .starts_with("host fault vector2 frame mismatch")
+        );
     }
 
     #[test]
     fn fault_frames_and_capture_sequence_are_enforced() {
         let good = image();
         for (needle, replacement, expected) in [
-            ("  102c03:      \tpushq\t$0xe\n", "  102c01:      \tpushq\t$0x0\n  102c03:      \tpushq\t$0xe\n", "host fault vector14 frame mismatch"),
+            (
+                "  102c03:      \tpushq\t$0xe\n",
+                "  102c01:      \tpushq\t$0x0\n  102c03:      \tpushq\t$0xe\n",
+                "host fault vector14 frame mismatch",
+            ),
             ("\tcld\n", "\tnop\n", "host fault capture sequence mismatch"),
-            ("<svmvisor_resident_host_fault>", "<other>", "host fault latch/record/callback targets differ"),
-            ("\tltrw\t%ax\n  100078:      \tlidtq\t(%rax)\n", "\tlidtq\t(%rax)\n  100078:      \tltrw\t%ax\n", "private IDT selected before private TSS"),
+            (
+                "<svmvisor_resident_host_fault>",
+                "<other>",
+                "host fault latch/record/callback targets differ",
+            ),
+            (
+                "\tltrw\t%ax\n  100078:      \tlidtq\t(%rax)\n",
+                "\tlidtq\t(%rax)\n  100078:      \tltrw\t%ax\n",
+                "private IDT selected before private TSS",
+            ),
         ] {
             let text = good.replacen(needle, replacement, 1);
             assert_ne!(text, good);

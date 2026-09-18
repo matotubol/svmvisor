@@ -1,7 +1,9 @@
 //! Join actual retained leaf/fetch observations to the reviewed WB classifier.
 //! This adds no ownership, global-alias, TLB, DMA or native-entry authority.
 use crate::native_tables::{LeafObservation, PreparedTables, TableError, TablePageObservation};
-use svmvisor_dxe::native::admission::cache::{self as native_cache, CacheError, CacheSnapshot, PageMapping};
+use svmvisor_dxe::native::admission::cache::{
+    self as native_cache, CacheError, CacheSnapshot, PageMapping,
+};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ResourceKind {
@@ -50,12 +52,7 @@ pub fn qualify_arena_fetches(
 pub enum ResourceCacheError {
     Tables(TableError),
     Shape,
-    Cache {
-        kind: ResourceKind,
-        page: u64,
-        pat_index: u8,
-        error: CacheError,
-    },
+    Cache { kind: ResourceKind, page: u64, pat_index: u8, error: CacheError },
 }
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct ResourceCacheReport {
@@ -245,10 +242,7 @@ mod tests {
         let page = table();
         assert_eq!(qualify_arena_fetches(&s, 0x200000, 33 * 4096), Ok(()));
         s.pat = (s.pat & !255) | 4; // PAT[0]=WT; software alias PAT[4] stays WB.
-        assert_eq!(
-            qualify_leaf(&s, page.alias, ResourceKind::TableAlias),
-            Ok(())
-        );
+        assert_eq!(qualify_leaf(&s, page.alias, ResourceKind::TableAlias), Ok(()));
         assert_eq!(
             qualify_arena_fetches(&s, 0x200000, 33 * 4096),
             Err(ResourceCacheError::Cache {

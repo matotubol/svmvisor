@@ -8,6 +8,11 @@
 //! Fixed MTRR accesses and guest cache serialization remain native; this is
 //! not an independent memory-type model or general SYSCFG implementation.
 
+use super::{
+    dispatch::{self, NativeEferError, NativeMsrOutcome},
+    exit::{MsrInstruction, ResumeCandidate},
+    vmcb::Vmcb,
+};
 use crate::arch::x86_64::{
     capabilities::ValidatedCapabilities,
     msr::{
@@ -16,8 +21,6 @@ use crate::arch::x86_64::{
     },
     registers::GuestRegisters,
 };
-use super::{dispatch::{self, NativeEferError, NativeMsrOutcome},
-    exit::{MsrInstruction, ResumeCandidate}, vmcb::Vmcb};
 
 pub const FIXED_DRAM_CONTROL_MASK: u64 = SYS_CFG_MTRR_FIX_DRAM_EN | SYS_CFG_MTRR_FIX_DRAM_MOD_EN;
 
@@ -54,9 +57,15 @@ pub struct PreparedWrite<'a> {
 }
 
 impl PreparedWrite<'_> {
-    pub const fn requested(&self) -> u64 { self.requested }
-    pub const fn current(&self) -> u64 { self.current }
-    pub const fn delta(&self) -> u64 { self.requested ^ self.current }
+    pub const fn requested(&self) -> u64 {
+        self.requested
+    }
+    pub const fn current(&self) -> u64 {
+        self.current
+    }
+    pub const fn delta(&self) -> u64 {
+        self.requested ^ self.current
+    }
     pub fn write_value(&self) -> Option<u64> {
         (self.requested != self.current).then_some(self.requested)
     }
@@ -93,8 +102,9 @@ pub fn prepare<'a>(
     }
     let instruction = match instruction {
         SyscfgInstruction::Bytes(bytes) => MsrInstruction::Bytes(bytes),
-        SyscfgInstruction::Hardware(caps) =>
-            dispatch::hardware_msr_instruction(vmcb, caps).map_err(E::Boundary)?,
+        SyscfgInstruction::Hardware(caps) => {
+            dispatch::hardware_msr_instruction(vmcb, caps).map_err(E::Boundary)?
+        }
     };
     dispatch::validate_native_msr_boundary(vmcb, instruction, startup_owned)
         .map_err(E::Boundary)?;
@@ -112,14 +122,14 @@ pub fn prepare<'a>(
         return Ok(SyscfgPreparation::GeneralProtectionPrepared);
     }
     if (!startup_owned && !vmcb.guest_in_64_bit_code())
-        || (startup_owned && !dispatch::native_startup_instruction_mode(vmcb, instruction.length())) {
+        || (startup_owned && !dispatch::native_startup_instruction_mode(vmcb, instruction.length()))
+    {
         return Err(E::Boundary(B::UnsupportedMode));
     }
     if vmcb.guest_rflags() & (1 << 8) != 0 {
         return Err(E::Boundary(B::UnsupportedDebugState));
     }
-    let next = instruction.continuation(snapshot)
-        .map_err(|e| E::Boundary(B::Instruction(e)))?;
+    let next = instruction.continuation(snapshot).map_err(|e| E::Boundary(B::Instruction(e)))?;
     let requested = ((frame.rdx as u32 as u64) << 32) | vmcb.guest_rax() as u32 as u64;
     let current = read_current();
     if current & !SYS_CFG_DEFINED != 0 {

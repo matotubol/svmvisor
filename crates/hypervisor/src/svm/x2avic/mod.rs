@@ -103,16 +103,32 @@ impl NativeX2AvicProfile {
         maximum: u16,
         policy: &AddressPolicy,
     ) -> Result<Self, Error> {
-        if maximum > MAX_ID { return Err(Error::InvalidId); }
-        for address in [backing, table] {
-            if address == 0 { return Err(Error::Address(AddressError::EmptyRange)); }
-            policy.validate(address, PAGE_BYTES as u64, PAGE_BYTES as u64).map_err(Error::Address)?;
+        if maximum > MAX_ID {
+            return Err(Error::InvalidId);
         }
-        if backing == table { return Err(Error::AliasedPages); }
+        for address in [backing, table] {
+            if address == 0 {
+                return Err(Error::Address(AddressError::EmptyRange));
+            }
+            policy
+                .validate(address, PAGE_BYTES as u64, PAGE_BYTES as u64)
+                .map_err(Error::Address)?;
+        }
+        if backing == table {
+            return Err(Error::AliasedPages);
+        }
         Ok(Self { backing, table, maximum })
     }
-    pub const fn backing_address(self) -> u64 { self.backing }
-    pub const fn table_address(self) -> u64 { self.table }
-    pub const fn maximum_id(self) -> u16 { self.maximum }
-    pub const fn table_control(self) -> u64 { self.table | self.maximum as u64 }
+    pub const fn backing_address(self) -> u64 {
+        self.backing
+    }
+    pub const fn table_address(self) -> u64 {
+        self.table
+    }
+    pub const fn maximum_id(self) -> u16 {
+        self.maximum
+    }
+    pub const fn table_control(self) -> u64 {
+        self.table | self.maximum as u64
+    }
 }

@@ -1,7 +1,7 @@
-use svmvisor_hypervisor::memory::address::EncryptionState;
 use svmvisor_hypervisor::arch::x86_64::capabilities::{
     CapabilityEvidence, CpuVendor, EvidenceFlag, OptionalFeatures, ValidatedCapabilities,
 };
+use svmvisor_hypervisor::memory::address::EncryptionState;
 use svmvisor_hypervisor::svm::exit::{ExitAction, ExitSnapshot, ResumeError, TranslationStage};
 
 fn capabilities(nrip_save: bool) -> ValidatedCapabilities {
@@ -14,26 +14,15 @@ fn capabilities(nrip_save: bool) -> ValidatedCapabilities {
         physical_address_bits: Some(48),
         vm_cr_svmdis: EvidenceFlag::Clear,
         hypervisor_present: EvidenceFlag::Clear,
-        encryption: EncryptionState::Unencrypted {
-            encryption_bit: None,
-        },
-        optional: OptionalFeatures {
-            nrip_save,
-            ..OptionalFeatures::default()
-        },
+        encryption: EncryptionState::Unencrypted { encryption_bit: None },
+        optional: OptionalFeatures { nrip_save, ..OptionalFeatures::default() },
     }
     .validate()
     .unwrap()
 }
 
 fn snapshot(code: u64) -> ExitSnapshot {
-    ExitSnapshot {
-        code,
-        info1: u64::MAX,
-        info2: u64::MAX,
-        rip: 0x1000,
-        nrip: 0x1002,
-    }
+    ExitSnapshot { code, info1: u64::MAX, info2: u64::MAX, rip: 0x1000, nrip: 0x1002 }
 }
 
 #[test]
@@ -69,15 +58,7 @@ fn codes_use_all_64_bits_and_never_interpret_undefined_information() {
     ] {
         assert_eq!(snapshot(code).action(), action);
     }
-    for code in [
-        0,
-        0x80,
-        0x7c,
-        0xa6,
-        0xffff_ffff,
-        0x1_0000_0072,
-        u64::MAX - 1,
-    ] {
+    for code in [0, 0x80, 0x7c, 0xa6, 0xffff_ffff, 0x1_0000_0072, u64::MAX - 1] {
         assert_eq!(snapshot(code).action(), ExitAction::Unsupported { code });
     }
 }
@@ -91,11 +72,7 @@ fn nested_fault_preserves_raw_bits_and_distinguishes_walk_from_final_translation
         (3, TranslationStage::Ambiguous),
     ] {
         let raw = (stage_bits << 32) | (1 << 63) | 0x1f;
-        let value = ExitSnapshot {
-            info1: raw,
-            info2: 0xfedc_ba98_7654_3210,
-            ..snapshot(0x400)
-        };
+        let value = ExitSnapshot { info1: raw, info2: 0xfedc_ba98_7654_3210, ..snapshot(0x400) };
         let ExitAction::NestedPageFault(fault) = value.action() else {
             panic!("expected NPF");
         };
@@ -108,11 +85,9 @@ fn nested_fault_preserves_raw_bits_and_distinguishes_walk_from_final_translation
         assert!(fault.reserved_bit_violation());
         assert!(fault.instruction_fetch());
     }
-    let ExitAction::NestedPageFault(fault) = (ExitSnapshot {
-        info1: 0,
-        ..snapshot(0x400)
-    })
-    .action() else {
+    let ExitAction::NestedPageFault(fault) =
+        (ExitSnapshot { info1: 0, ..snapshot(0x400) }).action()
+    else {
         panic!("expected NPF");
     };
     assert!(!fault.present());
@@ -131,10 +106,7 @@ fn only_supported_nonterminal_instruction_exits_can_yield_an_nrip_candidate() {
             Err(ResumeError::NripNotEstablished)
         );
         for length in [1, 2, 3, 15] {
-            let value = ExitSnapshot {
-                nrip: 0x1000 + length,
-                ..snapshot(code)
-            };
+            let value = ExitSnapshot { nrip: 0x1000 + length, ..snapshot(code) };
             let candidate = value.resume_candidate(&available).unwrap();
             assert_eq!(candidate.address(), value.nrip);
             assert_eq!(candidate.instruction_bytes(), length as u8);
@@ -153,49 +125,23 @@ fn only_supported_nonterminal_instruction_exits_can_yield_an_nrip_candidate() {
 #[test]
 fn nrip_never_wraps_skips_large_distances_or_accepts_noncanonical_pointers() {
     let available = capabilities(true);
-    for (rip, nrip) in [
-        (0x1000, 0x1000),
-        (0x1000, 0x0fff),
-        (0x1000, 0x1010),
-        (u64::MAX, 0),
-    ] {
+    for (rip, nrip) in [(0x1000, 0x1000), (0x1000, 0x0fff), (0x1000, 0x1010), (u64::MAX, 0)] {
         assert_eq!(
-            (ExitSnapshot {
-                rip,
-                nrip,
-                ..snapshot(0x72)
-            })
-            .resume_candidate(&available),
+            (ExitSnapshot { rip, nrip, ..snapshot(0x72) }).resume_candidate(&available),
             Err(ResumeError::InvalidInstructionLength)
         );
     }
     let noncanonical = 0x0000_8000_0000_0000;
     assert_eq!(
-        (ExitSnapshot {
-            rip: noncanonical,
-            ..snapshot(0x72)
-        })
-        .resume_candidate(&available),
+        (ExitSnapshot { rip: noncanonical, ..snapshot(0x72) }).resume_candidate(&available),
         Err(ResumeError::NonCanonicalRip)
     );
     assert_eq!(
-        (ExitSnapshot {
-            rip: noncanonical - 1,
-            nrip: noncanonical,
-            ..snapshot(0x72)
-        })
-        .resume_candidate(&available),
+        (ExitSnapshot { rip: noncanonical - 1, nrip: noncanonical, ..snapshot(0x72) })
+            .resume_candidate(&available),
         Err(ResumeError::NonCanonicalNrip)
     );
-    let high = ExitSnapshot {
-        rip: 0xffff_8000_0000_0000,
-        nrip: 0xffff_8000_0000_000f,
-        ..snapshot(0x81)
-    };
-    assert_eq!(
-        high.resume_candidate(&available)
-            .unwrap()
-            .instruction_bytes(),
-        15
-    );
+    let high =
+        ExitSnapshot { rip: 0xffff_8000_0000_0000, nrip: 0xffff_8000_0000_000f, ..snapshot(0x81) };
+    assert_eq!(high.resume_candidate(&available).unwrap().instruction_bytes(), 15);
 }

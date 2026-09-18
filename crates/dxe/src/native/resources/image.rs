@@ -15,10 +15,7 @@ impl ImageSpans {
         self.spans.get(..self.count).ok_or(Status::COMPROMISED_DATA)
     }
     pub fn push(&mut self, span: BorrowedSpan) -> Result<(), Status> {
-        *self
-            .spans
-            .get_mut(self.count)
-            .ok_or(Status::OUT_OF_RESOURCES)? = span;
+        *self.spans.get_mut(self.count).ok_or(Status::OUT_OF_RESOURCES)? = span;
         self.count += 1;
         Ok(())
     }
@@ -74,18 +71,10 @@ fn parse(base: u64, image_bytes: u64, header: &[u8]) -> Result<ImageSpans, Statu
         return Err(bad);
     }
     let mut result = ImageSpans {
-        spans: [BorrowedSpan {
-            base: 0,
-            bytes: 0,
-            access: BorrowedAccess::Read,
-        }; MAX_SPANS],
+        spans: [BorrowedSpan { base: 0, bytes: 0, access: BorrowedAccess::Read }; MAX_SPANS],
         count: 0,
     };
-    result.push(BorrowedSpan {
-        base,
-        bytes: headers as u64,
-        access: BorrowedAccess::Read,
-    })?;
+    result.push(BorrowedSpan { base, bytes: headers as u64, access: BorrowedAccess::Read })?;
     let entry = u64::from(u32_at(header, optional + 16)?);
     let mut entry_covered = false;
     let mut previous_end = 4096u64;
@@ -118,11 +107,7 @@ fn parse(base: u64, image_bytes: u64, header: &[u8]) -> Result<ImageSpans, Statu
             }
             entry_covered = true;
         }
-        result.push(BorrowedSpan {
-            base: base + start,
-            bytes,
-            access,
-        })?;
+        result.push(BorrowedSpan { base: base + start, bytes, access })?;
         previous_end = end;
     }
     if !entry_covered {
@@ -160,12 +145,7 @@ pub unsafe fn collect(image: Handle, services: &BootServices) -> Result<ImageSpa
         parse(loaded.image_base as u64, loaded.image_size, header)
     })();
     let closed = unsafe {
-        (services.close_protocol)(
-            image,
-            &LoadedImageProtocol::GUID,
-            image,
-            core::ptr::null_mut(),
-        )
+        (services.close_protocol)(image, &LoadedImageProtocol::GUID, image, core::ptr::null_mut())
     };
     if closed != Status::SUCCESS {
         return Err(closed);
@@ -178,14 +158,9 @@ mod tests {
     use super::*;
     fn header() -> [u8; 512] {
         let mut bytes = [0; 512];
-        for (offset, value) in [
-            (0, 0x5a4du16),
-            (0x84, 0x8664),
-            (0x86, 2),
-            (0x94, 240),
-            (0x98, 0x20b),
-            (0xdc, 11),
-        ] {
+        for (offset, value) in
+            [(0, 0x5a4du16), (0x84, 0x8664), (0x86, 2), (0x94, 240), (0x98, 0x20b), (0xdc, 11)]
+        {
             bytes[offset..offset + 2].copy_from_slice(&value.to_le_bytes());
         }
         for (offset, value) in [
@@ -214,21 +189,9 @@ mod tests {
         assert_eq!(
             spans.spans().unwrap(),
             &[
-                BorrowedSpan {
-                    base: 0x200000,
-                    bytes: 512,
-                    access: BorrowedAccess::Read
-                },
-                BorrowedSpan {
-                    base: 0x201000,
-                    bytes: 0x1400,
-                    access: BorrowedAccess::ReadExecute
-                },
-                BorrowedSpan {
-                    base: 0x203000,
-                    bytes: 0x400,
-                    access: BorrowedAccess::ReadWrite
-                },
+                BorrowedSpan { base: 0x200000, bytes: 512, access: BorrowedAccess::Read },
+                BorrowedSpan { base: 0x201000, bytes: 0x1400, access: BorrowedAccess::ReadExecute },
+                BorrowedSpan { base: 0x203000, bytes: 0x400, access: BorrowedAccess::ReadWrite },
             ]
         );
     }
@@ -245,10 +208,7 @@ mod tests {
         ] {
             let mut bytes = header();
             bytes[offset..offset + 4].copy_from_slice(&value.to_le_bytes());
-            assert!(
-                parse(0x200000, 0x4000, &bytes).is_err(),
-                "offset {offset:x}"
-            );
+            assert!(parse(0x200000, 0x4000, &bytes).is_err(), "offset {offset:x}");
         }
     }
 }

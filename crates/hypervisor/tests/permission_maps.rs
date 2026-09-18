@@ -1,6 +1,8 @@
 use core::mem::{align_of, size_of};
 use svmvisor_hypervisor::svm::{
-    permission_maps::{IOPM_BYTES, Iopm, MSRPM_BYTES, MsrAccess, Msrpm, Permission, PermissionMapError},
+    permission_maps::{
+        IOPM_BYTES, Iopm, MSRPM_BYTES, MsrAccess, Msrpm, Permission, PermissionMapError,
+    },
     x2avic::{irq::PhysicalIrqLedger, registers},
 };
 
@@ -41,7 +43,11 @@ fn x2avic_profile_matches_d1_for_every_x2apic_msr_and_access() {
         for write in [false, true] {
             let access = if write { MsrAccess::Write } else { MsrAccess::Read };
             // The two literal D1 lists partition the range.
-            assert_eq!(d1_intercepted(msr, write), !d1_left_to_hardware(msr, write), "{msr:#x} {write}");
+            assert_eq!(
+                d1_intercepted(msr, write),
+                !d1_left_to_hardware(msr, write),
+                "{msr:#x} {write}"
+            );
             assert_eq!(map_bit(&map, msr, write), d1_intercepted(msr, write), "{msr:#x} {write}");
             assert_eq!(registers::intercepted(msr, access), d1_intercepted(msr, write), "{msr:#x}");
             if map_bit(&map, msr, write) {
@@ -184,15 +190,7 @@ fn unsupported_msrs_cannot_alias_a_valid_range_or_reserved_storage() {
     let mut map = Msrpm::new();
     map.set(0x1fff, MsrAccess::Read, Permission::Allow).unwrap();
     let before = *map.bytes();
-    for msr in [
-        0x2000,
-        0xbfff_ffff,
-        0xc000_2000,
-        0xc000_ffff,
-        0xc001_2000,
-        0xc002_0000,
-        u32::MAX,
-    ] {
+    for msr in [0x2000, 0xbfff_ffff, 0xc000_2000, 0xc000_ffff, 0xc001_2000, 0xc002_0000, u32::MAX] {
         for access in [MsrAccess::Read, MsrAccess::Write] {
             for permission in [Permission::Allow, Permission::Intercept] {
                 assert_eq!(

@@ -112,9 +112,7 @@ impl GuestStateRequest {
         if self.efer != SYNTHETIC_EFER {
             return Err(GuestStateError::UnsupportedEfer);
         }
-        policy
-            .validate(self.cr3, 4096, 4096)
-            .map_err(GuestStateError::Cr3)?;
+        policy.validate(self.cr3, 4096, 4096).map_err(GuestStateError::Cr3)?;
         Ok(ValidatedGuestState { request: self })
     }
 }

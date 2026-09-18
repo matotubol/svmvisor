@@ -8,13 +8,7 @@ use svmvisor_hypervisor::{
 };
 
 fn policy() -> AddressPolicy {
-    AddressPolicy::new(
-        48,
-        EncryptionState::Unencrypted {
-            encryption_bit: None,
-        },
-    )
-    .unwrap()
+    AddressPolicy::new(48, EncryptionState::Unencrypted { encryption_bit: None }).unwrap()
 }
 
 fn word(bytes: &[u8], offset: usize) -> u64 {
@@ -90,16 +84,8 @@ impl Fixture {
 
     fn parsed(&self) -> ParsedFirmwareGdt<'_> {
         parse_firmware_gdt(
-            HostTablePointer {
-                base: 0xffff_8000_0000_1000,
-                limit: 39,
-            },
-            FirmwareSelectors {
-                cs: 8,
-                ss: 16,
-                ds: 16,
-                es: 16,
-            },
+            HostTablePointer { base: 0xffff_8000_0000_1000, limit: 39 },
+            FirmwareSelectors { cs: 8, ss: 16, ds: 16, es: 16 },
             &self.gdt,
         )
         .unwrap()
@@ -119,10 +105,7 @@ impl Fixture {
             },
             registers: &self.registers,
             gdt,
-            idtr: HostTablePointer {
-                base: 0xffff_8000_0000_9000,
-                limit: 4095,
-            },
+            idtr: HostTablePointer { base: 0xffff_8000_0000_9000, limit: 4095 },
             auxiliary: &self.auxiliary,
             cr2: 0xffff_8000_1234_5678,
             dr6: 0xffff0ff0,
@@ -141,23 +124,14 @@ fn native_commit_preserves_actual_paging_system_tls_and_unrelated_vmcb_bytes() {
     let request = f.request(&gdt);
     let original = request.entry;
     let mut before = [0x5a; VMCB_BYTES];
-    for (offset, value) in [
-        (0x060, 1 << 24),
-        (0x068, 0),
-        (0x070, 0),
-        (0x088, 0),
-        (0x090, 1),
-        (0x0a8, 0),
-        (0x0b8, 0),
-    ] {
+    for (offset, value) in
+        [(0x060, 1 << 24), (0x068, 0), (0x070, 0), (0x088, 0), (0x090, 1), (0x0a8, 0), (0x0b8, 0)]
+    {
         put(&mut before, offset, value);
     }
     let mut target = from_bytes(&before);
     let mut frame = GuestRegisters::default();
-    prepare_native(request, &policy())
-        .unwrap()
-        .apply(&mut target, &mut frame)
-        .unwrap();
+    prepare_native(request, &policy()).unwrap().apply(&mut target, &mut frame).unwrap();
     assert_eq!(frame, f.registers);
     let bytes = target.bytes();
     assert_eq!(word(bytes, 0x550), original.cr3); // Retains PWT+PCD.
@@ -172,33 +146,24 @@ fn native_commit_preserves_actual_paging_system_tls_and_unrelated_vmcb_bytes() {
     assert_eq!(word(bytes, 0x568), 0xffff0ff0);
     assert_eq!(word(bytes, 0x668), 0x0007_0406_0007_0406);
     assert_eq!(word(bytes, 0x060), (1 << 24) | 9);
-    for (offset, selector, attributes) in [
-        (0x400, 16u16, 0xc93u16),
-        (0x410, 8, 0xa9b),
-        (0x420, 16, 0xc93),
-        (0x430, 16, 0xc93),
-    ] {
+    for (offset, selector, attributes) in
+        [(0x400, 16u16, 0xc93u16), (0x410, 8, 0xa9b), (0x420, 16, 0xc93), (0x430, 16, 0xc93)]
+    {
         let mut expected = [0u8; 16];
         expected[0..2].copy_from_slice(&selector.to_le_bytes());
         expected[2..4].copy_from_slice(&attributes.to_le_bytes());
         expected[4..8].copy_from_slice(&u32::MAX.to_le_bytes());
         assert_eq!(&bytes[offset..offset + 16], &expected);
     }
-    for (offset, base, limit) in [
-        (0x460, 0xffff_8000_0000_1000, 39u32),
-        (0x480, 0xffff_8000_0000_9000, 4095),
-    ] {
+    for (offset, base, limit) in
+        [(0x460, 0xffff_8000_0000_1000, 39u32), (0x480, 0xffff_8000_0000_9000, 4095)]
+    {
         let mut expected = [0u8; 16];
         expected[4..8].copy_from_slice(&limit.to_le_bytes());
         put(&mut expected, 8, base);
         assert_eq!(&bytes[offset..offset + 16], &expected);
     }
-    for (start, end) in [
-        (0x440, 0x460),
-        (0x470, 0x480),
-        (0x490, 0x4a0),
-        (0x600, 0x640),
-    ] {
+    for (start, end) in [(0x440, 0x460), (0x470, 0x480), (0x490, 0x4a0), (0x600, 0x640)] {
         assert_eq!(&bytes[start..end], &f.auxiliary.bytes()[start..end]);
     }
     let changed = [
@@ -232,20 +197,11 @@ fn initial_fsgsbase_and_pcid_preserve_controls_tags_and_hidden_tls_state() {
             let original = request.entry;
             let mut target = Vmcb::new();
             let mut frame = GuestRegisters::default();
-            prepare_native(request, &policy())
-                .unwrap()
-                .apply(&mut target, &mut frame)
-                .unwrap();
+            prepare_native(request, &policy()).unwrap().apply(&mut target, &mut frame).unwrap();
             assert_eq!(word(target.bytes(), 0x548), original.cr4);
             assert_eq!(word(target.bytes(), 0x550), original.cr3);
-            assert_eq!(
-                &target.bytes()[0x440..0x460],
-                &f.auxiliary.bytes()[0x440..0x460]
-            );
-            assert_eq!(
-                word(target.bytes(), 0x620),
-                word(f.auxiliary.bytes(), 0x620)
-            );
+            assert_eq!(&target.bytes()[0x440..0x460], &f.auxiliary.bytes()[0x440..0x460]);
+            assert_eq!(word(target.bytes(), 0x620), word(f.auxiliary.bytes(), 0x620));
             assert_eq!(frame, f.registers);
         }
     }
@@ -272,16 +228,8 @@ fn scalar_refusal_does_not_normalize_source_or_touch_destination() {
     let f = Fixture::new();
     let gdt = f.parsed();
     for (field, bad, expected) in [
-        (
-            0,
-            0x8000_0000_0000,
-            NativeContinuationError::NoncanonicalAddress,
-        ),
-        (
-            1,
-            0x8000_0000_0000,
-            NativeContinuationError::NoncanonicalAddress,
-        ),
+        (0, 0x8000_0000_0000, NativeContinuationError::NoncanonicalAddress),
+        (1, 0x8000_0000_0000, NativeContinuationError::NoncanonicalAddress),
         (2, 0x202, NativeContinuationError::UnsupportedFlags),
         (3, 0x8001003b, NativeContinuationError::UnsupportedCr0),
         (4, 0x100001, NativeContinuationError::UnsupportedCr3),
@@ -316,21 +264,13 @@ fn scalar_refusal_does_not_normalize_source_or_touch_destination() {
 fn pending_events_and_existing_exit_refuse_transactionally() {
     let f = Fixture::new();
     let gdt = f.parsed();
-    for (offset, value) in [
-        (0x0a8, 1 << 31),
-        (0x088, 1 << 31),
-        (0x068, 1),
-        (0x070, 0x81),
-        (0x060, 1 << 8),
-        (0x090, 2),
-    ] {
+    for (offset, value) in
+        [(0x0a8, 1 << 31), (0x088, 1 << 31), (0x068, 1), (0x070, 0x81), (0x060, 1 << 8), (0x090, 2)]
+    {
         let mut before = [0; VMCB_BYTES];
         put(&mut before, offset, value);
         let mut target = from_bytes(&before);
-        let mut frame = GuestRegisters {
-            rcx: 0xdead,
-            ..Default::default()
-        };
+        let mut frame = GuestRegisters { rcx: 0xdead, ..Default::default() };
         let frame_before = frame;
         let prepared = prepare_native(f.request(&gdt), &policy()).unwrap();
         assert_eq!(
@@ -350,15 +290,10 @@ fn every_additional_virtualization_control_refuses_without_mutation() {
         let mut before = [0u8; VMCB_BYTES];
         put(&mut before, 0x0b8, 1u64 << bit);
         let mut target = from_bytes(&before);
-        let mut frame = GuestRegisters {
-            r15: 0x1234,
-            ..Default::default()
-        };
+        let mut frame = GuestRegisters { r15: 0x1234, ..Default::default() };
         let before_frame = frame;
         assert_eq!(
-            prepare_native(f.request(&gdt), &policy())
-                .unwrap()
-                .apply(&mut target, &mut frame),
+            prepare_native(f.request(&gdt), &policy()).unwrap().apply(&mut target, &mut frame),
             Err(NativeContinuationError::DestinationEventState)
         );
         assert_eq!(target.bytes(), &before);
@@ -368,9 +303,7 @@ fn every_additional_virtualization_control_refuses_without_mutation() {
 
 #[test]
 fn auxiliary_noncanonical_tls_and_system_targets_refuse() {
-    for offset in [
-        0x448, 0x458, 0x478, 0x498, 0x608, 0x610, 0x620, 0x630, 0x638,
-    ] {
+    for offset in [0x448, 0x458, 0x478, 0x498, 0x608, 0x610, 0x620, 0x630, 0x638] {
         let mut f = Fixture::new();
         let mut bytes = *f.auxiliary.bytes();
         put(&mut bytes, offset, 0x0000_8000_0000_0000);
@@ -396,9 +329,7 @@ fn fx_sse_avx_require_matching_original_osxsave_and_preserve_controls() {
         let expected_cr4 = r.entry.cr4;
         let prepared = prepare_native(r, &policy()).unwrap();
         let mut target = Vmcb::new();
-        prepared
-            .apply(&mut target, &mut GuestRegisters::default())
-            .unwrap();
+        prepared.apply(&mut target, &mut GuestRegisters::default()).unwrap();
         assert_eq!(word(target.bytes(), 0x548), expected_cr4);
         let mut bad = f.request(&gdt);
         bad.xstate_profile = profile;
@@ -423,9 +354,7 @@ fn dormant_selector_zero_tr_preserves_hidden_type_without_claiming_tss_execution
     let gdt = f.parsed();
     let prepared = prepare_native(f.request(&gdt), &policy()).unwrap();
     let mut target = Vmcb::new();
-    prepared
-        .apply(&mut target, &mut GuestRegisters::default())
-        .unwrap();
+    prepared.apply(&mut target, &mut GuestRegisters::default()).unwrap();
     assert_eq!(&target.bytes()[0x490..0x4a0], &bytes[0x490..0x4a0]);
     // No ring transition, task switch, TSS access or event injection is tested.
 }
@@ -436,10 +365,7 @@ fn table_overflow_and_nonflat_descriptor_are_refused() {
     {
         let gdt = f.parsed();
         let mut r = f.request(&gdt);
-        r.idtr = HostTablePointer {
-            base: u64::MAX - 4,
-            limit: 15,
-        };
+        r.idtr = HostTablePointer { base: u64::MAX - 4, limit: 15 };
         assert_eq!(
             prepare_native(r, &policy()).err(),
             Some(NativeContinuationError::NoncanonicalAddress)
@@ -491,10 +417,7 @@ fn unsupported_tr_hidden_encodings_refuse_without_touching_sources_or_destinatio
         let gdt = f.parsed();
         let mut destination = Vmcb::new();
         let before = *destination.bytes();
-        let mut registers = GuestRegisters {
-            rbx: 0x1234,
-            ..Default::default()
-        };
+        let mut registers = GuestRegisters { rbx: 0x1234, ..Default::default() };
         let before_registers = registers;
         let result = prepare_native(f.request(&gdt), &policy())
             .and_then(|prepared| prepared.apply(&mut destination, &mut registers));
@@ -512,27 +435,50 @@ fn native_efer_token_preserves_admitted_features_and_rejects_missing_or_wrong_ev
     let gdt = f.parsed();
     // These controls do not weaken the boundary's full XMM capture. The token
     // represents their separate execution-owner admission, not a bare mask.
-    for features in [1 << 15, 1 << 18, 1 << 20, 1 << 21,
-        (1 << 15) | (1 << 18) | (1 << 20) | (1 << 21)] {
+    for features in
+        [1 << 15, 1 << 18, 1 << 20, 1 << 21, (1 << 15) | (1 << 18) | (1 << 20) | (1 << 21)]
+    {
         let value = 0xd01 | features;
-        let efer = NativeEfer::admit_native(value, 1 << 17, (1 << 11) | (1 << 20) | (1 << 29), 1 << 13, Some((1 << 7) | (1 << 8))).unwrap();
+        let efer = NativeEfer::admit_native(
+            value,
+            1 << 17,
+            (1 << 11) | (1 << 20) | (1 << 29),
+            1 << 13,
+            Some((1 << 7) | (1 << 8)),
+        )
+        .unwrap();
         let mut request = f.request(&gdt);
         request.entry.efer = value;
-        assert_eq!(prepare_native(request, &policy()).err(), Some(NativeContinuationError::UnsupportedEfer));
+        assert_eq!(
+            prepare_native(request, &policy()).err(),
+            Some(NativeContinuationError::UnsupportedEfer)
+        );
         let mut request = f.request(&gdt);
         request.entry.efer = value;
         let mut vmcb = Vmcb::new();
         let mut frame = GuestRegisters::default();
-        prepare_native_with_efer(request, &policy(), &efer).unwrap().apply(&mut vmcb, &mut frame).unwrap();
+        prepare_native_with_efer(request, &policy(), &efer)
+            .unwrap()
+            .apply(&mut vmcb, &mut frame)
+            .unwrap();
         assert_eq!(word(vmcb.bytes(), 0x4d0), value | (1 << 12));
         assert_eq!(frame, f.registers);
-        assert_eq!(prepare_native_with_efer(f.request(&gdt), &policy(), &efer).err(), Some(NativeContinuationError::UnsupportedEfer));
-        assert!(NativeEfer::admit_native(value, 0, (1 << 11) | (1 << 20) | (1 << 29), 0, Some(0)).is_err());
+        assert_eq!(
+            prepare_native_with_efer(f.request(&gdt), &policy(), &efer).err(),
+            Some(NativeContinuationError::UnsupportedEfer)
+        );
+        assert!(
+            NativeEfer::admit_native(value, 0, (1 << 11) | (1 << 20) | (1 << 29), 0, Some(0))
+                .is_err()
+        );
     }
     let mut reset = NativeEfer::admit(0xd01, true).unwrap();
     reset.enable_guest_startup();
     reset.reset_after_init().unwrap();
     let mut request = f.request(&gdt);
     request.entry.efer = 0;
-    assert_eq!(prepare_native_with_efer(request, &policy(), &reset).err(), Some(NativeContinuationError::UnsupportedEfer));
+    assert_eq!(
+        prepare_native_with_efer(request, &policy(), &reset).err(),
+        Some(NativeContinuationError::UnsupportedEfer)
+    );
 }

@@ -193,7 +193,10 @@ impl TableFailure {
     pub fn resource_code(self) -> u64 {
         let diagnostic = if self.kind == TableError::AttributeProtocol {
             self.lookup.map_or(0, AttributeLookupFailure::diagnostic_bits)
-        } else if matches!(self.kind, TableError::AttributeFallback | TableError::AttributeFallbackRead) {
+        } else if matches!(
+            self.kind,
+            TableError::AttributeFallback | TableError::AttributeFallbackRead
+        ) {
             self.fallback_reason.map_or(0, |reason| u32::from(reason) << 16)
         } else {
             0
@@ -216,11 +219,7 @@ unsafe fn acquire_memory_attributes(
     const _: () = assert!(usize::BITS == 64);
     let mut interface = ptr::null_mut();
     let status = unsafe {
-        (services.locate_protocol)(
-            &MemoryAttributeProtocol::GUID,
-            ptr::null_mut(),
-            &mut interface,
-        )
+        (services.locate_protocol)(&MemoryAttributeProtocol::GUID, ptr::null_mut(), &mut interface)
     };
     if status != Status::SUCCESS {
         return Err(AttributeLookupFailure::NonSuccess(status));
@@ -269,37 +268,25 @@ struct RetainedWalks {
 }
 impl RetainedWalks {
     fn entries(&self) -> Result<&[EntryObservation], TableError> {
-        self.entries
-            .get(..self.entry_count)
-            .ok_or(TableError::Bounds)
+        self.entries.get(..self.entry_count).ok_or(TableError::Bounds)
     }
 
     fn remember_page(&mut self, page: u64) -> Result<(), TableError> {
         if !is_canonical_48(page) || !is_canonical_48(page | 4095) || page & 4095 != 0 {
             return Err(TableError::Context);
         }
-        let pages = self
-            .table_pages
-            .get(..self.page_count)
-            .ok_or(TableError::Bounds)?;
+        let pages = self.table_pages.get(..self.page_count).ok_or(TableError::Bounds)?;
         if pages.iter().any(|entry| entry.physical_page == page) {
             return Ok(());
         }
-        *self
-            .table_pages
-            .get_mut(self.page_count)
-            .ok_or(TableError::Bounds)? = TablePageObservation {
-            physical_page: page,
-            ..TablePageObservation::default()
-        };
+        *self.table_pages.get_mut(self.page_count).ok_or(TableError::Bounds)? =
+            TablePageObservation { physical_page: page, ..TablePageObservation::default() };
         self.page_count += 1;
         Ok(())
     }
 
     fn pages(&self) -> Result<&[TablePageObservation], TableError> {
-        self.table_pages
-            .get(..self.page_count)
-            .ok_or(TableError::Bounds)
+        self.table_pages.get(..self.page_count).ok_or(TableError::Bounds)
     }
 
     fn remember_fetch(
@@ -323,9 +310,8 @@ impl RetainedWalks {
             .checked_shl(u32::from(level.checked_sub(1).ok_or(TableError::Bounds)?))
             .ok_or(TableError::Bounds)?;
         if let Some(index) = pat_index {
-            observed.fetch_pat_indices |= 1u8
-                .checked_shl(u32::from(index))
-                .ok_or(TableError::Bounds)?;
+            observed.fetch_pat_indices |=
+                1u8.checked_shl(u32::from(index)).ok_or(TableError::Bounds)?;
         }
         Ok(())
     }
@@ -334,26 +320,12 @@ impl RetainedWalks {
         if address & 7 != 0 {
             return Err(TableError::Metadata);
         }
-        if let Some(previous) = self
-            .entries()?
-            .iter()
-            .find(|entry| entry.address == address)
-        {
-            return if previous.value == value {
-                Ok(())
-            } else {
-                Err(TableError::Changed)
-            };
+        if let Some(previous) = self.entries()?.iter().find(|entry| entry.address == address) {
+            return if previous.value == value { Ok(()) } else { Err(TableError::Changed) };
         }
         self.remember_page(address & !4095)?;
-        *self
-            .entries
-            .get_mut(self.entry_count)
-            .ok_or(TableError::Bounds)? = EntryObservation {
-            address,
-            value,
-            allowed_set_bits: 0,
-        };
+        *self.entries.get_mut(self.entry_count).ok_or(TableError::Bounds)? =
+            EntryObservation { address, value, allowed_set_bits: 0 };
         self.entry_count += 1;
         Ok(())
     }
@@ -371,11 +343,7 @@ impl RetainedWalks {
         // With PCIDE set these CR3 bits are PCID bits, not fetch selectors.
         // Compatibility prepare still supports that mode, but owned-resource
         // preparation and the cache-facing table view conservatively refuse it.
-        let mut fetch_index = if config.pcid {
-            None
-        } else {
-            Some(((config.cr3 >> 3) & 3) as u8)
-        };
+        let mut fetch_index = if config.pcid { None } else { Some(((config.cr3 >> 3) & 3) as u8) };
         let translation = host_paging::translate(config, linear, |address| {
             let result = read(address).and_then(|value| {
                 self.remember_entry(address, value)?;
@@ -401,11 +369,8 @@ impl RetainedWalks {
         // entry is the leaf; preceding entries are non-leaves. Do not infer a
         // leaf from bit 7 alone (that bit is PAT in a 4 KiB PTE). Accumulate per
         // physical slot if recursive/shared tables use it in multiple roles.
-        for (index, address) in trace
-            .get(..trace_count)
-            .ok_or(TableError::Bounds)?
-            .iter()
-            .enumerate()
+        for (index, address) in
+            trace.get(..trace_count).ok_or(TableError::Bounds)?.iter().enumerate()
         {
             let entry = self
                 .entries
@@ -430,16 +395,10 @@ impl RetainedWalks {
         self.remember_page(config.cr3 & ADDRESS)?;
         let mut index = 0;
         while index < self.page_count {
-            let page = self
-                .table_pages
-                .get(index)
-                .ok_or(TableError::Bounds)?
-                .physical_page;
+            let page = self.table_pages.get(index).ok_or(TableError::Bounds)?.physical_page;
             let translation = self.translate(config, page, read)?;
-            self.table_pages
-                .get_mut(index)
-                .ok_or(TableError::Bounds)?
-                .alias = LeafObservation::identity(page, translation)?;
+            self.table_pages.get_mut(index).ok_or(TableError::Bounds)?.alias =
+                LeafObservation::identity(page, translation)?;
             // Table sources need read access only. Effective RW is separately
             // required for GDT pages, which the eventual VMEXIT may update.
             index += 1;
@@ -466,10 +425,7 @@ impl RetainedWalks {
         &mut self,
         mut read: impl FnMut(u64) -> u64,
     ) -> Result<(), TableError> {
-        let entries = self
-            .entries
-            .get_mut(..self.entry_count)
-            .ok_or(TableError::Bounds)?;
+        let entries = self.entries.get_mut(..self.entry_count).ok_or(TableError::Bounds)?;
         for entry in entries {
             let current = read(entry.address);
             if (entry.value ^ current) & !entry.allowed_set_bits != 0 || entry.value & !current != 0
@@ -526,10 +482,7 @@ impl PreparedTables<'_> {
 
     #[cfg(any(feature = "native-transition-test", feature = "native-returning"))]
     pub fn captured_gdt(&self) -> Result<&[u8], TableError> {
-        self.storage()?
-            .gdt
-            .get(..self.report.gdt_bytes)
-            .ok_or(TableError::Bounds)
+        self.storage()?.gdt.get(..self.report.gdt_bytes).ok_or(TableError::Bounds)
     }
 
     pub fn retained_entry_count(&self) -> Result<usize, TableError> {
@@ -543,19 +496,13 @@ impl PreparedTables<'_> {
     /// Actual GDT leaves, retained by its existing read/write mapping proof.
     pub fn gdt_mappings(&self) -> Result<&[LeafObservation], TableError> {
         let storage = self.storage()?;
-        storage
-            .gdt_mappings
-            .get(..storage.gdt_page_count)
-            .ok_or(TableError::Bounds)
+        storage.gdt_mappings.get(..storage.gdt_page_count).ok_or(TableError::Bounds)
     }
 
     /// Caller spans first, followed by the exact retained pool and map pool.
     pub fn borrowed_spans(&self) -> Result<&[BorrowedSpan], TableError> {
         let storage = self.storage()?;
-        storage
-            .borrowed_spans
-            .get(..storage.borrowed_span_count)
-            .ok_or(TableError::Bounds)
+        storage.borrowed_spans.get(..storage.borrowed_span_count).ok_or(TableError::Bounds)
     }
 
     pub fn caller_borrowed_span_count(&self) -> Result<usize, TableError> {
@@ -569,13 +516,9 @@ impl PreparedTables<'_> {
         let selected = spans.get(index).ok_or(TableError::Bounds)?;
         let mut first = 0usize;
         for span in spans.get(..index).ok_or(TableError::Bounds)? {
-            first = first
-                .checked_add(covering_pages(*span, 52)?.1)
-                .ok_or(TableError::Bounds)?;
+            first = first.checked_add(covering_pages(*span, 52)?.1).ok_or(TableError::Bounds)?;
         }
-        let end = first
-            .checked_add(covering_pages(*selected, 52)?.1)
-            .ok_or(TableError::Bounds)?;
+        let end = first.checked_add(covering_pages(*selected, 52)?.1).ok_or(TableError::Bounds)?;
         storage
             .borrowed_mappings
             .get(..storage.borrowed_page_count)
@@ -586,10 +529,7 @@ impl PreparedTables<'_> {
     /// Ordered as supplied; each range's page observations are contiguous.
     pub fn owned_ranges(&self) -> Result<&[OwnedRange], TableError> {
         let storage = self.storage()?;
-        storage
-            .owned_ranges
-            .get(..storage.owned_range_count)
-            .ok_or(TableError::Bounds)
+        storage.owned_ranges.get(..storage.owned_range_count).ok_or(TableError::Bounds)
     }
 
     /// Physical address order within one supplied allocation. This view carries
@@ -600,13 +540,9 @@ impl PreparedTables<'_> {
         let selected = ranges.get(index).ok_or(TableError::Bounds)?;
         let mut first = 0usize;
         for range in ranges.get(..index).ok_or(TableError::Bounds)? {
-            first = first
-                .checked_add((range.bytes / 4096) as usize)
-                .ok_or(TableError::Bounds)?;
+            first = first.checked_add((range.bytes / 4096) as usize).ok_or(TableError::Bounds)?;
         }
-        let end = first
-            .checked_add((selected.bytes / 4096) as usize)
-            .ok_or(TableError::Bounds)?;
+        let end = first.checked_add((selected.bytes / 4096) as usize).ok_or(TableError::Bounds)?;
         storage
             .owned_mappings
             .get(..storage.owned_page_count)
@@ -648,11 +584,7 @@ impl PreparedTables<'_> {
                 self.storage = None;
             }
         }
-        if failed {
-            Err(TableError::Cleanup)
-        } else {
-            Ok(())
-        }
+        if failed { Err(TableError::Cleanup) } else { Ok(()) }
     }
 
     /// Compare controls first, then saved entry addresses and GDT bytes, then
@@ -682,21 +614,10 @@ impl PreparedTables<'_> {
     unsafe fn compare_live(&self, high_tpl: bool) -> Result<(), TableError> {
         use svmvisor_dxe::native::admission::snapshot as native_snapshot;
         let now = unsafe { native_snapshot::capture() }.map_err(|_| TableError::Snapshot)?;
-        context_unchanged(
-            &self.before,
-            self.efer,
-            &now,
-            unsafe { read_efer() },
-            high_tpl,
-        )?;
+        context_unchanged(&self.before, self.efer, &now, unsafe { read_efer() }, high_tpl)?;
         let storage = self.storage()?;
-        storage
-            .walks
-            .compare(|address| unsafe { ptr::read_volatile(address as *const u64) })?;
-        let bytes = storage
-            .gdt
-            .get(..self.report.gdt_bytes)
-            .ok_or(TableError::Bounds)?;
+        storage.walks.compare(|address| unsafe { ptr::read_volatile(address as *const u64) })?;
+        let bytes = storage.gdt.get(..self.report.gdt_bytes).ok_or(TableError::Bounds)?;
         for (index, byte) in bytes.iter().enumerate() {
             if *byte
                 != unsafe {
@@ -706,17 +627,9 @@ impl PreparedTables<'_> {
                 return Err(TableError::Changed);
             }
         }
-        storage
-            .walks
-            .compare(|address| unsafe { ptr::read_volatile(address as *const u64) })?;
+        storage.walks.compare(|address| unsafe { ptr::read_volatile(address as *const u64) })?;
         let after = unsafe { native_snapshot::capture() }.map_err(|_| TableError::Snapshot)?;
-        context_unchanged(
-            &self.before,
-            self.efer,
-            &after,
-            unsafe { read_efer() },
-            high_tpl,
-        )
+        context_unchanged(&self.before, self.efer, &after, unsafe { read_efer() }, high_tpl)
     }
 }
 impl Drop for PreparedTables<'_> {
@@ -791,11 +704,9 @@ fn internal_access<E>(
     failed: &core::cell::Cell<bool>,
 ) -> bool {
     match query {
-        Ok(attributes) => attributes_allow(
-            Status::SUCCESS,
-            MemoryAttribute::from_bits_retain(attributes),
-            access,
-        ),
+        Ok(attributes) => {
+            attributes_allow(Status::SUCCESS, MemoryAttribute::from_bits_retain(attributes), access)
+        }
         Err(_) => {
             failed.set(true);
             false
@@ -807,10 +718,7 @@ fn covering_pages(span: BorrowedSpan, physical_bits: u8) -> Result<(u64, usize),
     if !(32..=52).contains(&physical_bits) || span.bytes == 0 {
         return Err(TableError::BorrowedSpan);
     }
-    let end = span
-        .base
-        .checked_add(span.bytes)
-        .ok_or(TableError::BorrowedSpan)?;
+    let end = span.base.checked_add(span.bytes).ok_or(TableError::BorrowedSpan)?;
     let rounded_end = end.checked_add(4095).ok_or(TableError::BorrowedSpan)? & !4095;
     let first = span.base & !4095;
     if rounded_end > (1u64 << physical_bits)
@@ -830,16 +738,8 @@ fn validate_borrowed_spans(
     owned: &[OwnedRange],
     internal: bool,
 ) -> Result<usize, TableError> {
-    let span_limit = if internal {
-        INTERNAL_SPANS
-    } else {
-        MAX_BORROWED_SPANS
-    };
-    let page_limit = if internal {
-        MAX_INTERNAL_PAGES
-    } else {
-        MAX_BORROWED_PAGES
-    };
+    let span_limit = if internal { INTERNAL_SPANS } else { MAX_BORROWED_SPANS };
+    let page_limit = if internal { MAX_INTERNAL_PAGES } else { MAX_BORROWED_PAGES };
     if spans.len() > span_limit {
         return Err(TableError::Bounds);
     }
@@ -873,21 +773,11 @@ fn retain_borrowed_mappings(
         return Err(TableError::TableFetch);
     }
     let first_span = storage.borrowed_span_count;
-    let end_span = first_span
-        .checked_add(spans.len())
-        .ok_or(TableError::Bounds)?;
+    let end_span = first_span.checked_add(spans.len()).ok_or(TableError::Bounds)?;
     let first_mapping = storage.borrowed_page_count;
-    let end_mapping = first_mapping
-        .checked_add(page_count)
-        .ok_or(TableError::Bounds)?;
-    storage
-        .borrowed_spans
-        .get(first_span..end_span)
-        .ok_or(TableError::Bounds)?;
-    storage
-        .borrowed_mappings
-        .get(first_mapping..end_mapping)
-        .ok_or(TableError::Bounds)?;
+    let end_mapping = first_mapping.checked_add(page_count).ok_or(TableError::Bounds)?;
+    storage.borrowed_spans.get(first_span..end_span).ok_or(TableError::Bounds)?;
+    storage.borrowed_mappings.get(first_mapping..end_mapping).ok_or(TableError::Bounds)?;
     // Metadata for this complete request precedes its permission queries and
     // walks. These callbacks never load or execute the borrowed operand bytes.
     for span in spans {
@@ -916,10 +806,7 @@ fn retain_borrowed_mappings(
             {
                 return Err(TableError::NotExecutable);
             }
-            *storage
-                .borrowed_mappings
-                .get_mut(next)
-                .ok_or(TableError::Bounds)? = observed;
+            *storage.borrowed_mappings.get_mut(next).ok_or(TableError::Bounds)? = observed;
             next += 1;
         }
     }
@@ -955,10 +842,7 @@ fn validate_owned_ranges(ranges: &[OwnedRange], physical_bits: u8) -> Result<usi
     }
     let mut pages = 0u64;
     for (index, range) in ranges.iter().enumerate() {
-        let end = range
-            .base
-            .checked_add(range.bytes)
-            .ok_or(TableError::OwnedRange)?;
+        let end = range.base.checked_add(range.bytes).ok_or(TableError::OwnedRange)?;
         if range.bytes == 0
             || (range.base | range.bytes) & 4095 != 0
             || end > (1u64 << physical_bits)
@@ -967,17 +851,13 @@ fn validate_owned_ranges(ranges: &[OwnedRange], physical_bits: u8) -> Result<usi
         {
             return Err(TableError::OwnedRange);
         }
-        pages = pages
-            .checked_add(range.bytes / 4096)
-            .ok_or(TableError::Bounds)?;
+        pages = pages.checked_add(range.bytes / 4096).ok_or(TableError::Bounds)?;
         if pages > MAX_OWNED_PAGES as u64 {
             return Err(TableError::Bounds);
         }
         for previous in ranges.get(..index).ok_or(TableError::Bounds)? {
-            let previous_end = previous
-                .base
-                .checked_add(previous.bytes)
-                .ok_or(TableError::OwnedRange)?;
+            let previous_end =
+                previous.base.checked_add(previous.bytes).ok_or(TableError::OwnedRange)?;
             if range.base < previous_end && previous.base < end {
                 return Err(TableError::OwnedRange);
             }
@@ -1022,9 +902,7 @@ fn retain_owned_mappings(
     for range in ranges {
         for index in 0..range.bytes / 4096 {
             let page = range.base + index * 4096; // Shape/extent validated above.
-            memory
-                .permit_gdt_copy(page, 4096)
-                .map_err(|_| TableError::Metadata)?;
+            memory.permit_gdt_copy(page, 4096).map_err(|_| TableError::Metadata)?;
         }
     }
     let mut next = 0usize;
@@ -1039,10 +917,7 @@ fn retain_owned_mappings(
             if !translation.writable {
                 return Err(TableError::NotWritable);
             }
-            *storage
-                .owned_mappings
-                .get_mut(next)
-                .ok_or(TableError::Bounds)? = observed;
+            *storage.owned_mappings.get_mut(next).ok_or(TableError::Bounds)? = observed;
             next += 1;
         }
     }
@@ -1068,14 +943,9 @@ fn reject_owned_overlap(
     borrowed_base: u64,
     borrowed_bytes: u64,
 ) -> Result<(), TableError> {
-    let borrowed_end = borrowed_base
-        .checked_add(borrowed_bytes)
-        .ok_or(TableError::Bounds)?;
+    let borrowed_end = borrowed_base.checked_add(borrowed_bytes).ok_or(TableError::Bounds)?;
     for range in ranges {
-        let end = range
-            .base
-            .checked_add(range.bytes)
-            .ok_or(TableError::OwnedRange)?;
+        let end = range.base.checked_add(range.bytes).ok_or(TableError::OwnedRange)?;
         if range.base < borrowed_end && borrowed_base < end {
             return Err(TableError::OwnedRange);
         }
@@ -1195,28 +1065,14 @@ pub unsafe fn prepare_resource_ranges_detailed<'a>(
         map: None,
         before: NativeSnapshot::default(),
         efer: 0,
-        report: TableReport {
-            descriptors: 0,
-            pages: 0,
-            reads: 0,
-            gdt_bytes: 0,
-        },
+        report: TableReport { descriptors: 0, pages: 0, reads: 0, gdt_bytes: 0 },
         not_send_sync: PhantomData,
     };
     let result = if buffer.addr() % core::mem::align_of::<TableStorage>() != 0 {
         Err(E::Allocation.into())
     } else {
         unsafe { ptr::write_bytes(buffer, 0, size_of::<TableStorage>()) };
-        unsafe {
-            initialize(
-                &mut prepared,
-                source,
-                physical_bits,
-                page1gb,
-                ranges,
-                borrowed,
-            )
-        }
+        unsafe { initialize(&mut prepared, source, physical_bits, page1gb, ranges, borrowed) }
     };
     if let Err(error) = result {
         prepared.release()?;
@@ -1254,7 +1110,11 @@ unsafe fn initialize(
     prepared.map = Some(unsafe { native_memory::collect(prepared.services) }.map_err(|error| {
         // Preserve an explicit nested free failure even if its Drop later
         // succeeds; the outer caller must not report complete cleanup.
-        if matches!(error, native_memory::MemoryMapError::Cleanup(_)) { E::Cleanup } else { E::MemoryMap }
+        if matches!(error, native_memory::MemoryMapError::Cleanup(_)) {
+            E::Cleanup
+        } else {
+            E::MemoryMap
+        }
     })?);
     let map = prepared.map.as_ref().ok_or(E::Released)?;
     let map_range = map.storage_range().map_err(|_| E::Released)?;
@@ -1300,20 +1160,23 @@ unsafe fn initialize(
     #[cfg(feature = "memory-attribute-f7")]
     let fallback = core::cell::RefCell::new(match source {
         AttributeSource::Firmware(_) => None,
-        AttributeSource::F7 => Some(unsafe {
-            // The explicit prepare contract supplies the initial firmware
-            // identity/residency premise. Metadata and this constructor do not
-            // invent permission proof or qualify arbitrary physical pointers.
-            svmvisor_dxe::memory_attributes::f7::F7TableReader::new_detailed(
-                &memory,
-                svmvisor_memory_attributes::Config {
-                    root: config.cr3 & ADDRESS,
-                    physical_bits,
-                    nxe: config.nxe,
-                    page1gb,
-                },
-            )
-        }.map_err(|failure| TableFailure::fallback(E::AttributeFallback, failure.code()))?),
+        AttributeSource::F7 => Some(
+            unsafe {
+                // The explicit prepare contract supplies the initial firmware
+                // identity/residency premise. Metadata and this constructor do not
+                // invent permission proof or qualify arbitrary physical pointers.
+                svmvisor_dxe::memory_attributes::f7::F7TableReader::new_detailed(
+                    &memory,
+                    svmvisor_memory_attributes::Config {
+                        root: config.cr3 & ADDRESS,
+                        physical_bits,
+                        nxe: config.nxe,
+                        page1gb,
+                    },
+                )
+            }
+            .map_err(|failure| TableFailure::fallback(E::AttributeFallback, failure.code()))?,
+        ),
     });
     #[cfg(feature = "memory-attribute-f7")]
     let fallback_failed = core::cell::Cell::new(false);
@@ -1348,20 +1211,15 @@ unsafe fn initialize(
         let base = before.gdtr.base();
         let bytes = usize::from(before.gdtr.limit()) + 1;
         reject_owned_overlap(ranges, base, bytes as u64)?;
-        memory
-            .permit_gdt_copy(base, bytes)
-            .map_err(|_| E::Metadata)?;
+        memory.permit_gdt_copy(base, bytes).map_err(|_| E::Metadata)?;
         let last = base.checked_add(bytes as u64 - 1).ok_or(E::Metadata)?;
         if !is_canonical_48(base) || !is_canonical_48(last) {
             return Err(E::Context);
         }
         let first_page = base & !4095;
         let count = (((last & !4095) - first_page) / 4096 + 1) as usize;
-        let mut coverage = [CapturedGdtPage {
-            linear_page: 0,
-            present: false,
-            writable: false,
-        }; MAX_GDT_PAGES];
+        let mut coverage =
+            [CapturedGdtPage { linear_page: 0, present: false, writable: false }; MAX_GDT_PAGES];
         let pages = coverage.get_mut(..count).ok_or(E::Metadata)?;
         let storage = unsafe { prepared.storage.ok_or(E::Released)?.as_mut() };
         let mut reads = 0;
@@ -1382,17 +1240,11 @@ unsafe fn initialize(
             if !translation.writable {
                 return Err(E::NotWritable);
             }
-            memory
-                .permit_gdt_copy(linear, 4096)
-                .map_err(|_| E::Metadata)?;
+            memory.permit_gdt_copy(linear, 4096).map_err(|_| E::Metadata)?;
             if !current(linear, BorrowedAccess::ReadWrite) {
                 return Err(E::ReadPermission);
             }
-            *page = CapturedGdtPage {
-                linear_page: linear,
-                present: true,
-                writable: true,
-            };
+            *page = CapturedGdtPage { linear_page: linear, present: true, writable: true };
             *storage.gdt_mappings.get_mut(index).ok_or(E::Bounds)? = observed;
         }
         storage.gdt_page_count = count;
@@ -1451,25 +1303,15 @@ unsafe fn initialize(
             *byte = unsafe { ptr::read_volatile((base + index as u64) as *const u8) };
         }
         let parsed = parse_firmware_gdt(
-            HostTablePointer {
-                base,
-                limit: before.gdtr.limit(),
-            },
-            FirmwareSelectors {
-                cs: before.cs,
-                ss: before.ss,
-                ds: before.ds,
-                es: before.es,
-            },
+            HostTablePointer { base, limit: before.gdtr.limit() },
+            FirmwareSelectors { cs: before.cs, ss: before.ss, ds: before.ds, es: before.es },
             output,
         )
         .map_err(|_| E::Descriptor)?;
-        parsed
-            .validate_mapping_capture(pages)
-            .map_err(|_| E::Translation)?;
-        storage
-            .walks
-            .settle_accessed_dirty(|address| unsafe { ptr::read_volatile(address as *const u64) })?;
+        parsed.validate_mapping_capture(pages).map_err(|_| E::Translation)?;
+        storage.walks.settle_accessed_dirty(|address| unsafe {
+            ptr::read_volatile(address as *const u64)
+        })?;
         Ok(TableReport {
             descriptors: descriptors.len(),
             pages: count,
@@ -1482,7 +1324,8 @@ unsafe fn initialize(
         if fallback_failed.get() {
             return Err(TableFailure::fallback(E::AttributeFallbackRead, fallback_reason.get()));
         }
-        if let Some(reader) = fallback.try_borrow_mut()
+        if let Some(reader) = fallback
+            .try_borrow_mut()
             .map_err(|_| TableFailure::fallback(E::AttributeFallbackRead, 0xfffe))?
             .as_mut()
         {
@@ -1564,8 +1407,7 @@ mod lookup_tests {
             // Match the existing native_cpu host fixture: every unused service
             // slot has a non-NULL address and must never be invoked.
             for index in 0..size_of::<BootServices>() / size_of::<usize>() {
-                raw.as_mut_ptr().cast::<usize>().add(index)
-                    .write(unused as *const () as usize);
+                raw.as_mut_ptr().cast::<usize>().add(index).write(unused as *const () as usize);
             }
             ptr::addr_of_mut!((*raw.as_mut_ptr()).header).write(core::mem::zeroed());
             ptr::addr_of_mut!((*raw.as_mut_ptr()).raise_tpl).write(raise_tpl);
@@ -1678,7 +1520,8 @@ mod lookup_tests {
     fn failed_preparation(status: Status, output: Option<usize>) -> TableFailure {
         let services = setup(status, output);
         let failure = unsafe { prepare_resource_ranges_detailed(&services, 48, true, &[], &[]) }
-            .err().expect("lookup must refuse");
+            .err()
+            .expect("lookup must refuse");
         with(|state| {
             assert_eq!(state.calls, ["raise", "restore", "locate"]);
             assert_eq!(state.tpl, Tpl::NOTIFY);
@@ -1704,28 +1547,47 @@ mod lookup_tests {
     #[test]
     fn every_standard_error_and_warning_preserves_exact_status_before_pointer_checks() {
         let errors = [
-            (Status::LOAD_ERROR, 1), (Status::INVALID_PARAMETER, 2),
-            (Status::UNSUPPORTED, 3), (Status::BAD_BUFFER_SIZE, 4),
-            (Status::BUFFER_TOO_SMALL, 5), (Status::NOT_READY, 6),
-            (Status::DEVICE_ERROR, 7), (Status::WRITE_PROTECTED, 8),
-            (Status::OUT_OF_RESOURCES, 9), (Status::VOLUME_CORRUPTED, 10),
-            (Status::VOLUME_FULL, 11), (Status::NO_MEDIA, 12),
-            (Status::MEDIA_CHANGED, 13), (Status::NOT_FOUND, 14),
-            (Status::ACCESS_DENIED, 15), (Status::NO_RESPONSE, 16),
-            (Status::NO_MAPPING, 17), (Status::TIMEOUT, 18),
-            (Status::NOT_STARTED, 19), (Status::ALREADY_STARTED, 20),
-            (Status::ABORTED, 21), (Status::ICMP_ERROR, 22),
-            (Status::TFTP_ERROR, 23), (Status::PROTOCOL_ERROR, 24),
-            (Status::INCOMPATIBLE_VERSION, 25), (Status::SECURITY_VIOLATION, 26),
-            (Status::CRC_ERROR, 27), (Status::END_OF_MEDIA, 28),
-            (Status::END_OF_FILE, 31), (Status::INVALID_LANGUAGE, 32),
-            (Status::COMPROMISED_DATA, 33), (Status::IP_ADDRESS_CONFLICT, 34),
+            (Status::LOAD_ERROR, 1),
+            (Status::INVALID_PARAMETER, 2),
+            (Status::UNSUPPORTED, 3),
+            (Status::BAD_BUFFER_SIZE, 4),
+            (Status::BUFFER_TOO_SMALL, 5),
+            (Status::NOT_READY, 6),
+            (Status::DEVICE_ERROR, 7),
+            (Status::WRITE_PROTECTED, 8),
+            (Status::OUT_OF_RESOURCES, 9),
+            (Status::VOLUME_CORRUPTED, 10),
+            (Status::VOLUME_FULL, 11),
+            (Status::NO_MEDIA, 12),
+            (Status::MEDIA_CHANGED, 13),
+            (Status::NOT_FOUND, 14),
+            (Status::ACCESS_DENIED, 15),
+            (Status::NO_RESPONSE, 16),
+            (Status::NO_MAPPING, 17),
+            (Status::TIMEOUT, 18),
+            (Status::NOT_STARTED, 19),
+            (Status::ALREADY_STARTED, 20),
+            (Status::ABORTED, 21),
+            (Status::ICMP_ERROR, 22),
+            (Status::TFTP_ERROR, 23),
+            (Status::PROTOCOL_ERROR, 24),
+            (Status::INCOMPATIBLE_VERSION, 25),
+            (Status::SECURITY_VIOLATION, 26),
+            (Status::CRC_ERROR, 27),
+            (Status::END_OF_MEDIA, 28),
+            (Status::END_OF_FILE, 31),
+            (Status::INVALID_LANGUAGE, 32),
+            (Status::COMPROMISED_DATA, 33),
+            (Status::IP_ADDRESS_CONFLICT, 34),
             (Status::HTTP_ERROR, 35),
         ];
         let warnings = [
-            (Status::WARN_UNKNOWN_GLYPH, 1), (Status::WARN_DELETE_FAILURE, 2),
-            (Status::WARN_WRITE_FAILURE, 3), (Status::WARN_BUFFER_TOO_SMALL, 4),
-            (Status::WARN_STALE_DATA, 5), (Status::WARN_FILE_SYSTEM, 6),
+            (Status::WARN_UNKNOWN_GLYPH, 1),
+            (Status::WARN_DELETE_FAILURE, 2),
+            (Status::WARN_WRITE_FAILURE, 3),
+            (Status::WARN_BUFFER_TOO_SMALL, 4),
+            (Status::WARN_STALE_DATA, 5),
+            (Status::WARN_FILE_SYSTEM, 6),
             (Status::WARN_RESET_REQUIRED, 7),
         ];
         for (cases, prefix) in [(&errors[..], 0x1800_4101u64), (&warnings[..], 0x1000_4101)] {
@@ -1735,7 +1597,9 @@ mod lookup_tests {
                 }
                 // Valid, NULL, unaligned and deliberately unusable aligned
                 // outputs must all be ignored when status is non-SUCCESS.
-                for output in [None, Some(0), Some(protocol_address()), Some(1), Some(8), Some(usize::MAX)] {
+                for output in
+                    [None, Some(0), Some(protocol_address()), Some(1), Some(8), Some(usize::MAX)]
+                {
                     let failure = failed_preparation(status, output);
                     assert_eq!(failure.lookup, Some(AttributeLookupFailure::NonSuccess(status)));
                     assert_eq!(0x4000 | failure.resource_code(), prefix | (code << 16));
@@ -1752,9 +1616,18 @@ mod lookup_tests {
             assert_eq!(0x4000 | failure.resource_code(), 0x2000_4101);
         }
         for remainder in 1..=7u8 {
-            let failure = failed_preparation(Status::SUCCESS, Some(protocol_address() + usize::from(remainder)));
-            assert_eq!(failure.lookup, Some(AttributeLookupFailure::SuccessUnaligned { remainder }));
-            assert_eq!(0x4000 | failure.resource_code(), 0x3000_4101 | (u64::from(remainder) << 16));
+            let failure = failed_preparation(
+                Status::SUCCESS,
+                Some(protocol_address() + usize::from(remainder)),
+            );
+            assert_eq!(
+                failure.lookup,
+                Some(AttributeLookupFailure::SuccessUnaligned { remainder })
+            );
+            assert_eq!(
+                0x4000 | failure.resource_code(),
+                0x3000_4101 | (u64::from(remainder) << 16)
+            );
         }
     }
 
@@ -1763,7 +1636,9 @@ mod lookup_tests {
         for error in [0, 1usize << 63] {
             for code in [0usize, 14, 0x3ff] {
                 let raw = error | code;
-                if raw != 0 && !(cfg!(feature = "memory-attribute-f7") && Status(raw) == Status::NOT_FOUND) {
+                if raw != 0
+                    && !(cfg!(feature = "memory-attribute-f7") && Status(raw) == Status::NOT_FOUND)
+                {
                     let exact = failed_preparation(Status(raw), Some(1)).resource_code();
                     assert_eq!(exact & (1 << 26), 0);
                     assert_eq!((exact >> 16) & 0x3ff, code as u64);
@@ -1772,7 +1647,10 @@ mod lookup_tests {
                 for bit in 10..63 {
                     let raw = raw | (1usize << bit);
                     let failure = failed_preparation(Status(raw), Some(protocol_address()));
-                    assert_eq!(failure.lookup, Some(AttributeLookupFailure::NonSuccess(Status(raw))));
+                    assert_eq!(
+                        failure.lookup,
+                        Some(AttributeLookupFailure::NonSuccess(Status(raw)))
+                    );
                     let encoded = 0x4000 | failure.resource_code();
                     assert!(encoded <= u32::MAX as u64);
                     assert_eq!(encoded >> 28, 1);
@@ -1800,11 +1678,20 @@ mod lookup_tests {
                 continue;
             }
             let services = setup(status, output);
-            assert_eq!(unsafe { prepare(&services, 48, true) }.err(), Some(TableError::AttributeProtocol));
+            assert_eq!(
+                unsafe { prepare(&services, 48, true) }.err(),
+                Some(TableError::AttributeProtocol)
+            );
             let services = setup(status, output);
-            assert_eq!(unsafe { prepare_owned_ranges(&services, 48, true, &[]) }.err(), Some(TableError::AttributeProtocol));
+            assert_eq!(
+                unsafe { prepare_owned_ranges(&services, 48, true, &[]) }.err(),
+                Some(TableError::AttributeProtocol)
+            );
             let services = setup(status, output);
-            assert_eq!(unsafe { prepare_resource_ranges(&services, 48, true, &[], &[]) }.err(), Some(TableError::AttributeProtocol));
+            assert_eq!(
+                unsafe { prepare_resource_ranges(&services, 48, true, &[], &[]) }.err(),
+                Some(TableError::AttributeProtocol)
+            );
         }
         let legacy = TableFailure::from(TableError::AttributeProtocol);
         assert_eq!(legacy.lookup, None);
@@ -1814,14 +1701,25 @@ mod lookup_tests {
     #[test]
     fn validation_and_tpl_refuse_before_lookup_with_unchanged_codes() {
         let services = setup(Status::NOT_FOUND, None);
-        let failure = unsafe { prepare_resource_ranges_detailed(&services, 48, true,
-            &[OwnedRange { base: 1, bytes: 4096 }], &[]) }.err().unwrap();
+        let failure = unsafe {
+            prepare_resource_ranges_detailed(
+                &services,
+                48,
+                true,
+                &[OwnedRange { base: 1, bytes: 4096 }],
+                &[],
+            )
+        }
+        .err()
+        .unwrap();
         assert_eq!(failure, TableFailure::from(TableError::OwnedRange));
         assert_eq!(failure.resource_code(), 0x111);
         with(|state| assert!(state.calls.is_empty()));
         let services = setup(Status::NOT_FOUND, None);
         with(|state| state.tpl = Tpl::CALLBACK);
-        let failure = unsafe { prepare_resource_ranges_detailed(&services, 48, true, &[], &[]) }.err().unwrap();
+        let failure = unsafe { prepare_resource_ranges_detailed(&services, 48, true, &[], &[]) }
+            .err()
+            .unwrap();
         assert_eq!(failure, TableFailure::from(TableError::EntryTpl));
         assert_eq!(failure.resource_code(), 0x110);
         with(|state| {
@@ -1833,7 +1731,9 @@ mod lookup_tests {
     #[test]
     fn later_allocation_and_cleanup_failure_never_inherit_lookup_tags() {
         let services = setup(Status::SUCCESS, Some(protocol_address()));
-        let failure = unsafe { prepare_resource_ranges_detailed(&services, 48, true, &[], &[]) }.err().unwrap();
+        let failure = unsafe { prepare_resource_ranges_detailed(&services, 48, true, &[], &[]) }
+            .err()
+            .unwrap();
         assert_eq!(failure, TableFailure::from(TableError::Allocation));
         assert_eq!(failure.resource_code(), 0x102);
         with(|state| assert_eq!(state.calls, ["raise", "restore", "locate", "allocate"]));
@@ -1843,17 +1743,27 @@ mod lookup_tests {
                 state.unaligned_allocation = true;
                 state.free_failures = free_failures;
             });
-            let failure = unsafe { prepare_resource_ranges_detailed(&services, 48, true, &[], &[]) }.err().unwrap();
+            let failure =
+                unsafe { prepare_resource_ranges_detailed(&services, 48, true, &[], &[]) }
+                    .err()
+                    .unwrap();
             if free_failures == 0 {
                 assert_eq!(failure, TableFailure::from(TableError::Allocation));
                 assert_eq!(failure.resource_code(), 0x102);
-                with(|state| assert_eq!(state.calls, ["raise", "restore", "locate", "allocate", "free"]));
+                with(|state| {
+                    assert_eq!(state.calls, ["raise", "restore", "locate", "allocate", "free"])
+                });
             } else {
                 assert_eq!(failure, TableFailure::from(TableError::Cleanup));
                 assert_eq!(failure.resource_code(), 0x10d);
                 // The explicit first free failed. A later successful Drop must
                 // never turn that observation into reported complete cleanup.
-                with(|state| assert_eq!(state.calls, ["raise", "restore", "locate", "allocate", "free", "free"]));
+                with(|state| {
+                    assert_eq!(
+                        state.calls,
+                        ["raise", "restore", "locate", "allocate", "free", "free"]
+                    )
+                });
             }
         }
         let cleanup = TableFailure {
@@ -1867,7 +1777,10 @@ mod lookup_tests {
     #[test]
     fn source_selection_preserves_firmware_and_only_accepts_exact_missing_status() {
         let interface = NonNull::new(protocol_address() as *mut MemoryAttributeProtocol).unwrap();
-        assert_eq!(select_attribute_source(Ok(interface)), Ok(AttributeSource::Firmware(interface)));
+        assert_eq!(
+            select_attribute_source(Ok(interface)),
+            Ok(AttributeSource::Firmware(interface))
+        );
         for failure in [
             AttributeLookupFailure::SuccessNull,
             AttributeLookupFailure::SuccessUnaligned { remainder: 1 },
@@ -1889,11 +1802,13 @@ mod lookup_tests {
     #[test]
     #[cfg(feature = "memory-attribute-f7")]
     fn exact_not_found_fallback_reaches_allocation_without_reading_returned_pointer() {
-        for output in [None, Some(0), Some(1), Some(8), Some(usize::MAX), Some(protocol_address())] {
+        for output in [None, Some(0), Some(1), Some(8), Some(usize::MAX), Some(protocol_address())]
+        {
             let services = setup(Status::NOT_FOUND, output);
-            let failure = unsafe {
-                prepare_resource_ranges_detailed(&services, 48, true, &[], &[])
-            }.err().unwrap();
+            let failure =
+                unsafe { prepare_resource_ranges_detailed(&services, 48, true, &[], &[]) }
+                    .err()
+                    .unwrap();
             assert_eq!(failure, TableFailure::from(TableError::Allocation));
             with(|state| assert_eq!(state.calls, ["raise", "restore", "locate", "allocate"]));
         }
@@ -1932,11 +1847,8 @@ mod tests {
 
     fn empty() -> RetainedWalks {
         RetainedWalks {
-            entries: [EntryObservation {
-                address: 0,
-                value: 0,
-                allowed_set_bits: 0,
-            }; MAX_RETAINED_ENTRIES],
+            entries: [EntryObservation { address: 0, value: 0, allowed_set_bits: 0 };
+                MAX_RETAINED_ENTRIES],
             entry_count: 0,
             table_pages: [TablePageObservation::default(); MAX_TABLE_PAGES],
             page_count: 0,
@@ -1981,20 +1893,11 @@ mod tests {
     }
 
     fn ram(base: u64, pages: u64) -> MemoryDescriptor {
-        MemoryDescriptor {
-            memory_type: 4,
-            physical_start: base,
-            page_count: pages,
-            attributes: 8,
-        }
+        MemoryDescriptor { memory_type: 4, physical_start: base, page_count: pages, attributes: 8 }
     }
 
     fn span(base: u64, bytes: u64, access: BorrowedAccess) -> BorrowedSpan {
-        BorrowedSpan {
-            base,
-            bytes,
-            access,
-        }
+        BorrowedSpan { base, bytes, access }
     }
 
     #[test]
@@ -2002,10 +1905,7 @@ mod tests {
         use BorrowedAccess::*;
         let unaligned = span(0x1fff, 2, Read);
         assert_eq!(covering_pages(unaligned, 48), Ok((0x1000, 2)));
-        assert_eq!(
-            validate_borrowed_spans(&[unaligned, unaligned], 48, &[], false),
-            Ok(4)
-        );
+        assert_eq!(validate_borrowed_spans(&[unaligned, unaligned], 48, &[], false), Ok(4));
         for invalid in [
             span(0x1000, 0, Read),
             span(u64::MAX, 1, Read),
@@ -2021,16 +1921,10 @@ mod tests {
             Err(TableError::Bounds)
         );
         let page_limit = span(0x1000, MAX_BORROWED_PAGES as u64 * 4096, ReadWrite);
-        assert_eq!(
-            validate_borrowed_spans(&[page_limit], 48, &[], false),
-            Ok(MAX_BORROWED_PAGES)
-        );
+        assert_eq!(validate_borrowed_spans(&[page_limit], 48, &[], false), Ok(MAX_BORROWED_PAGES));
         assert_eq!(
             validate_borrowed_spans(
-                &[BorrowedSpan {
-                    bytes: page_limit.bytes + 1,
-                    ..page_limit
-                }],
+                &[BorrowedSpan { bytes: page_limit.bytes + 1, ..page_limit }],
                 48,
                 &[],
                 false
@@ -2055,10 +1949,7 @@ mod tests {
             validate_borrowed_spans(&[unaligned; 3], 48, &[], true),
             Err(TableError::Bounds)
         );
-        let owned = [OwnedRange {
-            base: 0x2000,
-            bytes: 4096,
-        }];
+        let owned = [OwnedRange { base: 0x2000, bytes: 4096 }];
         assert_eq!(
             validate_borrowed_spans(&[unaligned], 48, &owned, false),
             Err(TableError::OwnedRange)
@@ -2078,21 +1969,9 @@ mod tests {
     fn current_attribute_permissions_match_each_required_access() {
         use BorrowedAccess::*;
         for access in [Read, ReadWrite, ReadExecute] {
-            assert!(attributes_allow(
-                Status::SUCCESS,
-                MemoryAttribute::empty(),
-                access
-            ));
-            assert!(!attributes_allow(
-                Status::UNSUPPORTED,
-                MemoryAttribute::empty(),
-                access
-            ));
-            assert!(!attributes_allow(
-                Status::SUCCESS,
-                MemoryAttribute::READ_PROTECT,
-                access
-            ));
+            assert!(attributes_allow(Status::SUCCESS, MemoryAttribute::empty(), access));
+            assert!(!attributes_allow(Status::UNSUPPORTED, MemoryAttribute::empty(), access));
+            assert!(!attributes_allow(Status::SUCCESS, MemoryAttribute::READ_PROTECT, access));
         }
         let ro = MemoryAttribute::from_bits_retain(0x20000);
         assert!(attributes_allow(Status::SUCCESS, ro, Read));
@@ -2112,7 +1991,8 @@ mod tests {
         for query in [Ok(0x2000u64), Err(())] {
             assert_eq!(
                 read_checked_entry(
-                    &memory, 0x1000,
+                    &memory,
+                    0x1000,
                     |_| internal_access(query, BorrowedAccess::Read, &failed),
                     |_| panic!("failed internal permission must precede direct read"),
                 ),
@@ -2174,31 +2054,10 @@ mod tests {
         let memory = ValidatedMemoryMap::new(&descriptors, 48).unwrap();
         for (access, smep, ro, nx, user, expected) in [
             (Read, true, true, true, true, Ok(())),
-            (
-                ReadWrite,
-                false,
-                true,
-                false,
-                false,
-                Err(TableError::NotWritable),
-            ),
+            (ReadWrite, false, true, false, false, Err(TableError::NotWritable)),
             (ReadExecute, false, true, false, false, Ok(())),
-            (
-                ReadExecute,
-                false,
-                false,
-                true,
-                false,
-                Err(TableError::NotExecutable),
-            ),
-            (
-                ReadExecute,
-                true,
-                false,
-                false,
-                true,
-                Err(TableError::NotExecutable),
-            ),
+            (ReadExecute, false, false, true, false, Err(TableError::NotExecutable)),
+            (ReadExecute, true, false, false, true, Err(TableError::NotExecutable)),
             (ReadExecute, false, false, false, true, Ok(())),
             (ReadExecute, true, false, false, false, Ok(())),
         ] {
@@ -2258,11 +2117,8 @@ mod tests {
         use BorrowedAccess::*;
         let descriptors = [ram(0, 512)];
         let memory = ValidatedMemoryMap::new(&descriptors, 48).unwrap();
-        let requested = [
-            span(0x8fff, 2, Read),
-            span(0x9000, 2, ReadExecute),
-            span(0x9001, 1, ReadWrite),
-        ];
+        let requested =
+            [span(0x8fff, 2, Read), span(0x9000, 2, ReadExecute), span(0x9001, 1, ReadWrite)];
         let mut queried = 0;
         let mut storage = empty_storage();
         retain_borrowed_mappings(
@@ -2295,16 +2151,8 @@ mod tests {
                 }
             );
         }
-        storage
-            .walks
-            .close_dependencies(config(), &mut read_large)
-            .unwrap();
-        assert_eq!(
-            storage
-                .walks
-                .compare(|address| read_large(address).unwrap()),
-            Ok(())
-        );
+        storage.walks.close_dependencies(config(), &mut read_large).unwrap();
+        assert_eq!(storage.walks.compare(|address| read_large(address).unwrap()), Ok(()));
         assert_eq!(
             storage.walks.compare(
                 |address| read_large(address).unwrap() ^ if address == 0x3000 { 8 } else { 0 }
@@ -2358,11 +2206,7 @@ mod tests {
         assert!(storage.borrowed_page_count > MAX_BORROWED_PAGES + MAX_OWNED_PAGES);
         assert_eq!(&storage.borrowed_spans[1..3], &internal);
         let mut storage = empty_storage();
-        let pcid = PagingConfig {
-            pcid: true,
-            cr3: 0x1007,
-            ..config()
-        };
+        let pcid = PagingConfig { pcid: true, cr3: 0x1007, ..config() };
         assert_eq!(
             retain_borrowed_mappings(
                 &mut storage,
@@ -2461,9 +2305,7 @@ mod tests {
     fn settlement_unions_validated_roles_per_slot_and_rejects_unvalidated_roles() {
         let mut retained = empty();
         // The same slot serves every level of this recursive supplied walk.
-        retained
-            .translate(config(), 0, &mut |_| Ok(0x1003))
-            .unwrap();
+        retained.translate(config(), 0, &mut |_| Ok(0x1003)).unwrap();
         assert_eq!(retained.entry_count, 1);
         assert_eq!(retained.entries[0].allowed_set_bits, 0x60);
         retained.settle_accessed_dirty(|_| 0x1063).unwrap();
@@ -2474,81 +2316,36 @@ mod tests {
             Err(TableError::Translation)
         );
         assert_eq!(invalid.entries[0].allowed_set_bits, 0);
-        assert_eq!(
-            invalid.settle_accessed_dirty(|_| 0x10a3),
-            Err(TableError::Changed)
-        );
+        assert_eq!(invalid.settle_accessed_dirty(|_| 0x10a3), Err(TableError::Changed));
     }
 
     #[test]
     fn owned_extent_shape_bounds_and_overlap_are_checked_without_reads() {
         assert_eq!(validate_owned_ranges(&[], 0), Ok(0)); // Legacy path unchanged.
-        let page = OwnedRange {
-            base: 0x20_0000,
-            bytes: 4096,
-        };
+        let page = OwnedRange { base: 0x20_0000, bytes: 4096 };
         assert_eq!(validate_owned_ranges(&[page], 48), Ok(1));
-        assert_eq!(
-            validate_owned_ranges(&[page; 9], 48),
-            Err(TableError::Bounds)
-        );
-        assert_eq!(
-            validate_owned_ranges(&[page; 2], 48),
-            Err(TableError::OwnedRange)
-        );
+        assert_eq!(validate_owned_ranges(&[page; 9], 48), Err(TableError::Bounds));
+        assert_eq!(validate_owned_ranges(&[page; 2], 48), Err(TableError::OwnedRange));
         for invalid in [
             OwnedRange { bytes: 0, ..page },
-            OwnedRange {
-                base: page.base + 1,
-                ..page
-            },
-            OwnedRange {
-                bytes: 4097,
-                ..page
-            },
-            OwnedRange {
-                base: u64::MAX & !4095,
-                ..page
-            },
-            OwnedRange {
-                base: 1 << 48,
-                ..page
-            },
-            OwnedRange {
-                base: 1 << 47,
-                ..page
-            },
+            OwnedRange { base: page.base + 1, ..page },
+            OwnedRange { bytes: 4097, ..page },
+            OwnedRange { base: u64::MAX & !4095, ..page },
+            OwnedRange { base: 1 << 48, ..page },
+            OwnedRange { base: 1 << 47, ..page },
         ] {
-            assert_eq!(
-                validate_owned_ranges(&[invalid], 48),
-                Err(TableError::OwnedRange)
-            );
+            assert_eq!(validate_owned_ranges(&[invalid], 48), Err(TableError::OwnedRange));
         }
+        assert_eq!(validate_owned_ranges(&[page], 53), Err(TableError::OwnedRange));
         assert_eq!(
-            validate_owned_ranges(&[page], 53),
-            Err(TableError::OwnedRange)
-        );
-        assert_eq!(
-            validate_owned_ranges(
-                &[OwnedRange {
-                    bytes: 257 * 4096,
-                    ..page
-                }],
-                48
-            ),
+            validate_owned_ranges(&[OwnedRange { bytes: 257 * 4096, ..page }], 48),
             Err(TableError::Bounds)
         );
         assert_eq!(
             validate_owned_ranges(
                 &[
-                    OwnedRange {
-                        bytes: 255 * 4096,
-                        ..page
-                    },
-                    OwnedRange {
-                        base: 0x40_0000,
-                        bytes: 4096
-                    },
+                    OwnedRange { bytes: 255 * 4096, ..page },
+                    OwnedRange { base: 0x40_0000, bytes: 4096 },
                 ],
                 48
             ),
@@ -2557,58 +2354,28 @@ mod tests {
         assert_eq!(
             validate_owned_ranges(
                 &[
-                    OwnedRange {
-                        bytes: 256 * 4096,
-                        ..page
-                    },
-                    OwnedRange {
-                        base: 0x40_0000,
-                        bytes: 4096
-                    },
+                    OwnedRange { bytes: 256 * 4096, ..page },
+                    OwnedRange { base: 0x40_0000, bytes: 4096 },
                 ],
                 48
             ),
             Err(TableError::Bounds)
         );
         assert_eq!(
-            validate_owned_ranges(
-                &[
-                    page,
-                    OwnedRange {
-                        base: page.base + 4096,
-                        ..page
-                    }
-                ],
-                48
-            ),
+            validate_owned_ranges(&[page, OwnedRange { base: page.base + 4096, ..page }], 48),
             Ok(2)
         );
     }
 
     #[test]
     fn owned_metadata_holes_and_unallocated_or_non_wb_ram_never_reach_readers() {
-        let range = OwnedRange {
-            base: 0x20_0000,
-            bytes: 8192,
-        };
+        let range = OwnedRange { base: 0x20_0000, bytes: 8192 };
         for descriptor in [
             ram(range.base, 1),
-            MemoryDescriptor {
-                memory_type: 7,
-                ..ram(range.base, 2)
-            },
-            MemoryDescriptor {
-                memory_type: 11,
-                ..ram(range.base, 2)
-            },
-            MemoryDescriptor {
-                attributes: 0x2008,
-                ..ram(range.base, 2)
-            },
-            MemoryDescriptor {
-                attributes: 1,
-                ..ram(range.base, 2)
-            },
+            MemoryDescriptor { memory_type: 7, ..ram(range.base, 2) },
+            MemoryDescriptor { memory_type: 11, ..ram(range.base, 2) },
+            MemoryDescriptor { attributes: 0x2008, ..ram(range.base, 2) },
+            MemoryDescriptor { attributes: 1, ..ram(range.base, 2) },
         ] {
             let descriptors = [descriptor];
             let memory = ValidatedMemoryMap::new(&descriptors, 48).unwrap();
@@ -2644,28 +2411,17 @@ mod tests {
             );
         }
         assert_eq!(
-            read_checked_entry(
-                &memory,
-                0x1000,
-                |_| false,
-                |_| panic!("denied source was read")
-            ),
+            read_checked_entry(&memory, 0x1000, |_| false, |_| panic!("denied source was read")),
             Err(TableError::ReadPermission)
         );
-        assert_eq!(
-            read_checked_entry(&memory, 0x1ff8, |_| true, |_| 0x2003),
-            Ok(0x2003)
-        );
+        assert_eq!(read_checked_entry(&memory, 0x1ff8, |_| true, |_| 0x2003), Ok(0x2003));
     }
 
     #[test]
     fn owned_pages_require_current_write_permission_identity_and_every_ancestor_rw() {
         let descriptors = [ram(0, 2048)];
         let memory = ValidatedMemoryMap::new(&descriptors, 48).unwrap();
-        let ranges = [OwnedRange {
-            base: 0x20_0000,
-            bytes: 4096,
-        }];
+        let ranges = [OwnedRange { base: 0x20_0000, bytes: 4096 }];
         assert_eq!(
             retain_owned_mappings(
                 &mut empty_storage(),
@@ -2705,10 +2461,7 @@ mod tests {
                 &mut empty_storage(),
                 &ranges,
                 &memory,
-                PagingConfig {
-                    pcid: true,
-                    ..config()
-                },
+                PagingConfig { pcid: true, ..config() },
                 &mut |_| panic!("PCID refusal must precede query"),
                 &mut |_| panic!("PCID refusal must precede walk")
             ),
@@ -2720,14 +2473,8 @@ mod tests {
     fn retains_33_owned_pages_and_separates_parent_fetch_indices_from_leaf_pat() {
         let descriptors = [ram(0, 2048)];
         let memory = ValidatedMemoryMap::new(&descriptors, 48).unwrap();
-        let ranges = [OwnedRange {
-            base: 0x20_0000,
-            bytes: 33 * 4096,
-        }];
-        let config = PagingConfig {
-            cr3: 0x1018,
-            ..config()
-        };
+        let ranges = [OwnedRange { base: 0x20_0000, bytes: 33 * 4096 }];
+        let config = PagingConfig { cr3: 0x1018, ..config() };
         let mut read = |address| match address {
             0x1000 => Ok(0x200b),    // PDPT fetched with PAT1.
             0x2000 => Ok(0x3013),    // PD fetched with PAT2.
@@ -2738,15 +2485,8 @@ mod tests {
         let mut storage = empty_storage();
         storage.walks.close_dependencies(config, &mut read).unwrap();
         assert_eq!(storage.walks.entry_count, 3);
-        retain_owned_mappings(
-            &mut storage,
-            &ranges,
-            &memory,
-            config,
-            &mut |_| true,
-            &mut read,
-        )
-        .unwrap();
+        retain_owned_mappings(&mut storage, &ranges, &memory, config, &mut |_| true, &mut read)
+            .unwrap();
         storage.walks.close_dependencies(config, &mut read).unwrap();
         assert_eq!(storage.owned_page_count, 33);
         assert_eq!(storage.walks.entry_count, 4);
@@ -2762,11 +2502,9 @@ mod tests {
                 }
             );
         }
-        for (page, expected_fetch, expected_level) in [
-            (0x1000, 1 << 3, 1 << 3),
-            (0x2000, 1 << 1, 1 << 2),
-            (0x3000, 1 << 2, 1 << 1),
-        ] {
+        for (page, expected_fetch, expected_level) in
+            [(0x1000, 1 << 3, 1 << 3), (0x2000, 1 << 1, 1 << 2), (0x3000, 1 << 2, 1 << 1)]
+        {
             let observed = storage
                 .walks
                 .pages()
@@ -2798,10 +2536,7 @@ mod tests {
     fn owned_4k_walk_discovers_new_table_page_and_closes_its_software_alias() {
         let descriptors = [ram(0, 2048)];
         let memory = ValidatedMemoryMap::new(&descriptors, 48).unwrap();
-        let ranges = [OwnedRange {
-            base: 0x20_0000,
-            bytes: 8192,
-        }];
+        let ranges = [OwnedRange { base: 0x20_0000, bytes: 8192 }];
         let mut read = |address| match address {
             0x1000 => Ok(0x2003),
             0x2000 => Ok(0x3003),
@@ -2812,23 +2547,10 @@ mod tests {
             _ => Err(TableError::ReadPermission),
         };
         let mut storage = empty_storage();
-        storage
-            .walks
-            .close_dependencies(config(), &mut read)
+        storage.walks.close_dependencies(config(), &mut read).unwrap();
+        retain_owned_mappings(&mut storage, &ranges, &memory, config(), &mut |_| true, &mut read)
             .unwrap();
-        retain_owned_mappings(
-            &mut storage,
-            &ranges,
-            &memory,
-            config(),
-            &mut |_| true,
-            &mut read,
-        )
-        .unwrap();
-        storage
-            .walks
-            .close_dependencies(config(), &mut read)
-            .unwrap();
+        storage.walks.close_dependencies(config(), &mut read).unwrap();
         assert_eq!(storage.walks.entry_count, 6);
         assert_eq!(storage.walks.page_count, 4);
         assert_eq!(
@@ -2875,14 +2597,8 @@ mod tests {
         // Deliberately supplied out of physical order. Each allocation's own
         // view remains ascending, with full 1 GiB leaf bases preserved.
         let ranges = [
-            OwnedRange {
-                base: 0x8000_3000,
-                bytes: 128 * 4096,
-            },
-            OwnedRange {
-                base: 0x4000_5000,
-                bytes: 128 * 4096,
-            },
+            OwnedRange { base: 0x8000_3000, bytes: 128 * 4096 },
+            OwnedRange { base: 0x4000_5000, bytes: 128 * 4096 },
         ];
         let mut read = |address| match address {
             0x1000 => Ok(0x2003),
@@ -2893,19 +2609,9 @@ mod tests {
             _ => Err(TableError::ReadPermission),
         };
         let mut storage = empty_storage();
-        retain_owned_mappings(
-            &mut storage,
-            &ranges,
-            &memory,
-            config(),
-            &mut |_| true,
-            &mut read,
-        )
-        .unwrap();
-        storage
-            .walks
-            .close_dependencies(config(), &mut read)
+        retain_owned_mappings(&mut storage, &ranges, &memory, config(), &mut |_| true, &mut read)
             .unwrap();
+        storage.walks.close_dependencies(config(), &mut read).unwrap();
         assert_eq!(storage.owned_page_count, MAX_OWNED_PAGES);
         assert_eq!(storage.owned_ranges[..2], ranges);
         assert_eq!(
@@ -2937,25 +2643,16 @@ mod tests {
         assert_eq!(walks.pages().unwrap()[0].fetch_pat_indices, 9);
         assert_eq!(walks.pages().unwrap()[0].levels, 9);
         for (level, index) in [(0, 0), (5, 0), (4, 4), (4, 255)] {
-            assert_eq!(
-                walks.remember_fetch(0x2000, level, Some(index)),
-                Err(TableError::Bounds)
-            );
+            assert_eq!(walks.remember_fetch(0x2000, level, Some(index)), Err(TableError::Bounds));
         }
         assert_eq!(walks.page_count, 1);
     }
 
     #[test]
     fn owned_ranges_must_not_overlap_any_borrowed_gdt_byte_or_table_page() {
-        let ranges = [OwnedRange {
-            base: 0x20_0000,
-            bytes: 8192,
-        }];
+        let ranges = [OwnedRange { base: 0x20_0000, bytes: 8192 }];
         for (base, bytes) in [(0x1f_ffff, 2), (0x20_1000, 4096), (0x20_1fff, 1)] {
-            assert_eq!(
-                reject_owned_overlap(&ranges, base, bytes),
-                Err(TableError::OwnedRange)
-            );
+            assert_eq!(reject_owned_overlap(&ranges, base, bytes), Err(TableError::OwnedRange));
         }
         assert_eq!(reject_owned_overlap(&ranges, 0x1f_f000, 4096), Ok(()));
         assert_eq!(reject_owned_overlap(&ranges, 0x20_2000, 4096), Ok(()));
@@ -2965,21 +2662,14 @@ mod tests {
     fn closes_root_and_self_mapping_without_recursion_or_duplicate_entries() {
         let mut retained = empty();
         assert_eq!(
-            retained
-                .translate(config(), 0x8000, &mut read_large)
-                .unwrap()
-                .physical_address,
+            retained.translate(config(), 0x8000, &mut read_large).unwrap().physical_address,
             0x8000
         );
         assert_eq!(retained.entry_count, 3);
-        retained
-            .close_dependencies(config(), &mut read_large)
-            .unwrap();
+        retained.close_dependencies(config(), &mut read_large).unwrap();
         assert_eq!(retained.entry_count, 3);
         assert_eq!(retained.page_count, 3);
-        retained
-            .compare(|address| read_large(address).unwrap())
-            .unwrap();
+        retained.compare(|address| read_large(address).unwrap()).unwrap();
     }
 
     #[test]
@@ -3003,13 +2693,7 @@ mod tests {
         retained.close_dependencies(config(), &mut read).unwrap();
         assert_eq!(retained.entry_count, 8);
         assert_eq!(retained.page_count, 4);
-        assert!(
-            retained
-                .entries()
-                .unwrap()
-                .iter()
-                .any(|entry| entry.address == 0x4008)
-        );
+        assert!(retained.entries().unwrap().iter().any(|entry| entry.address == 0x4008));
     }
 
     #[test]
@@ -3024,10 +2708,7 @@ mod tests {
             _ => Err(TableError::ReadPermission),
         };
         retained.translate(config(), 0x9000, &mut read).unwrap();
-        assert_eq!(
-            retained.close_dependencies(config(), &mut read),
-            Err(TableError::Translation)
-        );
+        assert_eq!(retained.close_dependencies(config(), &mut read), Err(TableError::Translation));
     }
 
     #[test]
@@ -3042,10 +2723,7 @@ mod tests {
             _ => Err(TableError::ReadPermission),
         };
         retained.translate(config(), 0x9000, &mut read).unwrap();
-        assert_eq!(
-            retained.close_dependencies(config(), &mut read),
-            Err(TableError::NonIdentity)
-        );
+        assert_eq!(retained.close_dependencies(config(), &mut read), Err(TableError::NonIdentity));
     }
 
     #[test]
@@ -3062,17 +2740,10 @@ mod tests {
     fn rejects_drift_on_repeated_walk_including_accessed_and_dirty_bits() {
         for bit in [0, 1, 5, 6, 12, 63] {
             let mut retained = empty();
-            retained
-                .translate(config(), 0x9000, &mut read_large)
-                .unwrap();
+            retained.translate(config(), 0x9000, &mut read_large).unwrap();
             assert_eq!(
-                retained.translate(config(), 0x9000, &mut |address| read_large(address).map(
-                    |entry| if address == 0x1000 {
-                        entry ^ (1 << bit)
-                    } else {
-                        entry
-                    }
-                )),
+                retained.translate(config(), 0x9000, &mut |address| read_large(address)
+                    .map(|entry| if address == 0x1000 { entry ^ (1 << bit) } else { entry })),
                 Err(TableError::Changed)
             );
         }
@@ -3081,9 +2752,7 @@ mod tests {
     #[test]
     fn comparison_never_follows_a_changed_entry() {
         let mut retained = empty();
-        retained
-            .translate(config(), 0x9000, &mut read_large)
-            .unwrap();
+        retained.translate(config(), 0x9000, &mut read_large).unwrap();
         let mut reads = 0;
         assert_eq!(
             retained.compare(|address| {
@@ -3099,9 +2768,7 @@ mod tests {
     #[test]
     fn final_baseline_allows_only_setting_accessed_dirty_then_requires_exact_equality() {
         let mut retained = empty();
-        retained
-            .translate(config(), 0x9000, &mut read_large)
-            .unwrap();
+        retained.translate(config(), 0x9000, &mut read_large).unwrap();
         retained
             .settle_accessed_dirty(|address| {
                 read_large(address).unwrap() | if address == 0x3000 { 0x60 } else { 0x20 }
@@ -3122,9 +2789,7 @@ mod tests {
         );
         for changed in [1, 2, 4, 0x1000, 1 << 63] {
             let mut retained = empty();
-            retained
-                .translate(config(), 0x9000, &mut read_large)
-                .unwrap();
+            retained.translate(config(), 0x9000, &mut read_large).unwrap();
             assert_eq!(
                 retained.settle_accessed_dirty(|address| read_large(address).unwrap() ^ changed),
                 Err(TableError::Changed)
@@ -3136,9 +2801,7 @@ mod tests {
     fn bounds_exhaustion_and_noncanonical_pages_are_explicit_refusals() {
         let mut entries = empty();
         for index in 0..MAX_RETAINED_ENTRIES {
-            entries
-                .remember_entry(0x1000 + index as u64 * 8, 1)
-                .unwrap();
+            entries.remember_entry(0x1000 + index as u64 * 8, 1).unwrap();
         }
         assert_eq!(
             entries.remember_entry(0x1000 + MAX_RETAINED_ENTRIES as u64 * 8, 1),
@@ -3148,29 +2811,17 @@ mod tests {
         for index in 0..MAX_TABLE_PAGES {
             pages.remember_page(index as u64 * 4096).unwrap();
         }
-        assert_eq!(
-            pages.remember_page(MAX_TABLE_PAGES as u64 * 4096),
-            Err(TableError::Bounds)
-        );
-        assert_eq!(
-            empty().remember_page(0x0000_8000_0000_0000),
-            Err(TableError::Context)
-        );
+        assert_eq!(pages.remember_page(MAX_TABLE_PAGES as u64 * 4096), Err(TableError::Bounds));
+        assert_eq!(empty().remember_page(0x0000_8000_0000_0000), Err(TableError::Context));
         assert_eq!(empty().remember_entry(0x1001, 1), Err(TableError::Metadata));
     }
 
     #[test]
     fn high_tpl_requires_if_clear_but_allows_the_expected_if_transition() {
-        let before = NativeSnapshot {
-            rflags: 0x202,
-            ..NativeSnapshot::default()
-        };
+        let before = NativeSnapshot { rflags: 0x202, ..NativeSnapshot::default() };
         let mut after = before;
         after.rflags = 2;
-        assert_eq!(
-            context_unchanged(&before, 0x500, &after, 0x500, true),
-            Ok(())
-        );
+        assert_eq!(context_unchanged(&before, 0x500, &after, 0x500, true), Ok(()));
         assert_eq!(
             context_unchanged(&before, 0x500, &after, 0x500, false),
             Err(TableError::Changed)

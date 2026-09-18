@@ -41,9 +41,7 @@ pub(crate) unsafe fn run(
     let (evidence, outcome) = unsafe { collect_boot_identity(table) };
     if outcome == Outcome::NativeBoundaryUnavailable {
         let physical_bits = evidence.address_width.map(|r| r.eax as u8).unwrap_or(0);
-        let page1gb = evidence
-            .extended_features
-            .is_some_and(|r| r.edx & (1 << 26) != 0);
+        let page1gb = evidence.extended_features.is_some_and(|r| r.edx & (1 << 26) != 0);
         #[cfg(feature = "native-returning")]
         {
             inner_result = unsafe {
@@ -137,13 +135,7 @@ pub(crate) unsafe fn run(
     }
     #[cfg(feature = "native-returning")]
     if matches!(outcome, Outcome::CpuidRejected(_)) {
-        unsafe {
-            snapshot_line(
-                table,
-                "native-returning-cpuid-refused",
-                inner_result.refusal,
-            )
-        };
+        unsafe { snapshot_line(table, "native-returning-cpuid-refused", inner_result.refusal) };
     }
     if let Some(mailbox) = mailbox {
         unsafe { mailbox.complete(inner_result) };
@@ -166,12 +158,7 @@ pub(crate) unsafe fn run(
 unsafe fn collect_boot_identity(table: &SystemTable) -> (CpuidEvidence, Outcome) {
     let report = collect(|leaf| {
         let r = core::arch::x86_64::__cpuid_count(leaf, 0);
-        CpuidRegisters {
-            eax: r.eax,
-            ebx: r.ebx,
-            ecx: r.ecx,
-            edx: r.edx,
-        }
+        CpuidRegisters { eax: r.eax, ebx: r.ebx, ecx: r.ecx, edx: r.edx }
     });
     // Read-only native BSP boot capture. Diagnostics consume the retained
     // identity, never re-query hardware and never influence admission. This
@@ -200,9 +187,7 @@ unsafe fn collect_boot_identity(table: &SystemTable) -> (CpuidEvidence, Outcome)
                 let value = bytes
                     .iter()
                     .zip([0, 8, 16, 24, 32, 40, 48, 56])
-                    .fold(0u64, |word, (&byte, shift)| {
-                        word | (u64::from(byte) << shift)
-                    });
+                    .fold(0u64, |word, (&byte, shift)| word | (u64::from(byte) << shift));
                 unsafe { snapshot_line(table, field, value) };
             }
         }
@@ -294,11 +279,7 @@ unsafe fn observe_owned_tables(table: &SystemTable, physical_bits: u8, page1gb: 
     ] {
         unsafe { snapshot_line(table, field, value) };
     }
-    let observed = if completion.cleanup.is_err() {
-        Err(TableError::Cleanup)
-    } else {
-        observed
-    };
+    let observed = if completion.cleanup.is_err() { Err(TableError::Cleanup) } else { observed };
     match observed {
         Ok((observed, entries, pages)) => {
             for (field, value) in [
@@ -333,9 +314,7 @@ pub(crate) unsafe fn snapshot_line(table: &SystemTable, field: &str, value: u64)
         .chain(field.bytes())
         .chain([b'='])
         .chain(
-            (0..16)
-                .rev()
-                .map(|shift| b"0123456789abcdef"[((value >> (shift * 4)) & 15) as usize]),
+            (0..16).rev().map(|shift| b"0123456789abcdef"[((value >> (shift * 4)) & 15) as usize]),
         )
         .chain([13, 10]);
     for (dst, byte) in text.iter_mut().zip(bytes) {

@@ -12,8 +12,9 @@
 //! already advanced and the exit's nRIP is not used.
 use super::{BackingPage, Error, logical_x2apic_id};
 use crate::arch::x86_64::apic::{
-    DoorbellTarget, ICR_RESERVED, SELF_IPI_MSR, MESSAGE_EXTERNAL, MESSAGE_FIXED, MESSAGE_INIT,
+    DoorbellTarget, ICR_RESERVED, MESSAGE_EXTERNAL, MESSAGE_FIXED, MESSAGE_INIT,
     MESSAGE_LOWEST_PRIORITY, MESSAGE_NMI, MESSAGE_REMOTE_READ, MESSAGE_SMI, MESSAGE_STARTUP,
+    SELF_IPI_MSR,
 };
 
 /// Trigger mode (TGM, bit 15): 1 is level-sensitive (Figure 16-18 p643).
@@ -89,9 +90,13 @@ pub struct FixedIpi {
 }
 
 impl FixedIpi {
-    pub const fn vector(self) -> u8 { self.vector }
+    pub const fn vector(self) -> u8 {
+        self.vector
+    }
     /// Bit `s` selects inventory slot `s`.
-    pub const fn targets(self) -> u32 { self.targets }
+    pub const fn targets(self) -> u32 {
+        self.targets
+    }
 }
 
 /// A validated NMI IPI and its admitted target slots. The ICR vector is
@@ -104,7 +109,9 @@ pub struct NmiIpi {
 
 impl NmiIpi {
     /// Bit `s` selects inventory slot `s`.
-    pub const fn targets(self) -> u32 { self.targets }
+    pub const fn targets(self) -> u32 {
+        self.targets
+    }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

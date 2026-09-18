@@ -1,39 +1,20 @@
 use svmvisor_hypervisor::{
-    memory::address::EncryptionState,
     arch::x86_64::capabilities::{CapabilityError, EvidenceFlag},
     boot::preflight::*,
+    memory::address::EncryptionState,
 };
 fn evidence() -> CpuidEvidence {
     CpuidEvidence {
-        basic: CpuidRegisters {
-            eax: 0x10,
-            ebx: 0x68747541,
-            edx: 0x69746e65,
-            ecx: 0x444d4163,
-        },
-        extended: CpuidRegisters {
-            eax: 0x8000001f,
-            ..Default::default()
-        },
-        features: Some(CpuidRegisters {
-            edx: 1 << 5,
-            ..Default::default()
-        }),
+        basic: CpuidRegisters { eax: 0x10, ebx: 0x68747541, edx: 0x69746e65, ecx: 0x444d4163 },
+        extended: CpuidRegisters { eax: 0x8000001f, ..Default::default() },
+        features: Some(CpuidRegisters { edx: 1 << 5, ..Default::default() }),
         extended_features: Some(CpuidRegisters {
             ecx: 4,
             edx: (1 << 20) | (1 << 29),
             ..Default::default()
         }),
-        address_width: Some(CpuidRegisters {
-            eax: 48,
-            ..Default::default()
-        }),
-        svm: Some(CpuidRegisters {
-            eax: 1,
-            ebx: 32768,
-            edx: 1,
-            ..Default::default()
-        }),
+        address_width: Some(CpuidRegisters { eax: 48, ..Default::default() }),
+        svm: Some(CpuidRegisters { eax: 1, ebx: 32768, edx: 1, ..Default::default() }),
     }
 }
 #[test]
@@ -109,11 +90,7 @@ fn optional_features_decode_independent_bits_without_neighbor_aliases() {
         assert_eq!(optional.decode_assists, bit == 7);
     }
     assert_eq!(
-        evidence()
-            .evaluate()
-            .unwrap()
-            .incomplete_capabilities()
-            .optional,
+        evidence().evaluate().unwrap().incomplete_capabilities().optional,
         svmvisor_hypervisor::arch::x86_64::capabilities::OptionalFeatures::default()
     );
 }

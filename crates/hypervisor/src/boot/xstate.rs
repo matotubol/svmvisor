@@ -106,9 +106,7 @@ impl FirmwareXstatePlan {
             if original.cr4 & OSXSAVE == 0 || caps.leaf1_ecx & CPUID_OSXSAVE == 0 {
                 return Err(FirmwareXstateError::InconsistentEnablement);
             }
-            let original_mask = original
-                .xcr0
-                .ok_or(FirmwareXstateError::MissingOriginalXcr0)?;
+            let original_mask = original.xcr0.ok_or(FirmwareXstateError::MissingOriginalXcr0)?;
             if !matches!(original_mask, 3 | 7) || original_mask & !caps.supported_xcr0 != 0 {
                 return Err(FirmwareXstateError::UnsupportedOriginalXcr0);
             }
@@ -145,19 +143,13 @@ impl FirmwareXstatePlan {
             return Err(FirmwareXstateError::InconsistentEnablement);
         }
         let layout = XstateLayout::detect(caps).map_err(FirmwareXstateError::Layout)?;
-        layout
-            .validate_enabled_size(caps.enabled_size)
-            .map_err(FirmwareXstateError::Layout)?;
+        layout.validate_enabled_size(caps.enabled_size).map_err(FirmwareXstateError::Layout)?;
         let capture = FirmwareXstateControls {
             cr0: original.cr0 & !((1 << 2) | (1 << 3)), // clear EM/TS only temporarily
             efer: original.efer & !FFXSR,               // never permit omission of XMM registers
             ..original
         };
-        Ok(Self {
-            original,
-            capture,
-            layout,
-        })
+        Ok(Self { original, capture, layout })
     }
 
     pub const fn original_controls(self) -> FirmwareXstateControls {
@@ -191,9 +183,7 @@ impl FirmwareXstatePlan {
         image: &XstateArea,
         observed_mxcsr_mask: u32,
     ) -> Result<(), FirmwareXstateError> {
-        image
-            .validate(self.layout, observed_mxcsr_mask)
-            .map_err(FirmwareXstateError::Layout)
+        image.validate(self.layout, observed_mxcsr_mask).map_err(FirmwareXstateError::Layout)
     }
 
     /// Final readback after the original image and control values were restored.

@@ -1,17 +1,11 @@
-use svmvisor_hypervisor::memory::address::{AddressError, AddressPolicy, EncryptionState};
 use svmvisor_hypervisor::guest::state::{
     GuestStateError, GuestStateRequest, SYNTHETIC_CR0, SYNTHETIC_CR4, SYNTHETIC_EFER,
     SYNTHETIC_RFLAGS,
 };
+use svmvisor_hypervisor::memory::address::{AddressError, AddressPolicy, EncryptionState};
 
 fn policy() -> AddressPolicy {
-    AddressPolicy::new(
-        48,
-        EncryptionState::Unencrypted {
-            encryption_bit: None,
-        },
-    )
-    .unwrap()
+    AddressPolicy::new(48, EncryptionState::Unencrypted { encryption_bit: None }).unwrap()
 }
 
 fn request() -> GuestStateRequest {
@@ -49,24 +43,15 @@ fn canonical_48_boundary_requires_bit_47_sign_extension_for_both_pointers() {
         value.rsp = pointer;
         assert!(value.validate(&policy()).is_ok());
     }
-    for pointer in [
-        0x0000_8000_0000_0000,
-        0xffff_7fff_ffff_ffff,
-        0x0001_0000_0000_0000,
-        0xff00_0000_0000_0000,
-    ] {
+    for pointer in
+        [0x0000_8000_0000_0000, 0xffff_7fff_ffff_ffff, 0x0001_0000_0000_0000, 0xff00_0000_0000_0000]
+    {
         let mut value = request();
         value.rip = pointer;
-        assert_eq!(
-            value.validate(&policy()),
-            Err(GuestStateError::NonCanonicalRip)
-        );
+        assert_eq!(value.validate(&policy()), Err(GuestStateError::NonCanonicalRip));
         value = request();
         value.rsp = pointer;
-        assert_eq!(
-            value.validate(&policy()),
-            Err(GuestStateError::NonCanonicalRsp)
-        );
+        assert_eq!(value.validate(&policy()), Err(GuestStateError::NonCanonicalRsp));
     }
 }
 
@@ -77,28 +62,16 @@ fn every_control_bit_deviation_is_rejected_including_optional_modes() {
     for bit in 0..64 {
         let mut value = request();
         value.rflags ^= 1 << bit;
-        assert_eq!(
-            value.validate(&policy()),
-            Err(GuestStateError::UnsupportedRflags)
-        );
+        assert_eq!(value.validate(&policy()), Err(GuestStateError::UnsupportedRflags));
         value = request();
         value.cr0 ^= 1 << bit;
-        assert_eq!(
-            value.validate(&policy()),
-            Err(GuestStateError::UnsupportedCr0)
-        );
+        assert_eq!(value.validate(&policy()), Err(GuestStateError::UnsupportedCr0));
         value = request();
         value.cr4 ^= 1 << bit;
-        assert_eq!(
-            value.validate(&policy()),
-            Err(GuestStateError::UnsupportedCr4)
-        );
+        assert_eq!(value.validate(&policy()), Err(GuestStateError::UnsupportedCr4));
         value = request();
         value.efer ^= 1 << bit;
-        assert_eq!(
-            value.validate(&policy()),
-            Err(GuestStateError::UnsupportedEfer)
-        );
+        assert_eq!(value.validate(&policy()), Err(GuestStateError::UnsupportedEfer));
     }
 }
 
@@ -115,18 +88,10 @@ fn cr3_requires_an_unencrypted_aligned_whole_page_within_numeric_bounds() {
     );
     for low_bit in 0..12 {
         value.cr3 = 0x9000 | (1 << low_bit);
-        assert_eq!(
-            value.validate(&policy()),
-            Err(GuestStateError::Cr3(AddressError::Misaligned))
-        );
+        assert_eq!(value.validate(&policy()), Err(GuestStateError::Cr3(AddressError::Misaligned)));
     }
-    let encrypted_bit_policy = AddressPolicy::new(
-        48,
-        EncryptionState::Unencrypted {
-            encryption_bit: Some(47),
-        },
-    )
-    .unwrap();
+    let encrypted_bit_policy =
+        AddressPolicy::new(48, EncryptionState::Unencrypted { encryption_bit: Some(47) }).unwrap();
     value.cr3 = 1 << 47;
     assert_eq!(
         value.validate(&encrypted_bit_policy),
@@ -140,11 +105,7 @@ fn cr3_requires_an_unencrypted_aligned_whole_page_within_numeric_bounds() {
 #[test]
 fn extended_state_is_an_explicit_exact_profile_without_loosening_baseline() {
     use svmvisor_hypervisor::arch::x86_64::xstate::{XstateCapabilities, XstateLayout};
-    for (ecx, expected_cr4) in [
-        (0, 0x620),
-        (1 << 26, 0x40620),
-        ((1 << 26) | (1 << 28), 0x40620),
-    ] {
+    for (ecx, expected_cr4) in [(0, 0x620), (1 << 26, 0x40620), ((1 << 26) | (1 << 28), 0x40620)] {
         let layout = XstateLayout::detect(XstateCapabilities {
             leaf1_ecx: ecx,
             leaf1_edx: 1 | (1 << 23) | (1 << 24) | (1 << 25) | (1 << 26),
@@ -158,14 +119,8 @@ fn extended_state_is_an_explicit_exact_profile_without_loosening_baseline() {
         assert_eq!(layout.guest_cr4(), expected_cr4);
         let mut value = request();
         value.cr4 = expected_cr4;
-        assert_eq!(
-            value.validate(&policy()),
-            Err(GuestStateError::UnsupportedCr4)
-        );
-        assert_eq!(
-            value.validate_with_xstate(&policy(), layout).unwrap().cr4(),
-            expected_cr4
-        );
+        assert_eq!(value.validate(&policy()), Err(GuestStateError::UnsupportedCr4));
+        assert_eq!(value.validate_with_xstate(&policy(), layout).unwrap().cr4(), expected_cr4);
         for bit in 0..64 {
             value.cr4 = expected_cr4 ^ (1 << bit);
             assert_eq!(
@@ -201,10 +156,7 @@ fn captured_arithmetic_flags_preserved_without_loosening_fixed_guest_or_system_s
     for flags in [2, 3, 0x8d7] {
         value.rflags = flags;
         assert_eq!(
-            value
-                .validate_continuation_with_xstate(&policy(), layout)
-                .unwrap()
-                .rflags(),
+            value.validate_continuation_with_xstate(&policy(), layout).unwrap().rflags(),
             flags
         );
         if flags != 2 {

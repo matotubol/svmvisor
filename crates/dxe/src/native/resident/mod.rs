@@ -123,27 +123,14 @@ pub fn prepare_callback(
     {
         return Err(E::BoundaryShape);
     }
-    if request.gdt.table()
-        != (HostTablePointer {
-            base: b.gdtr.base(),
-            limit: b.gdtr.limit(),
-        })
-        || request.gdt.selectors()
-            != (FirmwareSelectors {
-                cs: b.cs,
-                ss: b.ss,
-                ds: b.ds,
-                es: b.es,
-            })
+    if request.gdt.table() != (HostTablePointer { base: b.gdtr.base(), limit: b.gdtr.limit() })
+        || request.gdt.selectors() != (FirmwareSelectors { cs: b.cs, ss: b.ss, ds: b.ds, es: b.es })
     {
         return Err(E::GdtMismatch);
     }
     for (offset, selector) in [(0x440, b.fs), (0x450, b.gs), (0x470, b.ldtr), (0x490, b.tr)] {
-        let actual = u16::from_le_bytes(
-            request.auxiliary.bytes()[offset..offset + 2]
-                .try_into()
-                .unwrap(),
-        );
+        let actual =
+            u16::from_le_bytes(request.auxiliary.bytes()[offset..offset + 2].try_into().unwrap());
         if actual != selector {
             return Err(E::AuxiliarySelectorMismatch);
         }
@@ -172,18 +159,11 @@ pub fn prepare_callback(
     let boundary_end = boundary_va
         .checked_add(core::mem::size_of::<NativeBoundary>() as u64)
         .ok_or(E::StackSpan)?;
-    let span_end = request
-        .stack
-        .base
-        .checked_add(request.stack.bytes)
-        .ok_or(E::StackSpan)?;
+    let span_end = request.stack.base.checked_add(request.stack.bytes).ok_or(E::StackSpan)?;
     if request.stack.bytes == 0
         || request.stack.base == 0
         || !canonical_span(request.stack.base, request.stack.bytes)
-        || !canonical_span(
-            guest_rsp,
-            required_end.checked_sub(guest_rsp).ok_or(E::StackSpan)?,
-        )
+        || !canonical_span(guest_rsp, required_end.checked_sub(guest_rsp).ok_or(E::StackSpan)?)
         || request.stack.base > guest_rsp
         || span_end < required_end
         || boundary_end > saved_register_frame
@@ -231,10 +211,7 @@ pub fn prepare_callback(
         },
         registers: &registers,
         gdt: request.gdt,
-        idtr: HostTablePointer {
-            base: b.idtr.base(),
-            limit: b.idtr.limit(),
-        },
+        idtr: HostTablePointer { base: b.idtr.base(), limit: b.idtr.limit() },
         auxiliary: request.auxiliary,
         cr2: b.cr2,
         dr6: request.dr6,
@@ -258,10 +235,7 @@ pub fn prepare_callback(
 }
 
 fn canonical_span(base: u64, bytes: u64) -> bool {
-    let Some(last) = bytes
-        .checked_sub(1)
-        .and_then(|length| base.checked_add(length))
-    else {
+    let Some(last) = bytes.checked_sub(1).and_then(|length| base.checked_add(length)) else {
         return false;
     };
     is_canonical_48(base) && is_canonical_48(last) && base >> 47 == last >> 47

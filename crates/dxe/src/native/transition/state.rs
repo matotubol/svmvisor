@@ -212,16 +212,8 @@ pub mod multi {
     pub const CPUID_INPUT_RAX_HIGH: u64 = 0xaabb_ccdd_0000_0000;
     pub const CPUID_INPUT_RCX: u64 = 0x1122_3344_0000_0000;
     pub const CPUID_INPUT_RBX: u64 = 0x7788_99aa_0000_0303;
-    pub const CPUID_LEAVES: [u32; 8] = [
-        0,
-        1,
-        0x4000_0000,
-        0x4000_0001,
-        0x8000_0000,
-        0x8000_0001,
-        0xdead_beef,
-        0x4000_0002,
-    ];
+    pub const CPUID_LEAVES: [u32; 8] =
+        [0, 1, 0x4000_0000, 0x4000_0001, 0x8000_0000, 0x8000_0001, 0xdead_beef, 0x4000_0002];
     /// Exact `svmvisor_hypervisor::svm::emulation::cpuid` results, in AX/BX/CX/DX order.
     pub const CPUID_OUTPUTS: [[u64; 4]; 8] = [
         [1, 0x566d_7653, 0x7473_6554, 0x726f_7369],

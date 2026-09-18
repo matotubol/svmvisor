@@ -42,20 +42,28 @@ pub struct TableStorage(pub [[u8; PAGE_BYTES]; TABLE_COUNT]);
 pub struct LowMemoryNptStorage(pub [[u8; PAGE_BYTES]; TABLE_COUNT + 1]);
 
 impl LowMemoryNptStorage {
-    pub const fn empty() -> Self { Self([[0; PAGE_BYTES]; TABLE_COUNT + 1]) }
+    pub const fn empty() -> Self {
+        Self([[0; PAGE_BYTES]; TABLE_COUNT + 1])
+    }
 
     /// APM2 5.4/15.25: remove permissions without changing any cache type.
     /// Both roots must be private to this stopped CPU. The caller owns the
     /// subsequent NCR3 switch and full TLB invalidation. Rebuild from the
     /// current root each time, preserving dynamic ECAM permissions and holes.
     /// On failure this destination is unusable; the source is never changed.
-    pub fn prepare(&mut self, source: &TableStorage, source_base: u64,
-        destination_base: u64) -> Result<(), IdentityNptError>
-    {
+    pub fn prepare(
+        &mut self,
+        source: &TableStorage,
+        source_base: u64,
+        destination_base: u64,
+    ) -> Result<(), IdentityNptError> {
         use IdentityNptError as E;
-        if (source_base | destination_base) & 4095 != 0
-            || source_base == destination_base { return Err(E::StorageBounds); }
-        for index in 0..TABLE_COUNT { self.0[index].copy_from_slice(&source.0[index]); }
+        if (source_base | destination_base) & 4095 != 0 || source_base == destination_base {
+            return Err(E::StorageBounds);
+        }
+        for index in 0..TABLE_COUNT {
+            self.0[index].copy_from_slice(&source.0[index]);
+        }
         self.0[TABLE_COUNT].fill(0);
         let mut seen = 0u16;
         self.relocate(0, 4, source_base, destination_base, &mut seen)?;
@@ -70,10 +78,14 @@ impl LowMemoryNptStorage {
         let pdpt = child(self.entry(0, 0))?;
         let pd = child(self.entry(pdpt, 0))?;
         let low = self.entry(pd, 0);
-        if low == 0 { return Ok(()); }
+        if low == 0 {
+            return Ok(());
+        }
         if low & 0x80 == 0 {
             let pt = child(low)?;
-            for index in 0..256 { self.put(pt, index, 0); }
+            for index in 0..256 {
+                self.put(pt, index, 0);
+            }
             return Ok(());
         }
         if low & ADDRESS_MASK != 0 || low & !0xe7 != 0 || low & 0x87 != 0x87 {
@@ -88,27 +100,42 @@ impl LowMemoryNptStorage {
     }
 
     fn entry(&self, table: usize, index: usize) -> u64 {
-        u64::from_le_bytes(self.0[table][index*8..index*8+8].try_into().unwrap())
+        u64::from_le_bytes(self.0[table][index * 8..index * 8 + 8].try_into().unwrap())
     }
     fn put(&mut self, table: usize, index: usize, value: u64) {
-        self.0[table][index*8..index*8+8].copy_from_slice(&value.to_le_bytes());
+        self.0[table][index * 8..index * 8 + 8].copy_from_slice(&value.to_le_bytes());
     }
-    fn relocate(&mut self, table: usize, level: u8, old: u64, new: u64,
-        seen: &mut u16) -> Result<(), IdentityNptError>
-    {
+    fn relocate(
+        &mut self,
+        table: usize,
+        level: u8,
+        old: u64,
+        new: u64,
+        seen: &mut u16,
+    ) -> Result<(), IdentityNptError> {
         use IdentityNptError as E;
-        if table >= TABLE_COUNT || *seen & (1 << table) != 0 { return Err(E::StorageBounds); }
+        if table >= TABLE_COUNT || *seen & (1 << table) != 0 {
+            return Err(E::StorageBounds);
+        }
         *seen |= 1 << table;
         for index in 0..512 {
             let entry = self.entry(table, index);
-            if entry == 0 { continue; }
-            if entry & 5 != 5 || entry & !(ADDRESS_MASK | 0xe7) != 0
-                || (level == 4 || level == 1) && entry & 0x80 != 0 {
+            if entry == 0 {
+                continue;
+            }
+            if entry & 5 != 5
+                || entry & !(ADDRESS_MASK | 0xe7) != 0
+                || (level == 4 || level == 1) && entry & 0x80 != 0
+            {
                 return Err(E::StorageBounds);
             }
-            if level == 1 || entry & 0x80 != 0 { continue; }
+            if level == 1 || entry & 0x80 != 0 {
+                continue;
+            }
             let offset = (entry & ADDRESS_MASK).checked_sub(old).ok_or(E::StorageBounds)?;
-            if offset / 4096 >= TABLE_COUNT as u64 { return Err(E::StorageBounds); }
+            if offset / 4096 >= TABLE_COUNT as u64 {
+                return Err(E::StorageBounds);
+            }
             self.relocate((offset / 4096) as usize, level - 1, old, new, seen)?;
             self.put(table, index, (new + offset) | (entry & !ADDRESS_MASK));
         }
@@ -193,11 +220,7 @@ impl<'a> Npt<'a> {
             return Err(NptError::InvalidGuestWidth);
         }
         let arena = policy
-            .validate(
-                arena_base,
-                (TABLE_COUNT * PAGE_BYTES) as u64,
-                PAGE_BYTES as u64,
-            )
+            .validate(arena_base, (TABLE_COUNT * PAGE_BYTES) as u64, PAGE_BYTES as u64)
             .map_err(NptError::Address)?;
         for page in &mut storage.0 {
             page.fill(0);
@@ -270,12 +293,7 @@ impl<'a> Npt<'a> {
         // Keep the synthetic profile free of HPA aliases, including separate
         // writable/executable aliases that would bypass per-leaf W^X policy.
         for existing_table in 0..self.used {
-            if *self
-                .levels
-                .get(existing_table)
-                .ok_or(NptError::StorageBounds)?
-                != 3
-            {
+            if *self.levels.get(existing_table).ok_or(NptError::StorageBounds)? != 3 {
                 continue;
             }
             for index in 0..512 {
@@ -325,21 +343,14 @@ impl<'a> Npt<'a> {
         if update.is_some() {
             return Err(NptError::StorageBounds);
         }
-        *update = Some(EntryUpdate {
-            index: leaf_index,
-            value: hpa | flags,
-        });
+        *update = Some(EntryUpdate { index: leaf_index, value: hpa | flags });
 
         // Resolve all mutable destinations before committing any bytes. Each
         // slot comes from a separate page borrow; no aliasing or unchecked
         // access is needed, and no fallible operation remains after this pass.
         let mut destinations: [Option<&mut [u8; 8]>; TABLE_COUNT] = [const { None }; TABLE_COUNT];
-        for ((page, update), destination) in self
-            .storage
-            .0
-            .iter_mut()
-            .zip(updates.iter())
-            .zip(destinations.iter_mut())
+        for ((page, update), destination) in
+            self.storage.0.iter_mut().zip(updates.iter()).zip(destinations.iter_mut())
         {
             if let Some(update) = update {
                 *destination = Some(entry_mut(page, update.index)?);
@@ -379,18 +390,11 @@ impl<'a> Npt<'a> {
         } else {
             PagePermissions::ReadOnly
         };
-        Ok(Some(Translation {
-            host_address: (entry & ADDRESS_MASK) | (gpa & 4095),
-            permissions,
-        }))
+        Ok(Some(Translation { host_address: (entry & ADDRESS_MASK) | (gpa & 4095), permissions }))
     }
 
     fn check_guest(&self, gpa: u64) -> Result<(), NptError> {
-        if gpa >> self.guest_bits != 0 {
-            Err(NptError::GuestAddressOutsideWidth)
-        } else {
-            Ok(())
-        }
+        if gpa >> self.guest_bits != 0 { Err(NptError::GuestAddressOutsideWidth) } else { Ok(()) }
     }
 
     fn table_address(&self, table: usize) -> Result<u64, NptError> {
@@ -403,9 +407,8 @@ impl<'a> Npt<'a> {
     // Still validate them so a corrupted link cannot become a panic or escape
     // this arena, and depth mismatches/cycles refuse before mapping mutation.
     fn child_index(&self, entry: u64, level: u8) -> Result<usize, NptError> {
-        let offset = (entry & ADDRESS_MASK)
-            .checked_sub(self.arena.base())
-            .ok_or(NptError::StorageBounds)?;
+        let offset =
+            (entry & ADDRESS_MASK).checked_sub(self.arena.base()).ok_or(NptError::StorageBounds)?;
         let index =
             usize::try_from(offset / PAGE_BYTES as u64).map_err(|_| NptError::StorageBounds)?;
         if index >= self.used || self.levels.get(index).copied() != Some(level) {
@@ -453,7 +456,7 @@ pub struct IdentityNpt<'a> {
     guest_bits: u8,
     pdpt_count: usize,
     pt_count: usize,
-    protected_range: Option<(u64,u64)>,
+    protected_range: Option<(u64, u64)>,
     extra_levels: [u8; TABLE_COUNT],
     extra_tables: usize,
 }
@@ -519,12 +522,9 @@ impl<'a> IdentityNpt<'a> {
             return Err(E::PatZeroNotWriteBack);
         }
         let guest_bits = policy.physical_bits().min(40);
-        let domain = policy
-            .validate(0, 1u64 << guest_bits, 4096)
-            .map_err(E::Address)?;
-        let excluded = policy
-            .validate(excluded.base(), excluded.len(), 4096)
-            .map_err(E::Address)?;
+        let domain = policy.validate(0, 1u64 << guest_bits, 4096).map_err(E::Address)?;
+        let excluded =
+            policy.validate(excluded.base(), excluded.len(), 4096).map_err(E::Address)?;
         let legacy_exclusion =
             excluded.len() <= 1 << 20 && excluded.base() >> 21 == excluded.last_byte() >> 21;
         if excluded.len() & 4095 != 0
@@ -566,12 +566,7 @@ impl<'a> IdentityNpt<'a> {
             page.fill(0);
         }
         for index in 0..pdpt_count {
-            identity_put(
-                storage,
-                0,
-                index,
-                (table_base + ((1 + index) * PAGE_BYTES) as u64) | 7,
-            );
+            identity_put(storage, 0, index, (table_base + ((1 + index) * PAGE_BYTES) as u64) | 7);
         }
         let excluded_gib = excluded.base() >> 30;
         for gib in 0..(1u64 << (guest_bits - 30)) {
@@ -580,12 +575,7 @@ impl<'a> IdentityNpt<'a> {
             } else {
                 (gib << 30) | 0x87
             };
-            identity_put(
-                storage,
-                1 + (gib / 512) as usize,
-                (gib % 512) as usize,
-                value,
-            );
+            identity_put(storage, 1 + (gib / 512) as usize, (gib % 512) as usize, value);
         }
         let mut pt_table = pd_table + 1;
         for index in 0..512 {
@@ -642,27 +632,38 @@ impl<'a> IdentityNpt<'a> {
     /// one already split, so the target is always an unsplit 1GiB leaf.
     pub fn protect_write_range(&mut self, base: u64, bytes: u64) -> Result<(), IdentityNptError> {
         use IdentityNptError as E;
-        let (start,end)=identity_protection_range(base,bytes)?;
-        if self.protected_range.is_some() || start>>30==self.excluded.base()>>30 {
+        let (start, end) = identity_protection_range(base, bytes)?;
+        if self.protected_range.is_some() || start >> 30 == self.excluded.base() >> 30 {
             return Err(E::InvalidExclusion);
         }
         // Validate every affected existing translation before writes. The
         // whole range lies in one GiB, so one 1GiB leaf covers all of it.
-        let Some(t)=self.translate(start)? else {return Err(E::InvalidExclusion);};
-        if t.page_bytes!=1<<30 {return Err(E::StorageBounds);}
-        for a in (start..end).step_by(1<<21) {self.translate(a)?;}
-        let pdpt=1+(start>>39)as usize;let pi=((start>>30)&511)as usize;
-        let pd=self.used_tables();
-        if pd>=TABLE_COUNT {return Err(E::StorageBounds);}
-        let gib=start&!((1u64<<30)-1);self.storage.0[pd].fill(0);
-        for i in 0..512 {
-            let a=gib+((i as u64)<<21);
-            let flags=if (start..end).contains(&a) {0x85} else {0x87};
-            identity_put(self.storage,pd,i,a|flags);
+        let Some(t) = self.translate(start)? else {
+            return Err(E::InvalidExclusion);
+        };
+        if t.page_bytes != 1 << 30 {
+            return Err(E::StorageBounds);
         }
-        identity_put(self.storage,pdpt,pi,(self.arena.base()+(pd*PAGE_BYTES)as u64)|7);
-        self.protected_range=Some((start,end));
-        self.extra_levels[pd]=2; self.extra_tables+=1;
+        for a in (start..end).step_by(1 << 21) {
+            self.translate(a)?;
+        }
+        let pdpt = 1 + (start >> 39) as usize;
+        let pi = ((start >> 30) & 511) as usize;
+        let pd = self.used_tables();
+        if pd >= TABLE_COUNT {
+            return Err(E::StorageBounds);
+        }
+        let gib = start & !((1u64 << 30) - 1);
+        self.storage.0[pd].fill(0);
+        for i in 0..512 {
+            let a = gib + ((i as u64) << 21);
+            let flags = if (start..end).contains(&a) { 0x85 } else { 0x87 };
+            identity_put(self.storage, pd, i, a | flags);
+        }
+        identity_put(self.storage, pdpt, pi, (self.arena.base() + (pd * PAGE_BYTES) as u64) | 7);
+        self.protected_range = Some((start, end));
+        self.extra_levels[pd] = 2;
+        self.extra_tables += 1;
         Ok(())
     }
 
@@ -705,8 +706,9 @@ impl<'a> IdentityNpt<'a> {
                 }
                 return Err(E::StorageBounds);
             }
-            let protected = level == 2 && self.protected_range.is_some_and(|(s,e)|s<=gpa&&gpa<e);
-            if entry & 7 != if protected {5} else {7} || entry & !(ADDRESS_MASK | 0xe7) != 0 {
+            let protected =
+                level == 2 && self.protected_range.is_some_and(|(s, e)| s <= gpa && gpa < e);
+            if entry & 7 != if protected { 5 } else { 7 } || entry & !(ADDRESS_MASK | 0xe7) != 0 {
                 return Err(E::StorageBounds);
             }
             let large = entry & 0x80 != 0;
@@ -729,14 +731,13 @@ impl<'a> IdentityNpt<'a> {
                 return Ok(Some(IdentityTranslation {
                     host_address,
                     page_bytes,
-                    writable: !self.protected_range.is_some_and(|(s,e)|s<=gpa&&gpa<e),
+                    writable: !self.protected_range.is_some_and(|(s, e)| s <= gpa && gpa < e),
                     executable: true,
                     pat_index: 0,
                 }));
             }
-            let offset = (entry & ADDRESS_MASK)
-                .checked_sub(self.arena.base())
-                .ok_or(E::StorageBounds)?;
+            let offset =
+                (entry & ADDRESS_MASK).checked_sub(self.arena.base()).ok_or(E::StorageBounds)?;
             let next = usize::try_from(offset / PAGE_BYTES as u64).map_err(|_| E::StorageBounds)?;
             let ordinary_used = self.pdpt_count + 2 + self.pt_count;
             let expected_level = if (1..=self.pdpt_count).contains(&next) {
@@ -760,45 +761,76 @@ impl<'a> IdentityNpt<'a> {
 }
 
 /// Bound and outward-round an ECAM aperture. No physical address is accessed.
-pub fn identity_protection_range(base:u64, bytes:u64)->Result<(u64,u64),IdentityNptError> {
-    let end=base.checked_add(bytes).filter(|_|bytes!=0).ok_or(IdentityNptError::InvalidExclusion)?;
-    let start=base&!((1u64<<21)-1);
-    let end=end.checked_add((1<<21)-1).ok_or(IdentityNptError::InvalidExclusion)?&!((1u64<<21)-1);
-    if base&((1<<20)-1)!=0 || bytes&((1<<20)-1)!=0 || start>>30!=(end-1)>>30
-        || end>1u64<<40 {return Err(IdentityNptError::InvalidExclusion);}
-    Ok((start,end))
+pub fn identity_protection_range(base: u64, bytes: u64) -> Result<(u64, u64), IdentityNptError> {
+    let end =
+        base.checked_add(bytes).filter(|_| bytes != 0).ok_or(IdentityNptError::InvalidExclusion)?;
+    let start = base & !((1u64 << 21) - 1);
+    let end = end.checked_add((1 << 21) - 1).ok_or(IdentityNptError::InvalidExclusion)?
+        & !((1u64 << 21) - 1);
+    if base & ((1 << 20) - 1) != 0
+        || bytes & ((1 << 20) - 1) != 0
+        || start >> 30 != (end - 1) >> 30
+        || end > 1u64 << 40
+    {
+        return Err(IdentityNptError::InvalidExclusion);
+    }
+    Ok((start, end))
 }
-fn identity_entry(storage:&TableStorage,table:usize,index:usize)->Result<u64,IdentityNptError>{
-    let p=storage.0.get(table).filter(|_|index<512).ok_or(IdentityNptError::StorageBounds)?;
-    Ok(u64::from_le_bytes(p[index*8..index*8+8].try_into().unwrap()))
+fn identity_entry(
+    storage: &TableStorage,
+    table: usize,
+    index: usize,
+) -> Result<u64, IdentityNptError> {
+    let p = storage.0.get(table).filter(|_| index < 512).ok_or(IdentityNptError::StorageBounds)?;
+    Ok(u64::from_le_bytes(p[index * 8..index * 8 + 8].try_into().unwrap()))
 }
 /// Restore only the installed ECAM PD write restrictions after diagnostic
 /// revocation. Caller exclusively owns this stopped CPU's installed tables;
 /// no other CPU may use or edit them, and the caller must request a nested-TLB
 /// flush before resuming the SAME faulting instruction. Every link/entry is
 /// checked before the first mutation. Existing leaf holes are never changed.
-pub fn restore_identity_write_range(storage:&mut TableStorage,table_base:u64,base:u64,bytes:u64)
-    ->Result<(),IdentityNptError>
-{
+pub fn restore_identity_write_range(
+    storage: &mut TableStorage,
+    table_base: u64,
+    base: u64,
+    bytes: u64,
+) -> Result<(), IdentityNptError> {
     use IdentityNptError as E;
-    let(start,end)=identity_protection_range(base,bytes)?;
-    if table_base&4095!=0 {return Err(E::StorageBounds);}
-    let child=|e:u64|->Result<usize,E>{
-        if e&7!=7 || e&!(ADDRESS_MASK|0x67)!=0 {return Err(E::StorageBounds);}
-        let d=(e&ADDRESS_MASK).checked_sub(table_base).ok_or(E::StorageBounds)?;
-        let i=usize::try_from(d/PAGE_BYTES as u64).map_err(|_|E::StorageBounds)?;
-        if i==0 || i>=TABLE_COUNT {return Err(E::StorageBounds);}Ok(i)
-    };
-    let pdpt=child(identity_entry(storage,0,(start>>39)as usize)?)?;
-    let pd=child(identity_entry(storage,pdpt,((start>>30)&511)as usize)?)?;
-    for a in(start..end).step_by(1<<21){
-        let e=identity_entry(storage,pd,((a>>21)&511)as usize)?;
-        if !matches!(e&7,5|7)||e&!(ADDRESS_MASK|0xe7)!=0{return Err(E::StorageBounds);}
-        if e&0x80!=0 {if e&ADDRESS_MASK!=a{return Err(E::StorageBounds);}}
-        else {child(e|WRITE)?;}
+    let (start, end) = identity_protection_range(base, bytes)?;
+    if table_base & 4095 != 0 {
+        return Err(E::StorageBounds);
     }
-    for a in(start..end).step_by(1<<21){let i=((a>>21)&511)as usize;
-        let e=identity_entry(storage,pd,i).expect("prevalidated PD entry");identity_put(storage,pd,i,e|WRITE);}
+    let child = |e: u64| -> Result<usize, E> {
+        if e & 7 != 7 || e & !(ADDRESS_MASK | 0x67) != 0 {
+            return Err(E::StorageBounds);
+        }
+        let d = (e & ADDRESS_MASK).checked_sub(table_base).ok_or(E::StorageBounds)?;
+        let i = usize::try_from(d / PAGE_BYTES as u64).map_err(|_| E::StorageBounds)?;
+        if i == 0 || i >= TABLE_COUNT {
+            return Err(E::StorageBounds);
+        }
+        Ok(i)
+    };
+    let pdpt = child(identity_entry(storage, 0, (start >> 39) as usize)?)?;
+    let pd = child(identity_entry(storage, pdpt, ((start >> 30) & 511) as usize)?)?;
+    for a in (start..end).step_by(1 << 21) {
+        let e = identity_entry(storage, pd, ((a >> 21) & 511) as usize)?;
+        if !matches!(e & 7, 5 | 7) || e & !(ADDRESS_MASK | 0xe7) != 0 {
+            return Err(E::StorageBounds);
+        }
+        if e & 0x80 != 0 {
+            if e & ADDRESS_MASK != a {
+                return Err(E::StorageBounds);
+            }
+        } else {
+            child(e | WRITE)?;
+        }
+    }
+    for a in (start..end).step_by(1 << 21) {
+        let i = ((a >> 21) & 511) as usize;
+        let e = identity_entry(storage, pd, i).expect("prevalidated PD entry");
+        identity_put(storage, pd, i, e | WRITE);
+    }
     Ok(())
 }
 
@@ -812,13 +844,7 @@ mod tests {
     use crate::memory::address::EncryptionState;
 
     fn policy() -> AddressPolicy {
-        AddressPolicy::new(
-            48,
-            EncryptionState::Unencrypted {
-                encryption_bit: None,
-            },
-        )
-        .unwrap()
+        AddressPolicy::new(48, EncryptionState::Unencrypted { encryption_bit: None }).unwrap()
     }
     fn evidence() -> NptEvidence {
         NptEvidence {
@@ -832,10 +858,12 @@ mod tests {
         let mut table = 0;
         for (depth, index) in indices(gpa).into_iter().enumerate() {
             let entry = storage.entry(table, index);
-            if entry & 1 == 0 { return None; }
+            if entry & 1 == 0 {
+                return None;
+            }
             if depth == 3 || entry & 0x80 != 0 {
-                let size = 1u64 << (12 + 9 * (3-depth));
-                return Some(((entry & ADDRESS_MASK) + (gpa & (size-1)), entry & 2 != 0));
+                let size = 1u64 << (12 + 9 * (3 - depth));
+                return Some(((entry & ADDRESS_MASK) + (gpa & (size - 1)), entry & 2 != 0));
             }
             table = ((entry & ADDRESS_MASK) - base) as usize / 4096;
         }
@@ -847,20 +875,33 @@ mod tests {
         for excluded_base in [0x100000, 0x400000] {
             let policy = policy();
             let mut original = TableStorage([[0; PAGE_BYTES]; TABLE_COUNT]);
-            let mut npt = IdentityNpt::new(&mut original, excluded_base, policy,
-                policy.validate(excluded_base, 0x100000, 4096).unwrap(), evidence(), EvidenceFlag::Set, 6).unwrap();
+            let mut npt = IdentityNpt::new(
+                &mut original,
+                excluded_base,
+                policy,
+                policy.validate(excluded_base, 0x100000, 4096).unwrap(),
+                evidence(),
+                EvidenceFlag::Set,
+                6,
+            )
+            .unwrap();
             npt.protect_write_range(0xe0000000, 0x1000000).unwrap();
             let mut copy = LowMemoryNptStorage::empty();
             let root = 0x800000;
             copy.prepare(npt.storage, excluded_base, root).unwrap();
-            for address in [0, 0x1000, 0x7ffff, 0xfffff] { assert_eq!(low_translation(&copy, root, address), None); }
+            for address in [0, 0x1000, 0x7ffff, 0xfffff] {
+                assert_eq!(low_translation(&copy, root, address), None);
+            }
             assert_eq!(low_translation(&copy, root, excluded_base), None);
             assert_eq!(low_translation(&copy, root, 0xfee01000), Some((0xfee01000, true)));
             assert_eq!(low_translation(&copy, root, 0xe0000000), Some((0xe0000000, false)));
             assert_eq!(low_translation(&copy, root, 0x200000), Some((0x200000, true)));
-            if excluded_base > 0x100000 { assert_eq!(low_translation(&copy, root, 0x100000), Some((0x100000, true))); }
+            if excluded_base > 0x100000 {
+                assert_eq!(low_translation(&copy, root, 0x100000), Some((0x100000, true)));
+            }
             assert_eq!(npt.translate(0).unwrap().unwrap().host_address, 0);
-            restore_identity_write_range(npt.storage, excluded_base, 0xe0000000, 0x1000000).unwrap();
+            restore_identity_write_range(npt.storage, excluded_base, 0xe0000000, 0x1000000)
+                .unwrap();
             copy.prepare(npt.storage, excluded_base, root).unwrap();
             assert_eq!(low_translation(&copy, root, 0xe0000000), Some((0xe0000000, true)));
         }
@@ -925,8 +966,7 @@ mod tests {
         for child in [0, 0x100000, 0x104000, 0x108000, ADDRESS_MASK] {
             let mut storage = TableStorage([[0; PAGE_BYTES]; TABLE_COUNT]);
             let mut npt = Npt::new(&mut storage, 0x100000, policy(), 48, evidence()).unwrap();
-            npt.map_page(0, 0x200000, PagePermissions::ReadOnly)
-                .unwrap();
+            npt.map_page(0, 0x200000, PagePermissions::ReadOnly).unwrap();
             *entry_mut(&mut npt.storage.0[0], 0).unwrap() = (child | 7).to_le_bytes();
             let before = npt.storage.0;
             let levels = npt.levels;

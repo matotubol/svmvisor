@@ -28,11 +28,7 @@ mod cpu {
 }
 mod pci_io {
     pub(crate) fn status_result(status: uefi_raw::Status) -> Result<(), uefi_raw::Status> {
-        if status.is_error() {
-            Err(status)
-        } else {
-            Ok(())
-        }
+        if status.is_error() { Err(status) } else { Ok(()) }
     }
 }
 mod card_returning_adapter {
@@ -152,11 +148,7 @@ unsafe extern "efiapi" fn create_event(
 unsafe extern "efiapi" fn close_event(event: Event) -> Status {
     let mut bus = STATE.lock().unwrap();
     bus.firmware_calls += 1;
-    let saved = bus
-        .events
-        .iter_mut()
-        .find(|e| e.0 == event as usize)
-        .unwrap();
+    let saved = bus.events.iter_mut().find(|e| e.0 == event as usize).unwrap();
     assert!(saved.3);
     saved.3 = false;
     Status::SUCCESS
@@ -209,11 +201,7 @@ fn begin(services: &BootServices, report: Delivery) {
     let mut bus = Bus::new();
     bus.diagnostics = Some(diagnostics);
     *STATE.lock().unwrap() = bus;
-    journal::commit(
-        &mut mmio::JournalMapping,
-        diagnostics.immediate_record(3, 77, 1),
-    )
-    .unwrap();
+    journal::commit(&mut mmio::JournalMapping, diagnostics.immediate_record(3, 77, 1)).unwrap();
     lifecycle::register(services, mmio::JournalMapping, 77).unwrap();
     assert!(!lifecycle::has_exited());
     assert_eq!(STATE.lock().unwrap().history.len(), 1);
@@ -224,10 +212,7 @@ fn begin(services: &BootServices, report: Delivery) {
 fn signal(kind: usize) {
     let (event, calls) = {
         let bus = STATE.lock().unwrap();
-        (
-            *bus.events.iter().find(|e| e.2 == kind && e.3).unwrap(),
-            bus.firmware_calls,
-        )
+        (*bus.events.iter().find(|e| e.2 == kind && e.3).unwrap(), bus.firmware_calls)
     };
     unsafe { (event.1)(event.0 as Event, kind as *mut c_void) };
     assert_eq!(STATE.lock().unwrap().firmware_calls, calls);
@@ -240,11 +225,7 @@ fn finish(services: &BootServices) {
     assert!(STATE.lock().unwrap().events.iter().all(|e| !e.3));
 }
 fn counts(record: [u32; 8]) -> [u32; 3] {
-    [
-        (record[6] >> 14) & 31,
-        (record[6] >> 19) & 31,
-        (record[6] >> 24) & 31,
-    ]
+    [(record[6] >> 14) & 31, (record[6] >> 19) & 31, (record[6] >> 24) & 31]
 }
 
 #[test]
@@ -264,11 +245,7 @@ fn real_callbacks_retain_diagnostics_across_publication_failures_anomalies_and_b
         (NativeResult::new(), 0x4000, [0, 0, 0x40]),
         (refused, 0x4000, [0x4132, 0, 0x3c1]),
         (
-            NativeResult {
-                canary_called: 1,
-                canary_observed: 1,
-                ..refused
-            },
+            NativeResult { canary_called: 1, canary_observed: 1, ..refused },
             0x4000,
             [0x4132, 0, 0x1bc1],
         ),
@@ -286,30 +263,9 @@ fn real_callbacks_retain_diagnostics_across_publication_failures_anomalies_and_b
             0x8000,
             [0x4312, 0x0002_0003, 0x3dc3],
         ),
-        (
-            NativeResult {
-                refusal: u64::MAX,
-                ..refused
-            },
-            0x4000,
-            [u32::MAX, 0, 0x2000_03c1],
-        ),
-        (
-            NativeResult {
-                canary_called: 2,
-                ..refused
-            },
-            0x8000,
-            [0x4132, 0, 0x4000_03c1],
-        ),
-        (
-            NativeResult {
-                version: 9,
-                ..refused
-            },
-            0x8000,
-            [0x4132, 0, 0x8000_03c1],
-        ),
+        (NativeResult { refusal: u64::MAX, ..refused }, 0x4000, [u32::MAX, 0, 0x2000_03c1]),
+        (NativeResult { canary_called: 2, ..refused }, 0x8000, [0x4132, 0, 0x4000_03c1]),
+        (NativeResult { version: 9, ..refused }, 0x8000, [0x4132, 0, 0x8000_03c1]),
     ];
     for (inner, result_bits, expected_words) in cases {
         begin(&services, delivered(inner));

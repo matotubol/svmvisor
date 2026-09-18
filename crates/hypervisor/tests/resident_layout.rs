@@ -9,7 +9,9 @@ fn remote_backing_aliases_fill_one_page_per_slot_below_every_shared_page() {
     assert_eq!(X2AVIC_BACKING_ALIASES_OFFSET, 0xd4000);
     let end = X2AVIC_BACKING_ALIASES_OFFSET + MAX_RESIDENT_CPUS as u64 * 4096;
     assert_eq!(end, X2AVIC_TABLE_OFFSET);
-    for shared in [X2AVIC_TABLE_OFFSET, CACHE_OWNER_OFFSET, CACHE_CAPTURE_OFFSET, STARTUP_PAGE_OFFSET] {
+    for shared in
+        [X2AVIC_TABLE_OFFSET, CACHE_OWNER_OFFSET, CACHE_CAPTURE_OFFSET, STARTUP_PAGE_OFFSET]
+    {
         assert!(shared >= end && shared < 0x100000, "{shared:#x}");
     }
     // The linker script cannot name the Rust constant; its literal must agree.

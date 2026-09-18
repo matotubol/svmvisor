@@ -17,13 +17,7 @@ use svmvisor_hypervisor::{
 };
 
 fn policy() -> AddressPolicy {
-    AddressPolicy::new(
-        48,
-        EncryptionState::Unencrypted {
-            encryption_bit: None,
-        },
-    )
-    .unwrap()
+    AddressPolicy::new(48, EncryptionState::Unencrypted { encryption_bit: None }).unwrap()
 }
 
 fn table(base: u64, limit: u16) -> TableSnapshot {
@@ -100,30 +94,14 @@ impl Fixture {
         put(&mut auxiliary, 0x492, &0x8bu16.to_le_bytes());
         put(&mut auxiliary, 0x494, &103u32.to_le_bytes());
         put(&mut auxiliary, 0x498, &0xa000u64.to_le_bytes());
-        put(
-            &mut auxiliary,
-            0x600,
-            &0x001b_0008_0000_0000u64.to_le_bytes(),
-        );
-        Self {
-            boundary,
-            gdt: *descriptors.gdt(),
-            auxiliary,
-        }
+        put(&mut auxiliary, 0x600, &0x001b_0008_0000_0000u64.to_le_bytes());
+        Self { boundary, gdt: *descriptors.gdt(), auxiliary }
     }
 
     fn parsed(&self) -> ParsedFirmwareGdt<'_> {
         parse_firmware_gdt(
-            HostTablePointer {
-                base: 0x8000,
-                limit: 39,
-            },
-            FirmwareSelectors {
-                cs: 8,
-                ss: 16,
-                ds: 16,
-                es: 16,
-            },
+            HostTablePointer { base: 0x8000, limit: 39 },
+            FirmwareSelectors { cs: 8, ss: 16, ds: 16, es: 16 },
             &self.gdt,
         )
         .unwrap()
@@ -139,15 +117,8 @@ impl Fixture {
             dr6: 0xffff0ff0,
             dr7: 0x400,
             pat: 0x0007_0406_0007_0406,
-            stack: GuestStackSpan {
-                base,
-                bytes: self.boundary.entry_rsp + 40 - base,
-            },
-            sites: CallbackSites {
-                resume: 0x120000,
-                ack: 0x120005,
-                after_ack: 0x120008,
-            },
+            stack: GuestStackSpan { base, bytes: self.boundary.entry_rsp + 40 - base },
+            sites: CallbackSites { resume: 0x120000, ack: 0x120005, after_ack: 0x120008 },
         }
     }
 }
@@ -156,16 +127,9 @@ fn unchanged_refusal(request: CallbackRequest<'_>, expected: CallbackError) {
     let mut vmcb = Vmcb::new();
     put(&mut vmcb, 0x300, &[0x52; 32]);
     let before = *vmcb.bytes();
-    let mut frame = GuestRegisters {
-        rcx: 0xdeadbeef,
-        r15: 0xabcdef,
-        ..Default::default()
-    };
+    let mut frame = GuestRegisters { rcx: 0xdeadbeef, r15: 0xabcdef, ..Default::default() };
     let original_frame = frame;
-    assert_eq!(
-        prepare_callback(request, &policy(), &mut vmcb, &mut frame),
-        Err(expected)
-    );
+    assert_eq!(prepare_callback(request, &policy(), &mut vmcb, &mut frame), Err(expected));
     assert_eq!(vmcb.bytes(), &before);
     assert_eq!(frame, original_frame);
 }
@@ -259,32 +223,16 @@ fn stale_stack_record_and_missing_frame_or_shadow_bytes_refuse_transactionally()
 fn wrong_gdt_or_stale_auxiliary_selectors_are_not_substituted() {
     let mut f = Fixture::new();
     let gdt = parse_firmware_gdt(
-        HostTablePointer {
-            base: 0x18000,
-            limit: 39,
-        },
-        FirmwareSelectors {
-            cs: 8,
-            ss: 16,
-            ds: 16,
-            es: 16,
-        },
+        HostTablePointer { base: 0x18000, limit: 39 },
+        FirmwareSelectors { cs: 8, ss: 16, ds: 16, es: 16 },
         &f.gdt,
     )
     .unwrap();
     unchanged_refusal(f.request(&gdt), CallbackError::GdtMismatch);
     drop(gdt);
     let gdt = parse_firmware_gdt(
-        HostTablePointer {
-            base: 0x8000,
-            limit: 39,
-        },
-        FirmwareSelectors {
-            cs: 8,
-            ss: 16,
-            ds: 0,
-            es: 16,
-        },
+        HostTablePointer { base: 0x8000, limit: 39 },
+        FirmwareSelectors { cs: 8, ss: 16, ds: 0, es: 16 },
         &f.gdt,
     )
     .unwrap();
@@ -327,21 +275,9 @@ fn malformed_boundary_return_pointer_and_linked_site_recipe_refuse() {
     f.boundary.entry_rip = 0x100000;
     let gdt = f.parsed();
     for sites in [
-        CallbackSites {
-            resume: 0x120000,
-            ack: 0x120006,
-            after_ack: 0x120009,
-        },
-        CallbackSites {
-            resume: 0x120000,
-            ack: 0x120005,
-            after_ack: 0x120009,
-        },
-        CallbackSites {
-            resume: u64::MAX - 4,
-            ack: 0,
-            after_ack: 3,
-        },
+        CallbackSites { resume: 0x120000, ack: 0x120006, after_ack: 0x120009 },
+        CallbackSites { resume: 0x120000, ack: 0x120005, after_ack: 0x120009 },
+        CallbackSites { resume: u64::MAX - 4, ack: 0, after_ack: 3 },
     ] {
         let mut request = f.request(&gdt);
         request.sites = sites;
@@ -356,16 +292,11 @@ fn destination_event_refusal_keeps_whole_vmcb_and_frame_unchanged() {
     let mut vmcb = Vmcb::new();
     put(&mut vmcb, 0x0a8, &0x8000_0006u64.to_le_bytes());
     let before = *vmcb.bytes();
-    let mut frame = GuestRegisters {
-        r12: 0xabba,
-        ..Default::default()
-    };
+    let mut frame = GuestRegisters { r12: 0xabba, ..Default::default() };
     let original_frame = frame;
     assert_eq!(
         prepare_callback(f.request(&gdt), &policy(), &mut vmcb, &mut frame),
-        Err(CallbackError::Native(
-            NativeContinuationError::DestinationEventState
-        ))
+        Err(CallbackError::Native(NativeContinuationError::DestinationEventState))
     );
     assert_eq!(vmcb.bytes(), &before);
     assert_eq!(frame, original_frame);
@@ -377,11 +308,26 @@ fn callback_requires_matching_feature_admission_and_preserves_tce_aibrse() {
     let mut f = Fixture::new();
     f.boundary.efer |= (1 << 15) | (1 << 21);
     let gdt = f.parsed();
-    unchanged_refusal(f.request(&gdt), CallbackError::Native(svmvisor_hypervisor::guest::continuation::NativeContinuationError::UnsupportedEfer));
+    unchanged_refusal(
+        f.request(&gdt),
+        CallbackError::Native(
+            svmvisor_hypervisor::guest::continuation::NativeContinuationError::UnsupportedEfer,
+        ),
+    );
     let mut request = f.request(&gdt);
-    request.efer = NativeEfer::admit_native(f.boundary.efer, 1 << 17, (1 << 11) | (1 << 20) | (1 << 29), 0, Some(1 << 8)).unwrap();
+    request.efer = NativeEfer::admit_native(
+        f.boundary.efer,
+        1 << 17,
+        (1 << 11) | (1 << 20) | (1 << 29),
+        0,
+        Some(1 << 8),
+    )
+    .unwrap();
     let mut vmcb = Vmcb::new();
     let mut frame = GuestRegisters::default();
     prepare_callback(request, &policy(), &mut vmcb, &mut frame).unwrap();
-    assert_eq!(u64::from_le_bytes(vmcb.bytes()[0x4d0..0x4d8].try_into().unwrap()), f.boundary.efer | (1 << 12));
+    assert_eq!(
+        u64::from_le_bytes(vmcb.bytes()[0x4d0..0x4d8].try_into().unwrap()),
+        f.boundary.efer | (1 << 12)
+    );
 }

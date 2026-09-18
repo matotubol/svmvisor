@@ -112,10 +112,7 @@ fn setup() -> BootServices {
     unsafe {
         // Unused service slots are non-null function addresses and never called.
         for i in 0..size_of::<BootServices>() / size_of::<usize>() {
-            raw.as_mut_ptr()
-                .cast::<usize>()
-                .add(i)
-                .write(unused as *const () as usize);
+            raw.as_mut_ptr().cast::<usize>().add(i).write(unused as *const () as usize);
         }
         ptr::addr_of_mut!((*raw.as_mut_ptr()).header).write(core::mem::zeroed());
         ptr::addr_of_mut!((*raw.as_mut_ptr()).raise_tpl).write(raise_tpl);
@@ -201,10 +198,7 @@ unsafe extern "efiapi" fn free_pool(p: *mut u8) -> Status {
             s.fail_free -= 1;
             return Status::DEVICE_ERROR;
         }
-        let layout = s
-            .allocations
-            .remove(&(p as usize))
-            .expect("free owned allocation once");
+        let layout = s.allocations.remove(&(p as usize)).expect("free owned allocation once");
         unsafe {
             dealloc(p, layout);
         }
@@ -373,14 +367,7 @@ fn clean() {
 fn all_enabled_aps_complete_but_only_bsp_is_a_probe_processor() {
     let services = setup();
     let report = unsafe { observe(&services) }.unwrap();
-    assert_eq!(
-        (
-            report.total_processors,
-            report.enabled_processors,
-            report.enabled_aps
-        ),
-        (4, 4, 3)
-    );
+    assert_eq!((report.total_processors, report.enabled_processors, report.enabled_aps), (4, 4, 3));
     assert_eq!(report.completed_ap_callbacks, 3);
     assert_eq!(report.probe_processors, 1);
     assert_eq!((report.bsp_number, report.bsp_processor_id), (0, 0x100));
@@ -396,11 +383,7 @@ fn disabled_cpus_are_inventoried_but_never_dispatched() {
     with(|s| s.records[2].status_flag = 0);
     let report = unsafe { observe(&services) }.unwrap();
     assert_eq!(
-        (
-            report.total_processors,
-            report.enabled_aps,
-            report.completed_ap_callbacks
-        ),
+        (report.total_processors, report.enabled_aps, report.completed_ap_callbacks),
         (4, 2, 2)
     );
     clean();
@@ -437,13 +420,7 @@ fn absent_null_and_failed_allocation_refuse_without_dispatch() {
 }
 #[test]
 fn count_bounds_refuse_before_allocation() {
-    for pair in [
-        (0, 0),
-        (MAX_PROCESSORS + 1, 1),
-        (4, 0),
-        (4, 5),
-        (usize::MAX, 2),
-    ] {
+    for pair in [(0, 0), (MAX_PROCESSORS + 1, 1), (4, 0), (4, 5), (usize::MAX, 2)] {
         let services = setup();
         with(|s| s.counts = Some(pair));
         assert_eq!(unsafe { observe(&services) }, Err(CpuError::Bounds));
@@ -480,10 +457,7 @@ fn not_ready_and_terminated_timeout_release_storage() {
     for status in [Status::NOT_READY, Status::TIMEOUT, Status::DEVICE_ERROR] {
         let services = setup();
         with(|s| s.dispatch_status = status);
-        assert_eq!(
-            unsafe { observe(&services) },
-            Err(CpuError::Dispatch(status))
-        );
+        assert_eq!(unsafe { observe(&services) }, Err(CpuError::Dispatch(status)));
         with(|s| assert_eq!(s.free_calls, 1));
         clean();
     }
@@ -532,10 +506,7 @@ fn explicit_free_failure_retains_ownership_and_drop_retries() {
 fn cleanup_failure_is_reported_even_when_drop_retry_succeeds() {
     let services = setup();
     with(|s| s.fail_free = 1);
-    assert_eq!(
-        unsafe { observe(&services) },
-        Err(CpuError::Cleanup(Status::DEVICE_ERROR))
-    );
+    assert_eq!(unsafe { observe(&services) }, Err(CpuError::Cleanup(Status::DEVICE_ERROR)));
     with(|s| assert_eq!(s.free_calls, 2));
     clean();
 }
@@ -636,10 +607,7 @@ impl<'a> ScopedPool<'a> {
         if status != Status::SUCCESS {
             return Err(status);
         }
-        Ok(Self {
-            services,
-            pool: Some(pool),
-        })
+        Ok(Self { services, pool: Some(pool) })
     }
     fn release(&mut self) -> Result<(), Status> {
         with(|s| assert_eq!(s.tpl, Tpl::NOTIFY));
@@ -697,11 +665,7 @@ fn prepared_resources_are_created_and_freed_inside_callback_exclusion() {
         assert_eq!(s.tpl, Tpl::APPLICATION);
         assert_eq!(s.allocations.len(), 1); // CPU preparation alone remains.
         let index = |name| s.calls.iter().position(|call| *call == name).unwrap();
-        let final_dispatch = s
-            .calls
-            .iter()
-            .rposition(|call| *call == "dispatch")
-            .unwrap();
+        let final_dispatch = s.calls.iter().rposition(|call| *call == "dispatch").unwrap();
         assert_eq!(s.dispatches, 2);
         assert!(index("dispatch") < index("prepare_resource"));
         assert!(index("prepare_resource") < final_dispatch);
@@ -767,10 +731,7 @@ fn preparation_refusal_drops_partial_resources_without_final_barrier_or_operatio
             |_| -> () { panic!("failed preparation executed finish") },
         )
     };
-    assert_eq!(
-        result,
-        Err(PreparedScopeError::Preparation(Status::ACCESS_DENIED))
-    );
+    assert_eq!(result, Err(PreparedScopeError::Preparation(Status::ACCESS_DENIED)));
     with(|s| {
         assert_eq!(s.dispatches, 1); // Initial idle check alone completed.
         assert_eq!(s.allocations.len(), 1);
@@ -845,12 +806,7 @@ fn already_busy_aps_refuse_before_any_preparation_dereference() {
             |_| -> () { panic!("busy APs reached finish") },
         )
     };
-    assert_eq!(
-        result,
-        Err(PreparedScopeError::Cpu(CpuError::Dispatch(
-            Status::NOT_READY
-        )))
-    );
+    assert_eq!(result, Err(PreparedScopeError::Cpu(CpuError::Dispatch(Status::NOT_READY))));
     with(|s| {
         assert_eq!(s.dispatches, 1);
         assert_eq!(s.dispatch_tpl, Some(Tpl::NOTIFY));
@@ -884,11 +840,7 @@ fn cache_snapshot(number: usize) -> cache::CacheSnapshot {
         mtrr_cap: 0x508,
         mtrr_default: 0x806,
         top_mem: 0x0800_0000,
-        apic_base: if number == 0 {
-            0xfee0_0900
-        } else {
-            0xfee0_0800
-        },
+        apic_base: if number == 0 { 0xfee0_0900 } else { 0xfee0_0800 },
         ..CacheSnapshot::default()
     }
 }
@@ -904,17 +856,9 @@ unsafe extern "efiapi" fn svmvisor_native_cache_read(out: *mut cache::CacheSnaps
     }
     with(|s| {
         let number = s.identity;
-        assert_eq!(
-            s.tpl,
-            if number == 0 {
-                Tpl::HIGH_LEVEL
-            } else {
-                Tpl::NOTIFY
-            }
-        );
+        assert_eq!(s.tpl, if number == 0 { Tpl::HIGH_LEVEL } else { Tpl::NOTIFY });
         assert!(s.allocations.iter().any(|(base, layout)| {
-            out.addr() >= *base
-                && out.addr() + cache::SNAPSHOT_BYTES <= *base + layout.size()
+            out.addr() >= *base && out.addr() + cache::SNAPSHOT_BYTES <= *base + layout.size()
         }));
         s.cache_reads.push(number);
         let mut snapshot = cache_snapshot(number);
@@ -950,9 +894,7 @@ fn paging_snapshot(cache: &cache::CacheSnapshot) -> [u64; 9] {
 // compiled into the UEFI driver. The per-thread order assertion applies to the
 // concurrent AP fixture as well as the serial MP/BSP paths.
 #[unsafe(no_mangle)]
-unsafe extern "efiapi" fn svmvisor_native_snapshot(
-    out: *mut snapshot::NativeSnapshot,
-) -> u32 {
+unsafe extern "efiapi" fn svmvisor_native_snapshot(out: *mut snapshot::NativeSnapshot) -> u32 {
     let out = out.cast::<[u64; 9]>();
     assert_eq!(out.addr() % 8, 0);
     if let Some(number) = AP_IDENTITY.get() {
@@ -963,14 +905,7 @@ unsafe extern "efiapi" fn svmvisor_native_snapshot(
     with(|s| {
         let number = s.identity;
         assert_eq!(CACHE_READ_SUCCESS.take(), Some(number));
-        assert_eq!(
-            s.tpl,
-            if number == 0 {
-                Tpl::HIGH_LEVEL
-            } else {
-                Tpl::NOTIFY
-            }
-        );
+        assert_eq!(s.tpl, if number == 0 { Tpl::HIGH_LEVEL } else { Tpl::NOTIFY });
         assert_eq!(s.cache_reads.last(), Some(&number));
         s.paging_reads.push(number);
         let mut cache = cache_snapshot(number);
@@ -1027,14 +962,8 @@ fn cache_capture_occurs_only_in_final_callbacks_and_high_bsp_with_owned_storage(
                     assert_eq!(s.allocations.len(), 2);
                 });
                 let result = cache.release();
-                assert_eq!(
-                    cache.storage_range(),
-                    Err(cache_rendezvous::RendezvousError::Released)
-                );
-                assert_eq!(
-                    cache.bsp_cr3(),
-                    Err(cache_rendezvous::RendezvousError::Released)
-                );
+                assert_eq!(cache.storage_range(), Err(cache_rendezvous::RendezvousError::Released));
+                assert_eq!(cache.bsp_cr3(), Err(cache_rendezvous::RendezvousError::Released));
                 result
             },
         )
@@ -1122,27 +1051,12 @@ fn cache_refusal_and_coerced_success_never_pass_comparison() {
         }
         .unwrap();
         let expected = match mode {
-            0 | 4 => Error::Capture {
-                processor: 2,
-                error: CaptureError::PrivilegeOrFlags,
-            },
-            1 => Error::Capture {
-                processor: 2,
-                error: CaptureError::UnsupportedCpu,
-            },
-            2 => Error::Mismatch {
-                processor: 2,
-                field: Field::Cr4,
-            },
-            3 => Error::Mismatch {
-                processor: 2,
-                field: Field::Pat,
-            },
+            0 | 4 => Error::Capture { processor: 2, error: CaptureError::PrivilegeOrFlags },
+            1 => Error::Capture { processor: 2, error: CaptureError::UnsupportedCpu },
+            2 => Error::Mismatch { processor: 2, field: Field::Cr4 },
+            3 => Error::Mismatch { processor: 2, field: Field::Pat },
             5 => Error::CaptureShape { processor: 2 },
-            _ => Error::Mismatch {
-                processor: 2,
-                field: Field::SysCfg,
-            },
+            _ => Error::Mismatch { processor: 2, field: Field::SysCfg },
         };
         assert_eq!(completion.outcome.unwrap().1, Err(expected));
         assert_eq!(completion.cleanup, Ok(()));
@@ -1182,10 +1096,7 @@ fn actual_ap_cr3_requires_exact_root_and_pwt_pcd_agreement() {
         .unwrap();
         assert_eq!(
             completion.outcome.unwrap().1,
-            Err(RendezvousError::Mismatch {
-                processor: 2,
-                field: ConfigurationField::Cr3,
-            }),
+            Err(RendezvousError::Mismatch { processor: 2, field: ConfigurationField::Cr3 }),
             "CR3 bit {bit}"
         );
         assert_eq!(completion.cleanup, Ok(()));
@@ -1201,19 +1112,16 @@ thread_local! { static BAD_ROOT: std::cell::Cell<u64> = const { std::cell::Cell:
 fn zero_and_reserved_cr3_bits_refuse_on_either_bsp_or_ap() {
     use cache_rendezvous::{PagingRootError, RendezvousError};
     for processor in [0, 2] {
-        for root in [0, 0x18].into_iter().chain(
-            (0..3)
-                .chain(5..12)
-                .chain(48..64)
-                .map(|bit| MOCK_CR3 | (1u64 << bit)),
-        ) {
+        for root in [0, 0x18]
+            .into_iter()
+            .chain((0..3).chain(5..12).chain(48..64).map(|bit| MOCK_CR3 | (1u64 << bit)))
+        {
             let services = setup();
             let mut cpus = unsafe { prepare(&services) }.unwrap();
             let cache = unsafe { cache_rendezvous::prepare(&services, &cpus) }.unwrap();
             BAD_ROOT.set(root);
             with(|s| {
-                s.paging_changes
-                    .insert(processor, |words| words[6] = BAD_ROOT.get());
+                s.paging_changes.insert(processor, |words| words[6] = BAD_ROOT.get());
             });
             let completion = unsafe {
                 cpus.with_prepared_quiescent_bsp_and_ap_observation(
@@ -1226,10 +1134,7 @@ fn zero_and_reserved_cr3_bits_refuse_on_either_bsp_or_ap() {
             .unwrap();
             assert_eq!(
                 completion.outcome.unwrap().1,
-                Err(RendezvousError::PagingRoot {
-                    processor,
-                    error: PagingRootError::InvalidCr3,
-                }),
+                Err(RendezvousError::PagingRoot { processor, error: PagingRootError::InvalidCr3 }),
                 "CPU {processor} root {root:#x}"
             );
             assert_eq!(completion.cleanup, Ok(()));
@@ -1258,25 +1163,20 @@ fn paging_helper_failures_and_inconsistent_success_refuse() {
                     s.paging_changes.insert(processor, |words| words[4] |= 3);
                 }
                 3 => {
-                    s.paging_changes
-                        .insert(processor, |words| words[5] ^= 1 << 16);
+                    s.paging_changes.insert(processor, |words| words[5] ^= 1 << 16);
                 }
                 4 => {
-                    s.paging_changes
-                        .insert(processor, |words| words[7] ^= 1 << 18);
+                    s.paging_changes.insert(processor, |words| words[7] ^= 1 << 18);
                 }
                 5..=9 => {
                     AP_ROOT_BIT.set([8, 9, 10, 14, 18][mode - 5]);
-                    s.paging_changes
-                        .insert(processor, |words| words[8] |= 1 << AP_ROOT_BIT.get());
+                    s.paging_changes.insert(processor, |words| words[8] |= 1 << AP_ROOT_BIT.get());
                 }
                 10 => {
-                    s.paging_changes
-                        .insert(processor, |words| words[8] ^= 1 << 12);
+                    s.paging_changes.insert(processor, |words| words[8] ^= 1 << 12);
                 }
                 _ => {
-                    s.paging_changes
-                        .insert(processor, |words| words[8] ^= 0x8d5);
+                    s.paging_changes.insert(processor, |words| words[8] ^= 0x8d5);
                 }
             });
             let completion = unsafe {
@@ -1300,10 +1200,7 @@ fn paging_helper_failures_and_inconsistent_success_refuse() {
                     5..=9 => Paging::UnsupportedFlags,
                     _ => Paging::InconsistentFlags,
                 };
-                assert_eq!(
-                    result,
-                    Err(RendezvousError::PagingRoot { processor, error })
-                );
+                assert_eq!(result, Err(RendezvousError::PagingRoot { processor, error }));
             }
             assert_eq!(completion.cleanup, Ok(()));
             cpus.release().unwrap();
@@ -1433,11 +1330,7 @@ fn bsp_recapture_replaces_or_refuses_the_actual_root_without_stale_fallback() {
                     assert_eq!(result, Err(expected));
                     assert_eq!(
                         cache.bsp_cr3(),
-                        if mode == 2 {
-                            Ok(MOCK_CR3 ^ (1 << 12))
-                        } else {
-                            Err(expected)
-                        }
+                        if mode == 2 { Ok(MOCK_CR3 ^ (1 << 12)) } else { Err(expected) }
                     );
                     with(|s| {
                         assert_eq!(s.cache_reads, [1, 2, 3, 0, 0]);
@@ -1537,10 +1430,7 @@ fn concurrent_ap_slots_publish_before_bsp_and_duplicate_claims_cannot_write_twic
         if duplicate {
             assert_eq!(completion.outcome, Err(CpuError::Completion));
         } else {
-            assert_eq!(
-                completion.outcome.unwrap().1.unwrap().completed_ap_captures,
-                3
-            );
+            assert_eq!(completion.outcome.unwrap().1.unwrap().completed_ap_captures, 3);
         }
         assert_eq!(completion.cleanup, Ok(()));
         cpus.release().unwrap();
@@ -1555,9 +1445,7 @@ fn configuration_comparison_excludes_exactly_identity_role_and_arithmetic_bits()
         for bit in 0..8 {
             let mut ap = bsp;
             unsafe {
-                *(&mut ap as *mut cache::CacheSnapshot)
-                    .cast::<u8>()
-                    .add(byte) ^= 1 << bit;
+                *(&mut ap as *mut cache::CacheSnapshot).cast::<u8>().add(byte) ^= 1 << bit;
             }
             // Independent whitelist in the fixed 352-byte capture ABI.
             let allowed = (72..76).contains(&byte)
@@ -1580,9 +1468,7 @@ fn ap_configuration_adds_exactly_cr4_de_to_the_existing_abi_exclusions() {
         for bit in 0..8 {
             let mut ap = bsp;
             unsafe {
-                *(&mut ap as *mut cache::CacheSnapshot)
-                    .cast::<u8>()
-                    .add(byte) ^= 1 << bit;
+                *(&mut ap as *mut cache::CacheSnapshot).cast::<u8>().add(byte) ^= 1 << bit;
             }
             // Independently enumerate exclusions using the fixed capture ABI.
             let allowed = (72..76).contains(&byte)
@@ -1723,26 +1609,11 @@ fn de_differences_do_not_relax_same_cpu_cr4_raw_cr3_cache_or_reader_guards() {
             .unwrap();
             let mismatch_processor = if processor == 0 { 1 } else { processor };
             let expected = match mode {
-                0 => Error::PagingRoot {
-                    processor,
-                    error: Paging::InconsistentCr4,
-                },
-                1 => Error::Mismatch {
-                    processor: mismatch_processor,
-                    field: Field::Cr3,
-                },
-                2 => Error::Mismatch {
-                    processor: mismatch_processor,
-                    field: Field::Pat,
-                },
-                3 => Error::Mismatch {
-                    processor: mismatch_processor,
-                    field: Field::VariableMtrrs,
-                },
-                _ => Error::Capture {
-                    processor,
-                    error: cache::CaptureError::PrivilegeOrFlags,
-                },
+                0 => Error::PagingRoot { processor, error: Paging::InconsistentCr4 },
+                1 => Error::Mismatch { processor: mismatch_processor, field: Field::Cr3 },
+                2 => Error::Mismatch { processor: mismatch_processor, field: Field::Pat },
+                3 => Error::Mismatch { processor: mismatch_processor, field: Field::VariableMtrrs },
+                _ => Error::Capture { processor, error: cache::CaptureError::PrivilegeOrFlags },
             };
             assert_eq!(completion.outcome.unwrap().1, Err(expected));
             assert_eq!(completion.cleanup, Ok(()));
@@ -1800,10 +1671,7 @@ fn stale_ap_round_refuses_even_with_identical_successful_registers() {
                 // test fault injection into exclusive owned storage after all
                 // callbacks finished, with no live snapshot reference.
                 let (base, _) = cache.storage_range().unwrap();
-                (base as *mut u8)
-                    .add(2 * 416 + 32)
-                    .cast::<usize>()
-                    .write(guard.rendezvous() - 1);
+                (base as *mut u8).add(2 * 416 + 32).cast::<usize>().write(guard.rendezvous() - 1);
                 cache.capture_bsp_and_compare(guard)
             },
             |cache| cache.release(),
@@ -1894,11 +1762,7 @@ fn cache_diagnostic_codes_are_stable_and_never_truncate_processor_numbers() {
     }
     for processor in [0, 255, 256, usize::MAX] {
         let expected = |detail: u64| {
-            if processor <= 255 {
-                ((processor as u64) << 24) | (detail << 16)
-            } else {
-                0x007f_0000
-            }
+            if processor <= 255 { ((processor as u64) << 24) | (detail << 16) } else { 0x007f_0000 }
         };
         for (error, detail) in [
             (Capture::OutputAddress, 0x10),
@@ -1909,11 +1773,7 @@ fn cache_diagnostic_codes_are_stable_and_never_truncate_processor_numbers() {
             (Capture::UnsupportedMtrrCount, 0x15),
             (Capture::UnexpectedStatus, 0x16),
         ] {
-            assert_cache_diagnostic(
-                &cache,
-                Error::Capture { processor, error },
-                expected(detail),
-            );
+            assert_cache_diagnostic(&cache, Error::Capture { processor, error }, expected(detail));
         }
         for (error, detail) in [
             (Error::CaptureShape { processor }, 0x20),
@@ -1973,20 +1833,13 @@ fn cache_diagnostic_codes_are_stable_and_never_truncate_processor_numbers() {
             (Field::Iorr, 0x5e),
             (Field::VariableMtrrs, 0x5f),
         ] {
-            assert_cache_diagnostic(
-                &cache,
-                Error::Mismatch { processor, field },
-                expected(detail),
-            );
+            assert_cache_diagnostic(&cache, Error::Mismatch { processor, field }, expected(detail));
         }
     }
     cache.release().unwrap();
     assert_cache_diagnostic(
         &cache,
-        Error::Capture {
-            processor: 0,
-            error: Capture::PrivilegeOrFlags,
-        },
+        Error::Capture { processor: 0, error: Capture::PrivilegeOrFlags },
         0x0011_0000,
     );
     cpus.release().unwrap();
@@ -2024,9 +1877,8 @@ fn actual_refused_captures_report_each_observed_flag_without_recapture_or_mutati
                     }
                 }
                 DIAGNOSTIC_FLAGS.set(flags);
-                s.cache_changes.insert(processor, |snapshot| {
-                    snapshot.rflags |= DIAGNOSTIC_FLAGS.get()
-                });
+                s.cache_changes
+                    .insert(processor, |snapshot| snapshot.rflags |= DIAGNOSTIC_FLAGS.get());
             });
             let mut cpus = unsafe { prepare(&services) }.unwrap();
             let cache = unsafe { cache_rendezvous::prepare(&services, &cpus) }.unwrap();
@@ -2096,12 +1948,10 @@ fn final_rendezvous_and_post_capture_errors_keep_stage_and_original_error() {
                                 s.cache_status.insert(0, 4);
                             }
                             1 => {
-                                s.cache_changes
-                                    .insert(0, |snapshot| snapshot.rflags |= 1 << 9);
+                                s.cache_changes.insert(0, |snapshot| snapshot.rflags |= 1 << 9);
                             }
                             2 => {
-                                s.cache_changes
-                                    .insert(0, |snapshot| snapshot.msr_reads -= 1);
+                                s.cache_changes.insert(0, |snapshot| snapshot.msr_reads -= 1);
                             }
                             3 => {
                                 s.paging_status.insert(0, 1);
@@ -2196,8 +2046,7 @@ fn actual_ap_cr4_refusal_encodes_one_residual_bit_in_both_stages_through_cpu255(
                             })
                             .collect();
                     }
-                    s.cache_changes
-                        .insert(processor, |cache| cache.cr4 ^= CR4_DIFFERENCE.get());
+                    s.cache_changes.insert(processor, |cache| cache.cr4 ^= CR4_DIFFERENCE.get());
                 });
                 let mut cpus = unsafe { prepare(&services) }.unwrap();
                 let cache = unsafe { cache_rendezvous::prepare(&services, &cpus) }.unwrap();
@@ -2208,13 +2057,7 @@ fn actual_ap_cr4_refusal_encodes_one_residual_bit_in_both_stages_through_cpu255(
                         |guard, cache| {
                             for stage in [0x400b, 0x4017] {
                                 let error = cache.capture_bsp_and_compare(guard).unwrap_err();
-                                assert_eq!(
-                                    error,
-                                    Error::Mismatch {
-                                        processor,
-                                        field: Field::Cr4
-                                    }
-                                );
+                                assert_eq!(error, Error::Mismatch { processor, field: Field::Cr4 });
                                 let expected = ((processor as u64) << 24) | ((0xc0u64 | bit) << 16);
                                 assert_cache_diagnostic(cache, error, expected);
                                 assert_eq!(cache.diagnostic_bits(error) | stage, expected | stage);
@@ -2249,10 +2092,7 @@ fn cr4_diagnostic_requires_actual_association_and_clears_it_before_a_new_capture
         with(|s| s.records.truncate(2));
         let mut cpus = unsafe { prepare(&services) }.unwrap();
         let cache = unsafe { cache_rendezvous::prepare(&services, &cpus) }.unwrap();
-        let error = Error::Mismatch {
-            processor: 1,
-            field: Field::Cr4,
-        };
+        let error = Error::Mismatch { processor: 1, field: Field::Cr4 };
         assert_cache_diagnostic(&cache, error, 0x0152_0000); // No captures.
         let completion = unsafe {
             cpus.with_prepared_quiescent_bsp_and_ap_observation(
@@ -2268,18 +2108,12 @@ fn cr4_diagnostic_requires_actual_association_and_clears_it_before_a_new_capture
                     assert_cache_diagnostic(cache, error, 0x01d2_0000);
                     assert_cache_diagnostic(
                         cache,
-                        Error::Mismatch {
-                            processor: 0,
-                            field: Field::Cr4,
-                        },
+                        Error::Mismatch { processor: 0, field: Field::Cr4 },
                         0x0052_0000,
                     );
                     assert_cache_diagnostic(
                         cache,
-                        Error::Mismatch {
-                            processor: 2,
-                            field: Field::Cr4,
-                        },
+                        Error::Mismatch { processor: 2, field: Field::Cr4 },
                         0x0252_0000,
                     );
                     with(|s| {
@@ -2324,8 +2158,7 @@ fn cr4_diagnostic_never_enriches_stale_incomplete_invalid_or_non_single_bit_reco
     for mode in 0..13 {
         let services = setup();
         with(|s| {
-            s.cache_changes
-                .insert(2, |cache| cache.cr4 ^= 8 | (1 << 18));
+            s.cache_changes.insert(2, |cache| cache.cr4 ^= 8 | (1 << 18));
         });
         let mut cpus = unsafe { prepare(&services) }.unwrap();
         let cache = unsafe { cache_rendezvous::prepare(&services, &cpus) }.unwrap();
@@ -2335,13 +2168,7 @@ fn cr4_diagnostic_never_enriches_stale_incomplete_invalid_or_non_single_bit_reco
                 |cache| cache,
                 |guard, cache| {
                     let error = cache.capture_bsp_and_compare(guard).unwrap_err();
-                    assert_eq!(
-                        error,
-                        Error::Mismatch {
-                            processor: 2,
-                            field: Field::Cr4
-                        }
-                    );
+                    assert_eq!(error, Error::Mismatch { processor: 2, field: Field::Cr4 });
                     assert_cache_diagnostic(cache, error, 0x02d2_0000);
                     // Exclusive test fault injection after every callback has
                     // returned. Fixed Slot ABI: state24, round32, status40,
@@ -2356,13 +2183,10 @@ fn cr4_diagnostic_never_enriches_stale_incomplete_invalid_or_non_single_bit_reco
                         3 => ap.add(24).cast::<usize>().write(1),
                         4 => bsp.add(24).cast::<usize>().write(0),
                         5 => (*ap.add(48).cast::<cache::CacheSnapshot>()).msr_reads = 0,
-                        6 => {
-                            (*bsp.add(48).cast::<cache::CacheSnapshot>()).captured_fields = 0
-                        }
+                        6 => (*bsp.add(48).cast::<cache::CacheSnapshot>()).captured_fields = 0,
                         7 => ap.add(40).cast::<u32>().write(2),
                         8 => {
-                            (*ap.add(48).cast::<cache::CacheSnapshot>()).cr4 =
-                                cache_snapshot(0).cr4
+                            (*ap.add(48).cast::<cache::CacheSnapshot>()).cr4 = cache_snapshot(0).cr4
                         }
                         9 => {
                             (*ap.add(48).cast::<cache::CacheSnapshot>()).cr4 =

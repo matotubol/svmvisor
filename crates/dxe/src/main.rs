@@ -11,7 +11,10 @@
 // firmware ownership and fixtures without changing the reviewed call graph or
 // compiling these image-specific modules into the host-testable library.
 
-#[cfg(all(feature = "native-preflight", any(feature = "card-load-only", feature = "card-returning-loader", feature = "card-resident")))]
+#[cfg(all(
+    feature = "native-preflight",
+    any(feature = "card-load-only", feature = "card-returning-loader", feature = "card-resident")
+))]
 compile_error!("native child and resident card loader are separate images");
 #[cfg(all(feature = "card-returning-loader", feature = "card-load-only"))]
 compile_error!("returning PE delivery is a separate resident loader mode");
@@ -19,22 +22,25 @@ compile_error!("returning PE delivery is a separate resident loader mode");
 #[path = "delivery/adapter.rs"]
 mod card_returning_adapter;
 
-#[cfg(all(feature = "card-resident", any(feature = "card-returning-loader", feature = "card-load-only")))]
+#[cfg(all(
+    feature = "card-resident",
+    any(feature = "card-returning-loader", feature = "card-load-only")
+))]
 compile_error!("resident PE delivery is a separate parent image");
 
 // Native child entry, resource ownership, and the returning SVM execution path.
-#[cfg(all(target_os = "uefi", feature = "native-resident"))]
-#[path = "native/resident/activation.rs"]
-mod resident_activation;
-#[cfg(all(target_os = "uefi", feature = "native-preflight", not(feature="native-resident")))]
-#[path = "native/entry.rs"]
-mod native_entry;
-#[cfg(all(target_os = "uefi", feature = "native-preflight", not(feature="native-resident")))]
+#[cfg(all(target_os = "uefi", feature = "native-preflight", not(feature = "native-resident")))]
 #[path = "native/child_result.rs"]
 mod native_child_result;
-#[cfg(all(target_os = "uefi", feature = "native-preflight", not(feature="native-resident")))]
-#[path = "native/resources/tables.rs"]
-mod native_tables;
+#[cfg(all(target_os = "uefi", feature = "native-preflight", not(feature = "native-resident")))]
+#[path = "native/entry.rs"]
+mod native_entry;
+#[cfg(all(
+    target_os = "uefi",
+    any(feature = "native-transition-test", feature = "native-returning")
+))]
+#[path = "native/resources/guest.rs"]
+mod native_guest_resources;
 #[cfg(all(target_os = "uefi", feature = "native-resource-observe"))]
 #[path = "native/resources/image.rs"]
 mod native_image_resources;
@@ -47,9 +53,12 @@ mod native_resources;
 #[cfg(all(target_os = "uefi", feature = "native-returning"))]
 #[path = "native/returning.rs"]
 mod native_returning;
-#[cfg(all(target_os = "uefi", any(feature = "native-transition-test", feature = "native-returning")))]
-#[path = "native/resources/guest.rs"]
-mod native_guest_resources;
+#[cfg(all(target_os = "uefi", feature = "native-preflight", not(feature = "native-resident")))]
+#[path = "native/resources/tables.rs"]
+mod native_tables;
+#[cfg(all(target_os = "uefi", feature = "native-resident"))]
+#[path = "native/resident/activation.rs"]
+mod resident_activation;
 #[cfg(all(feature = "native-returning", feature = "native-transition-test"))]
 compile_error!("native returning admission cannot combine with a TCG transition fixture");
 #[cfg(all(target_os = "uefi", feature = "native-transition-test"))]
@@ -80,7 +89,10 @@ mod mmio;
 #[path = "firmware/pci_io.rs"]
 mod pci_io;
 
-#[cfg(all(target_os = "uefi", any(not(feature = "native-preflight"), feature="native-resident")))]
+#[cfg(all(
+    target_os = "uefi",
+    any(not(feature = "native-preflight"), feature = "native-resident")
+))]
 #[unsafe(no_mangle)]
 /// Firmware image entry, UEFI 2.10 §4.1.1.
 ///
@@ -88,15 +100,17 @@ mod pci_io;
 /// Firmware must supply a live image handle and system table with boot services
 /// available, and invoke this entry once, at TPL_APPLICATION.
 pub unsafe extern "efiapi" fn efi_main(image: Handle, table: *const SystemTable) -> Status {
-    #[cfg(feature="native-resident")]
-    unsafe { return resident_activation::install(image, table.cast_mut()); }
+    #[cfg(feature = "native-resident")]
+    unsafe {
+        return resident_activation::install(image, table.cast_mut());
+    }
     #[cfg(not(feature = "native-preflight"))]
     unsafe {
         driver::install(image, table)
     }
 }
 
-#[cfg(all(target_os = "uefi", feature = "native-preflight", not(feature="native-resident")))]
+#[cfg(all(target_os = "uefi", feature = "native-preflight", not(feature = "native-resident")))]
 #[unsafe(no_mangle)]
 /// Called only by the assembly image entry after original-state capture.
 ///
@@ -120,7 +134,7 @@ pub unsafe extern "efiapi" fn svmvisor_native_efi_main_inner(
 // The default ROM image has no runtime panic policy. A reachable Rust panic makes linking
 // fail; size-optimized LTO must prove this handler unreachable. This avoids
 // pulling in the general UEFI crate's console/delay/shutdown panic machinery.
-#[cfg(all(target_os = "uefi", not(feature = "card-load-only"), not(feature="native-resident")))]
+#[cfg(all(target_os = "uefi", not(feature = "card-load-only"), not(feature = "native-resident")))]
 #[panic_handler]
 fn panic(_: &core::panic::PanicInfo) -> ! {
     unsafe extern "C" {
@@ -131,14 +145,20 @@ fn panic(_: &core::panic::PanicInfo) -> ! {
 
 // The resident candidate has an explicit terminal invariant-failure path.
 // Expected admission refusals return through the original callback instead.
-#[cfg(all(target_os="uefi", feature="native-resident"))]
+#[cfg(all(target_os = "uefi", feature = "native-resident"))]
 #[panic_handler]
 fn resident_panic(_: &core::panic::PanicInfo) -> ! {
-    #[cfg(feature="native-resident-test")]
+    #[cfg(feature = "native-resident-test")]
     for byte in b"resident-dxe-panic\n" {
-        unsafe {core::arch::asm!("out dx,al",in("dx")0xe9u16,in("al")*byte,options(nomem,nostack));}
+        unsafe {
+            core::arch::asm!("out dx,al",in("dx")0xe9u16,in("al")*byte,options(nomem,nostack));
+        }
     }
-    loop {unsafe {core::arch::asm!("cli; hlt",options(nomem,nostack));}}
+    loop {
+        unsafe {
+            core::arch::asm!("cli; hlt", options(nomem, nostack));
+        }
+    }
 }
 
 // Candidate-only last resort for an internal invariant failure. Expected bad
@@ -147,7 +167,9 @@ fn resident_panic(_: &core::panic::PanicInfo) -> ! {
 #[cfg(all(target_os = "uefi", feature = "card-load-only"))]
 #[panic_handler]
 fn panic(_: &core::panic::PanicInfo) -> ! {
-    loop { core::hint::spin_loop(); }
+    loop {
+        core::hint::spin_loop();
+    }
 }
 
 #[cfg(not(target_os = "uefi"))]

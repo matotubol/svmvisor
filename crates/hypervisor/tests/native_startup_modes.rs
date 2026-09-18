@@ -23,23 +23,12 @@ fn stopped(bits32: bool) -> (NativeEfer, Vmcb, GuestRegisters) {
     put(&mut v, 0x60, 1 << 24);
     put(&mut v, 0x70, 0x7c);
     put(&mut v, 0x78, 0);
-    put(
-        &mut v,
-        0x410,
-        ((if bits32 { 0x49b } else { 0x9b }) << 16) | (0xffff << 32),
-    );
+    put(&mut v, 0x410, ((if bits32 { 0x49b } else { 0x9b }) << 16) | (0xffff << 32));
     put(&mut v, 0x4d0, 0x1000);
     put(&mut v, 0x558, if bits32 { 0x11 } else { 0x10 });
     put(&mut v, 0x570, 2);
     put(&mut v, 0x578, 0x100);
-    (
-        e,
-        v,
-        GuestRegisters {
-            rcx: 0xc0000080,
-            ..GuestRegisters::default()
-        },
-    )
+    (e, v, GuestRegisters { rcx: 0xc0000080, ..GuestRegisters::default() })
 }
 
 #[test]

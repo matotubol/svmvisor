@@ -53,9 +53,8 @@ impl JournalIo for Mock {
         Ok(())
     }
 }
-const RECORD: [u32; 8] = [
-    1, 0x12345678, 0x89abcdef, 0x01234567, 0x76543210, 0xfedcba98, 31, 0x00010010,
-];
+const RECORD: [u32; 8] =
+    [1, 0x12345678, 0x89abcdef, 0x01234567, 0x76543210, 0xfedcba98, 31, 0x00010010];
 #[test]
 fn exact_layout_and_fresh_staging_on_each_commit() {
     let mut io = Mock::new();

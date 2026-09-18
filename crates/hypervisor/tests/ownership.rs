@@ -3,34 +3,17 @@ use svmvisor_hypervisor::boot::ownership::*;
 use svmvisor_hypervisor::memory::address::{AddressError, AddressPolicy, EncryptionState};
 
 fn policy() -> AddressPolicy {
-    AddressPolicy::new(
-        48,
-        EncryptionState::Unencrypted {
-            encryption_bit: None,
-        },
-    )
-    .unwrap()
+    AddressPolicy::new(48, EncryptionState::Unencrypted { encryption_bit: None }).unwrap()
 }
 fn descriptor(start: u64, pages: u64, kind: u32) -> MemoryDescriptor {
-    MemoryDescriptor {
-        memory_type: kind,
-        physical_start: start,
-        page_count: pages,
-        attributes: 8,
-    }
+    MemoryDescriptor { memory_type: kind, physical_start: start, page_count: pages, attributes: 8 }
 }
 fn valid_page() -> [u8; HANDOFF_PAGE_BYTES] {
     let mut page = [0xa5; HANDOFF_PAGE_BYTES];
     OwnershipRecord::encode_into(
         &mut page,
-        &[
-            descriptor(0, 256, 7),
-            descriptor(0x100000, 512, 1),
-            descriptor(0x300000, 256, 4),
-        ],
-        policy()
-            .validate(0x180000, RESIDENT_ARENA_BYTES, 4096)
-            .unwrap(),
+        &[descriptor(0, 256, 7), descriptor(0x100000, 512, 1), descriptor(0x300000, 256, 4)],
+        policy().validate(0x180000, RESIDENT_ARENA_BYTES, 4096).unwrap(),
         48,
         1,
     )
@@ -57,11 +40,7 @@ fn exact_wire_offsets_and_roundtrip() {
     assert_eq!(record.descriptor_count(), 3);
     assert_eq!(
         record.descriptors().collect::<Vec<_>>(),
-        vec![
-            descriptor(0, 256, 7),
-            descriptor(0x100000, 512, 1),
-            descriptor(0x300000, 256, 4)
-        ]
+        vec![descriptor(0, 256, 7), descriptor(0x100000, 512, 1), descriptor(0x300000, 256, 4)]
     );
 }
 #[test]
@@ -95,15 +74,10 @@ fn guest_projection_reserves_only_arena_and_preserves_every_byte() {
 }
 #[test]
 fn encoding_refuses_without_mutating_and_requires_complete_loader_coverage() {
-    let arena = policy()
-        .validate(0x100000, RESIDENT_ARENA_BYTES, 4096)
-        .unwrap();
+    let arena = policy().validate(0x100000, RESIDENT_ARENA_BYTES, 4096).unwrap();
     let cases = [
         (vec![], OwnershipError::DescriptorCount),
-        (
-            vec![descriptor(0x100000, 255, 1)],
-            OwnershipError::ArenaUncovered,
-        ),
+        (vec![descriptor(0x100000, 255, 1)], OwnershipError::ArenaUncovered),
         (
             vec![descriptor(0x100000, 128, 1), descriptor(0x181000, 127, 1)],
             OwnershipError::ArenaUncovered,
@@ -120,17 +94,11 @@ fn encoding_refuses_without_mutating_and_requires_complete_loader_coverage() {
             vec![descriptor(0x100001, 256, 1)],
             OwnershipError::Map(MemoryError::MisalignedDescriptor),
         ),
-        (
-            vec![descriptor(0x100000, u64::MAX, 1)],
-            OwnershipError::Map(MemoryError::Overflow),
-        ),
+        (vec![descriptor(0x100000, u64::MAX, 1)], OwnershipError::Map(MemoryError::Overflow)),
     ];
     for (descriptors, error) in cases {
         let mut page = [0xaa; 4096];
-        assert_eq!(
-            OwnershipRecord::encode_into(&mut page, &descriptors, arena, 48, 1),
-            Err(error)
-        );
+        assert_eq!(OwnershipRecord::encode_into(&mut page, &descriptors, arena, 48, 1), Err(error));
         assert_eq!(page, [0xaa; 4096]);
     }
     let mut page = [0; 4096];
@@ -149,10 +117,7 @@ fn malformed_records_fail_closed() {
     for offset in [64, 72, 74, 76, 80, 84, 104, 128 + 4, 4095] {
         let mut page = valid_page();
         page[offset] ^= 0x80;
-        assert!(
-            OwnershipRecord::decode(&page, &policy()).is_err(),
-            "offset {offset}"
-        );
+        assert!(OwnershipRecord::decode(&page, &policy()).is_err(), "offset {offset}");
     }
     for count in [0u16, 125, u16::MAX] {
         let mut page = valid_page();
@@ -180,16 +145,9 @@ fn exact_capacity_is_supported_but_extra_descriptors_are_never_dropped() {
         descriptors.push(descriptor(0x200000 + (index as u64) * 4096, 1, 7));
     }
     let mut page = [0; 4096];
-    let arena = policy()
-        .validate(0x100000, RESIDENT_ARENA_BYTES, 4096)
-        .unwrap();
+    let arena = policy().validate(0x100000, RESIDENT_ARENA_BYTES, 4096).unwrap();
     OwnershipRecord::encode_into(&mut page, &descriptors, arena, 48, 1).unwrap();
-    assert_eq!(
-        OwnershipRecord::decode(&page, &policy())
-            .unwrap()
-            .descriptor_count(),
-        124
-    );
+    assert_eq!(OwnershipRecord::decode(&page, &policy()).unwrap().descriptor_count(), 124);
     descriptors.push(descriptor(0x400000, 1, 7));
     assert_eq!(
         OwnershipRecord::encode_into(&mut page, &descriptors, arena, 48, 1),
@@ -220,29 +178,16 @@ fn decode_rechecks_extent_coverage_type_and_encryption_policy() {
     );
     let mut page = valid_page();
     page[200..208].copy_from_slice(&(1u64 << 47).to_le_bytes());
-    let encrypted_bit = AddressPolicy::new(
-        48,
-        EncryptionState::Unencrypted {
-            encryption_bit: Some(47),
-        },
-    )
-    .unwrap();
+    let encrypted_bit =
+        AddressPolicy::new(48, EncryptionState::Unencrypted { encryption_bit: Some(47) }).unwrap();
     assert_eq!(
         OwnershipRecord::decode(&page, &encrypted_bit).unwrap_err(),
         OwnershipError::Address(AddressError::EncryptionBitEncoded)
     );
     let mut page = [0xaa; 4096];
-    let wide_arena = policy()
-        .validate(1u64 << 40, RESIDENT_ARENA_BYTES, 4096)
-        .unwrap();
+    let wide_arena = policy().validate(1u64 << 40, RESIDENT_ARENA_BYTES, 4096).unwrap();
     assert_eq!(
-        OwnershipRecord::encode_into(
-            &mut page,
-            &[descriptor(0x100000, 256, 1)],
-            wide_arena,
-            32,
-            1
-        ),
+        OwnershipRecord::encode_into(&mut page, &[descriptor(0x100000, 256, 1)], wide_arena, 32, 1),
         Err(OwnershipError::Address(AddressError::OutsidePhysicalWidth))
     );
     assert_eq!(page, [0xaa; 4096]);

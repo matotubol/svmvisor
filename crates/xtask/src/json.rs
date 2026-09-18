@@ -24,7 +24,9 @@ impl Value {
     #[cfg(test)]
     pub fn get(&self, key: &str) -> Option<&Value> {
         match self {
-            Value::Map(entries) => entries.iter().find(|(name, _)| name == key).map(|(_, value)| value),
+            Value::Map(entries) => {
+                entries.iter().find(|(name, _)| name == key).map(|(_, value)| value)
+            }
             _ => None,
         }
     }
@@ -101,7 +103,10 @@ mod tests {
         let value = Value::Map(vec![
             ("a".into(), Value::Bool(false)),
             ("b".into(), Value::ints([1, 2])),
-            ("c".into(), Value::Map(vec![("d".into(), Value::str("x\\y\"\u{e9}\n\u{1f600}\u{1}"))])),
+            (
+                "c".into(),
+                Value::Map(vec![("d".into(), Value::str("x\\y\"\u{e9}\n\u{1f600}\u{1}"))]),
+            ),
             ("e".into(), Value::List(vec![])),
             ("f".into(), Value::Map(vec![])),
         ]);

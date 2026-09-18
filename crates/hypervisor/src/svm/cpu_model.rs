@@ -36,7 +36,11 @@ pub fn native_boot_cpuid(leaf: u32, mut native: [u32; 4], guest_cr4: u64) -> [u3
         1 => {
             // OSXSAVE reports the guest's CR4, not the stopped host CR4.
             native[2] = (native[2] & !(1 << 27))
-                | if native[2] & (1 << 26) != 0 && guest_cr4 & (1 << 18) != 0 { 1 << 27 } else { 0 };
+                | if native[2] & (1 << 26) != 0 && guest_cr4 & (1 << 18) != 0 {
+                    1 << 27
+                } else {
+                    0
+                };
         }
         // ExtApicSpace (bit3) is absent from the native guest LAPIC model.
         // Its physical extension controls remain exclusively host-owned.
@@ -104,22 +108,14 @@ impl CpuIdentity {
         let mut bytes = [0; 48];
         // Both iterators contain exactly 48 bytes. Avoid dynamic slice bounds:
         // the native size-optimized no-panic image must retain no panic edge.
-        for (destination, source) in bytes.iter_mut().zip(
-            leaves
-                .iter()
-                .flatten()
-                .flat_map(|value| value.to_le_bytes()),
-        ) {
+        for (destination, source) in
+            bytes.iter_mut().zip(leaves.iter().flatten().flat_map(|value| value.to_le_bytes()))
+        {
             *destination = source;
         }
         // Preserve native bytes verbatim, including full-width names and
         // firmware-selected padding; identity capture is not string rewriting.
-        Ok(Self {
-            vendor,
-            signature,
-            extended_signature,
-            brand: bytes,
-        })
+        Ok(Self { vendor, signature, extended_signature, brand: bytes })
     }
 
     pub const fn vendor(&self) -> [u8; 12] {
@@ -138,12 +134,8 @@ impl CpuIdentity {
     pub const fn family_model_stepping(&self) -> (u16, u16, u8) {
         let base_family = ((self.signature >> 8) & 15) as u16;
         let base_model = ((self.signature >> 4) & 15) as u16;
-        let family = base_family
-            + if base_family == 15 {
-                ((self.signature >> 20) & 255) as u16
-            } else {
-                0
-            };
+        let family =
+            base_family + if base_family == 15 { ((self.signature >> 20) & 255) as u16 } else { 0 };
         let model = base_model
             | if base_family == 6 || base_family == 15 {
                 ((self.signature >> 12) & 0xf0) as u16
@@ -198,9 +190,7 @@ impl HostCacheEvidence {
         let count = usize::from(self.deterministic_count);
         if count >= MAX_CACHE_SUBLEAVES
             || (!topology_extensions && count != 0)
-            || self.deterministic[count..]
-                .iter()
-                .any(|&leaf| leaf != [0; 4])
+            || self.deterministic[count..].iter().any(|&leaf| leaf != [0; 4])
         {
             return Err(CpuModelError::InvalidCacheEvidence);
         }
@@ -236,11 +226,7 @@ impl HostCacheEvidence {
             // Preserve native geometry/policy; project L3 package sharing onto
             // the two guest CPUs rather than forwarding a host SMT/core count.
             let native_sharers = ((leaf[0] >> 14) & 0xfff) + 1;
-            let sharers = if level < 3 {
-                1
-            } else {
-                native_sharers.min(VCPU_COUNT)
-            };
+            let sharers = if level < 3 { 1 } else { native_sharers.min(VCPU_COUNT) };
             leaf[0] = (leaf[0] & !(0xfff << 14)) | ((sharers - 1) << 14);
         }
         Ok(self)
@@ -413,11 +399,8 @@ impl AmdCpuModel {
             return Err(InvalidExtendedMetadata);
         }
         let mut basic_ecx = host.leaf1_ecx & OPTIONAL_ECX;
-        let mut structured_ebx = if host.max_basic >= 7 {
-            host.leaf7_ebx & OPTIONAL_7_EBX
-        } else {
-            0
-        };
+        let mut structured_ebx =
+            if host.max_basic >= 7 { host.leaf7_ebx & OPTIONAL_7_EBX } else { 0 };
         let mut structured_ecx = 0;
         let structured_edx = if host.max_basic >= 7 {
             host.leaf7_edx & (1 << 4) // FSRM uses the native integer string engine.
@@ -488,11 +471,7 @@ impl AmdCpuModel {
             } else {
                 0
             },
-            extended21_ebx: if host.max_extended >= 0x8000_0021 {
-                host.extended21_ebx
-            } else {
-                0
-            },
+            extended21_ebx: if host.max_extended >= 0x8000_0021 { host.extended21_ebx } else { 0 },
             extended21_available: host.max_extended >= 0x8000_0021,
         })
     }
@@ -535,17 +514,9 @@ impl AmdCpuModel {
                 self.runtime.identity.signature(),
                 (state.vcpu_id << 24)
                     | (VCPU_COUNT << 16)
-                    | if self.basic_edx & CLFLUSH != 0 {
-                        8 << 8
-                    } else {
-                        0
-                    },
+                    | if self.basic_edx & CLFLUSH != 0 { 8 << 8 } else { 0 },
                 self.basic_ecx
-                    | if self.uses_xsave() && state.cr4 & CR4_OSXSAVE != 0 {
-                        OSXSAVE
-                    } else {
-                        0
-                    },
+                    | if self.uses_xsave() && state.cr4 & CR4_OSXSAVE != 0 { OSXSAVE } else { 0 },
                 self.basic_edx,
             ],
             // AMD does not use Intel descriptor/serial/cache leaves 2/3/4.
@@ -553,12 +524,7 @@ impl AmdCpuModel {
             2..=6 | 8..=10 | 12 => [0; 4],
             7 => {
                 if subleaf == 0 {
-                    [
-                        0,
-                        self.structured_ebx,
-                        self.structured_ecx,
-                        self.structured_edx,
-                    ]
+                    [0, self.structured_ebx, self.structured_ecx, self.structured_edx]
                 } else {
                     [0; 4]
                 }
@@ -572,14 +538,11 @@ impl AmdCpuModel {
             0x0d => self.xstate_leaf(subleaf, state.xcr0),
             // Native-facing AMD identity has no private hypervisor namespace.
             0x4000_0000..=0x4fff_ffff => [0; 4],
-            0x8000_0000 => self
-                .runtime
-                .identity
-                .vendor_leaf(if self.extended21_available {
-                    MAX_EXTENDED_LEAF
-                } else {
-                    0x8000_001e
-                }),
+            0x8000_0000 => self.runtime.identity.vendor_leaf(if self.extended21_available {
+                MAX_EXTENDED_LEAF
+            } else {
+                0x8000_001e
+            }),
             0x8000_0001 => [
                 self.runtime.identity.extended_signature(),
                 0,
@@ -636,11 +599,7 @@ impl AmdCpuModel {
         match subleaf {
             0 => [
                 self.xcr0_mask() as u32,
-                if xcr0 & 4 != 0 {
-                    self.runtime.xstate.size() as u32
-                } else {
-                    576
-                },
+                if xcr0 & 4 != 0 { self.runtime.xstate.size() as u32 } else { 576 },
                 self.runtime.xstate.size() as u32,
                 0,
             ],

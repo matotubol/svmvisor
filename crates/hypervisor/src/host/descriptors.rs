@@ -8,8 +8,10 @@
 //! No handler instructions, memory backing, mappings, stack space, table loads,
 //! fault recovery or hardware access are supplied or established by this module.
 
+use crate::arch::x86_64::descriptors::{
+    CODE_SELECTOR, DATA_SELECTOR, GDT_BYTES, TSS_BYTES, TSS_SELECTOR,
+};
 use crate::memory::address::is_canonical_48;
-use crate::arch::x86_64::descriptors::{CODE_SELECTOR, DATA_SELECTOR, GDT_BYTES, TSS_BYTES, TSS_SELECTOR};
 
 pub const IDT_ENTRIES: usize = 256;
 pub const IDT_GATE_BYTES: usize = 16;
@@ -82,11 +84,8 @@ impl HostDescriptorRequest {
             canonical_last(self.tss_base, TSS_BYTES).ok_or(HostDescriptorError::InvalidTssRange)?;
         let idt_last =
             canonical_last(self.idt_base, IDT_BYTES).ok_or(HostDescriptorError::InvalidIdtRange)?;
-        let ranges = [
-            (self.gdt_base, gdt_last),
-            (self.tss_base, tss_last),
-            (self.idt_base, idt_last),
-        ];
+        let ranges =
+            [(self.gdt_base, gdt_last), (self.tss_base, tss_last), (self.idt_base, idt_last)];
         for i in 0..ranges.len() {
             for j in i + 1..ranges.len() {
                 if ranges[i].0 <= ranges[j].1 && ranges[j].0 <= ranges[i].1 {
@@ -105,9 +104,7 @@ impl HostDescriptorRequest {
         }
         for (vector, handler) in self.handlers.iter().enumerate() {
             if !valid_pointer(*handler) {
-                return Err(HostDescriptorError::InvalidHandler {
-                    vector: vector as u8,
-                });
+                return Err(HostDescriptorError::InvalidHandler { vector: vector as u8 });
             }
         }
         let mut gdt = [0; GDT_BYTES];
@@ -139,14 +136,8 @@ impl HostDescriptorRequest {
             gate[8..12].copy_from_slice(&((handler >> 32) as u32).to_le_bytes());
         }
         Ok(ValidatedHostDescriptors {
-            gdtr: HostTablePointer {
-                base: self.gdt_base,
-                limit: GDT_BYTES as u16 - 1,
-            },
-            idtr: HostTablePointer {
-                base: self.idt_base,
-                limit: IDT_BYTES as u16 - 1,
-            },
+            gdtr: HostTablePointer { base: self.gdt_base, limit: GDT_BYTES as u16 - 1 },
+            idtr: HostTablePointer { base: self.idt_base, limit: IDT_BYTES as u16 - 1 },
             gdt,
             tss,
             idt,

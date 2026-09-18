@@ -35,9 +35,7 @@ pub struct Iopm {
 
 impl Iopm {
     pub const fn new() -> Self {
-        Self {
-            bytes: [0xff; IOPM_BYTES],
-        }
+        Self { bytes: [0xff; IOPM_BYTES] }
     }
 
     pub const fn bytes(&self) -> &[u8; IOPM_BYTES] {
@@ -105,12 +103,8 @@ impl Msrpm {
         // Admission requires disabled SME/SNP/VMPL/host multi-key modes.
         // Keep SYS_CFG writes stopped before hardware changes that invariant.
         // Reads remain native. PPR57896 rev3.00 p202; APM2 7.10.2/.9.
-        map.set(
-            crate::arch::x86_64::msr::SYS_CFG,
-            MsrAccess::Write,
-            Permission::Intercept,
-        )
-        .expect("covered SYS_CFG MSR");
+        map.set(crate::arch::x86_64::msr::SYS_CFG, MsrAccess::Write, Permission::Intercept)
+            .expect("covered SYS_CFG MSR");
         map
     }
 
@@ -163,9 +157,7 @@ impl Msrpm {
     }
 
     pub const fn new() -> Self {
-        Self {
-            bytes: [0xff; MSRPM_BYTES],
-        }
+        Self { bytes: [0xff; MSRPM_BYTES] }
     }
 
     pub const fn bytes(&self) -> &[u8; MSRPM_BYTES] {

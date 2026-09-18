@@ -46,10 +46,7 @@ impl Manifest {
         if &digest != pinned {
             return Err(CardError::Digest);
         }
-        Ok(Self {
-            package_bytes: size as usize,
-            digest,
-        })
+        Ok(Self { package_bytes: size as usize, digest })
     }
 
     pub fn package<'a>(&self, bytes: &'a [u8]) -> Result<Payload<'a>, CardError> {

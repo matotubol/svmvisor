@@ -99,21 +99,12 @@ impl<'a> GuestPages<'a> {
             return Err(GuestPagesError::VirtualWindowNonCanonical);
         }
         let arena = policy
-            .validate(
-                arena_base,
-                (TABLE_COUNT * PAGE_BYTES) as u64,
-                PAGE_BYTES as u64,
-            )
+            .validate(arena_base, (TABLE_COUNT * PAGE_BYTES) as u64, PAGE_BYTES as u64)
             .map_err(GuestPagesError::Address)?;
         for page in &mut storage.0 {
             page.fill(0);
         }
-        let mut pages = Self {
-            storage,
-            arena,
-            policy,
-            virtual_window_base,
-        };
+        let mut pages = Self { storage, arena, policy, virtual_window_base };
         for (parent, shift) in [39, 30, 21].into_iter().enumerate() {
             pages.write_entry(
                 parent,
@@ -170,12 +161,7 @@ impl<'a> GuestPages<'a> {
                 return Err(GuestPagesError::GuestPageAlias);
             }
         }
-        let flags = PRESENT
-            | if permissions == PagePermissions::ReadWrite {
-                WRITE
-            } else {
-                0
-            };
+        let flags = PRESENT | if permissions == PagePermissions::ReadWrite { WRITE } else { 0 };
         self.write_entry(3, index, guest_address | flags)
     }
 
@@ -240,21 +226,13 @@ mod tests {
 
     #[test]
     fn invalid_internal_entry_indices_refuse_without_mutating_storage() {
-        let policy = AddressPolicy::new(
-            48,
-            EncryptionState::Unencrypted {
-                encryption_bit: None,
-            },
-        )
-        .unwrap();
+        let policy =
+            AddressPolicy::new(48, EncryptionState::Unencrypted { encryption_bit: None }).unwrap();
         let mut storage = TableStorage([[0; PAGE_BYTES]; TABLE_COUNT]);
         let mut pages = GuestPages::new(&mut storage, 0x100000, policy).unwrap();
         let before = pages.storage.0;
         for (table, entry) in [(TABLE_COUNT, 0), (usize::MAX, 0), (3, 512), (3, usize::MAX)] {
-            assert_eq!(
-                pages.read_entry(table, entry),
-                Err(GuestPagesError::StorageBounds)
-            );
+            assert_eq!(pages.read_entry(table, entry), Err(GuestPagesError::StorageBounds));
             assert_eq!(
                 pages.write_entry(table, entry, 0x1234),
                 Err(GuestPagesError::StorageBounds)

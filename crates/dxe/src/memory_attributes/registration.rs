@@ -40,10 +40,7 @@ impl<'fw> BootServicesDatabase<'fw> {
     /// # Safety
     /// A genuine conforming Boot Services table must stay live for this borrow.
     pub unsafe fn new(services: &'fw BootServices) -> Self {
-        Self {
-            services,
-            _not_send_sync: PhantomData,
-        }
+        Self { services, _not_send_sync: PhantomData }
     }
 }
 

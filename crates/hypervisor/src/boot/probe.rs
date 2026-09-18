@@ -172,10 +172,7 @@ impl<'a> Transaction<'a> {
         observed_mxcsr_mask: u32,
         expected_exit_rip: u64,
     ) -> Result<Self, Error> {
-        let caps = evidence
-            .capabilities
-            .validate()
-            .map_err(Error::Capabilities)?;
+        let caps = evidence.capabilities.validate().map_err(Error::Capabilities)?;
         if evidence.context != Context::FirmwareApplication
             || evidence.tpl != 4
             || evidence.privilege_level != 0

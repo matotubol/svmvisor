@@ -7,7 +7,13 @@ use uefi_raw::table::boot::BootServices;
 type MemAccess =
     unsafe extern "efiapi" fn(*const PciIo, u32, u8, u64, usize, *mut c_void) -> Status;
 type ConfigRead = unsafe extern "efiapi" fn(*const PciIo, u32, u32, usize, *mut c_void) -> Status;
-type GetLocation = unsafe extern "efiapi" fn(*const PciIo, *mut usize, *mut usize, *mut usize, *mut usize) -> Status;
+type GetLocation = unsafe extern "efiapi" fn(
+    *const PciIo,
+    *mut usize,
+    *mut usize,
+    *mut usize,
+    *mut usize,
+) -> Status;
 type Attributes = unsafe extern "efiapi" fn(*const PciIo, u32, u64, *mut u64) -> Status;
 type GetBarAttributes =
     unsafe extern "efiapi" fn(*const PciIo, u8, *mut u64, *mut *mut u8) -> Status;
@@ -19,11 +25,7 @@ const MEMORY: u64 = 0x0200;
 const MSE: u32 = 2;
 
 pub(crate) fn status_result(status: Status) -> Result<(), Status> {
-    if status.is_error() {
-        Err(status)
-    } else {
-        Ok(())
-    }
+    if status.is_error() { Err(status) } else { Ok(()) }
 }
 
 // Prefix through Attributes. UINT32 width is enum value 2.
@@ -59,7 +61,11 @@ const _: () = {
 
 pub(crate) struct Bar0(pub(crate) *const PciIo);
 impl Bar0 {
-    #[cfg(any(feature = "card-load-only", feature = "card-returning-loader", feature = "card-resident"))]
+    #[cfg(any(
+        feature = "card-load-only",
+        feature = "card-returning-loader",
+        feature = "card-resident"
+    ))]
     pub(crate) fn card_word(&self, offset: u64) -> Result<u32, Status> {
         if offset & 3 != 0 || offset > 0x100000 - 4 {
             return Err(Status::INVALID_PARAMETER);
@@ -138,19 +144,26 @@ impl Bar0 {
     /// target. All protocol calls finish in the parent's serialized Start path.
     /// PPR57896 rev3.00 pp40-41/210; UEFI2.11 14.4.16 (PDF730, printed646).
     #[cfg(feature = "card-resident")]
-    pub(crate) fn terminal_endpoint(&mut self, journal_base: u64, boot_id: u32)
-        -> Result<svmvisor_hypervisor::host::resident::terminal::TerminalEndpoint, Status>
-    {
+    pub(crate) fn terminal_endpoint(
+        &mut self,
+        journal_base: u64,
+        boot_id: u32,
+    ) -> Result<svmvisor_hypervisor::host::resident::terminal::TerminalEndpoint, Status> {
         use svmvisor_hypervisor::host::resident::terminal::{self, TerminalEndpoint};
         let vendor = core::arch::x86_64::__cpuid(0);
-        if vendor.ebx != 0x6874_7541 || vendor.edx != 0x6974_6e65
-            || vendor.ecx != 0x444d_4163 || vendor.eax < 1
+        if vendor.ebx != 0x6874_7541
+            || vendor.edx != 0x6974_6e65
+            || vendor.ecx != 0x444d_4163
+            || vendor.eax < 1
             || core::arch::x86_64::__cpuid(1).eax
                 != svmvisor_hypervisor::arch::x86_64::msr::TARGET_SIGNATURE
-        { return Err(Status::UNSUPPORTED); }
+        {
+            return Err(Status::UNSUPPORTED);
+        }
         let (mut segment, mut bus, mut device, mut function) = (0usize, 0usize, 0usize, 0usize);
-        status_result(unsafe { ((*self.0).get_location)(self.0, &mut segment, &mut bus,
-            &mut device, &mut function) })?;
+        status_result(unsafe {
+            ((*self.0).get_location)(self.0, &mut segment, &mut bus, &mut device, &mut function)
+        })?;
         if segment != 0 || bus > 255 || device > 31 || function > 7 {
             return Err(Status::UNSUPPORTED);
         }
@@ -158,22 +171,37 @@ impl Bar0 {
         let low: u32;
         let high: u32;
         // Exact CPU identity above admits this processor-specific, read-only MSR.
-        unsafe { core::arch::asm!("rdmsr", in("ecx") 0xc001_0058u32,
-            out("eax") low, out("edx") high, options(nostack, preserves_flags)); }
+        unsafe {
+            core::arch::asm!("rdmsr", in("ecx") 0xc001_0058u32,
+            out("eax") low, out("edx") high, options(nostack, preserves_flags));
+        }
         let mmio_config_msr = u64::from(low) | (u64::from(high) << 32);
         let config_page = TerminalEndpoint::config_page_from_msr(mmio_config_msr, segment_bdf)
             .ok_or(Status::UNSUPPORTED)?;
         if self.config(0)? != terminal::PCI_VENDOR_DEVICE
             || self.config(8)? != terminal::PCI_CLASS_REVISION
             || (self.config(0x0c)? >> 16) & 0xff != 0
-        { return Err(Status::UNSUPPORTED); }
+        {
+            return Err(Status::UNSUPPORTED);
+        }
         let command = self.config(4)? as u16;
         let bar0_raw = self.config(0x10)?;
-        let endpoint = TerminalEndpoint { config_page, bar0_host_page: journal_base,
+        let endpoint = TerminalEndpoint {
+            config_page,
+            bar0_host_page: journal_base,
             fpga_build_id: u64::from(self.read(8)?) | (u64::from(self.read(12)?) << 32),
             rom_build_id: u64::from(self.read(16)?) | (u64::from(self.read(20)?) << 32),
-            mmio_config_msr, bar0_raw, segment_bdf, boot_id, command, version: 1, reserved: 0 };
-        if !endpoint.valid() { return Err(Status::UNSUPPORTED); }
+            mmio_config_msr,
+            bar0_raw,
+            segment_bdf,
+            boot_id,
+            command,
+            version: 1,
+            reserved: 0,
+        };
+        if !endpoint.valid() {
+            return Err(Status::UNSUPPORTED);
+        }
         Ok(endpoint)
     }
 

@@ -1,6 +1,6 @@
 use svmvisor_dxe::{
     diagnostics::journal::JournalIo,
-    diagnostics::trace::{EventKind::*, Trace, MAX_CALLBACK_RECORDS},
+    diagnostics::trace::{EventKind::*, MAX_CALLBACK_RECORDS, Trace},
 };
 use uefi_raw::Status;
 
@@ -63,15 +63,9 @@ impl JournalIo for Journal {
 fn same_boot_id_fresh_timestamps_and_ordered_counts() {
     let mut trace = Trace::new(77);
     let mut io = Journal::new();
-    trace
-        .record(&mut io, ReadyToBoot, 0x1234567887654321, 5)
-        .unwrap();
-    trace
-        .record(&mut io, AfterReadyToBoot, 0x1234567998765432, 5)
-        .unwrap();
-    trace
-        .record(&mut io, ExitBootServices, 0x12345680a9876543, 5)
-        .unwrap();
+    trace.record(&mut io, ReadyToBoot, 0x1234567887654321, 5).unwrap();
+    trace.record(&mut io, AfterReadyToBoot, 0x1234567998765432, 5).unwrap();
+    trace.record(&mut io, ExitBootServices, 0x12345680a9876543, 5).unwrap();
     assert_eq!(
         io.history,
         [
@@ -87,38 +81,16 @@ fn missing_reversed_and_duplicate_events_survive_in_final_snapshot() {
     let cases: &[(&[svmvisor_dxe::diagnostics::trace::EventKind], u32, [u32; 2])] = &[
         (&[ReadyToBoot, ExitBootServices], 0x08040040, [1, 1]),
         (&[ExitBootServices], 0x09040040, [0, 1]),
+        (&[AfterReadyToBoot, ReadyToBoot, ExitBootServices], 0x11040040, [0x10001, 1]),
+        (&[ReadyToBoot, AfterReadyToBoot, ReadyToBoot, ExitBootServices], 0x14040040, [0x10002, 1]),
+        (&[ReadyToBoot, ReadyToBoot, AfterReadyToBoot, ExitBootServices], 0x04040040, [0x10002, 1]),
         (
-            &[AfterReadyToBoot, ReadyToBoot, ExitBootServices],
-            0x11040040,
-            [0x10001, 1],
-        ),
-        (
-            &[ReadyToBoot, AfterReadyToBoot, ReadyToBoot, ExitBootServices],
-            0x14040040,
-            [0x10002, 1],
-        ),
-        (
-            &[ReadyToBoot, ReadyToBoot, AfterReadyToBoot, ExitBootServices],
-            0x04040040,
-            [0x10002, 1],
-        ),
-        (
-            &[
-                ReadyToBoot,
-                AfterReadyToBoot,
-                AfterReadyToBoot,
-                ExitBootServices,
-            ],
+            &[ReadyToBoot, AfterReadyToBoot, AfterReadyToBoot, ExitBootServices],
             0x04040040,
             [0x20001, 1],
         ),
         (
-            &[
-                ReadyToBoot,
-                AfterReadyToBoot,
-                ExitBootServices,
-                ExitBootServices,
-            ],
+            &[ReadyToBoot, AfterReadyToBoot, ExitBootServices, ExitBootServices],
             0x04040040,
             [0x10001, 2],
         ),
@@ -144,20 +116,14 @@ fn failed_commit_is_reported_by_next_record_and_mapping_mismatch_writes_nothing(
     let mut trace = Trace::new(1);
     let mut io = Journal::new();
     io.lost = true;
-    assert_eq!(
-        trace.record(&mut io, ReadyToBoot, 1, 0),
-        Err(Status::TIMEOUT)
-    );
+    assert_eq!(trace.record(&mut io, ReadyToBoot, 1, 0), Err(Status::TIMEOUT));
     io.lost = false;
     trace.record(&mut io, AfterReadyToBoot, 2, 0).unwrap();
     trace.record(&mut io, ExitBootServices, 3, 0).unwrap();
     assert_eq!(io.last[7], 0x02040040);
     let writes = io.writes;
     io.bad_magic = true;
-    assert_eq!(
-        trace.record(&mut io, ExitBootServices, 4, 0),
-        Err(Status::DEVICE_ERROR)
-    );
+    assert_eq!(trace.record(&mut io, ExitBootServices, 4, 0), Err(Status::DEVICE_ERROR));
     assert_eq!(io.writes, writes);
 }
 #[test]
@@ -168,24 +134,15 @@ fn record_budget_reserves_after_and_exit_slots_without_extra_bus_access() {
         trace.record(&mut io, ReadyToBoot, 1, 0).unwrap();
     }
     let reads = io.reads;
-    assert_eq!(
-        trace.record(&mut io, ReadyToBoot, 1, 0),
-        Err(Status::ABORTED)
-    );
+    assert_eq!(trace.record(&mut io, ReadyToBoot, 1, 0), Err(Status::ABORTED));
     assert_eq!(io.reads, reads);
     trace.record(&mut io, AfterReadyToBoot, 2, 0).unwrap();
     let reads = io.reads;
-    assert_eq!(
-        trace.record(&mut io, AfterReadyToBoot, 2, 0),
-        Err(Status::ABORTED)
-    );
+    assert_eq!(trace.record(&mut io, AfterReadyToBoot, 2, 0), Err(Status::ABORTED));
     assert_eq!(io.reads, reads);
     trace.record(&mut io, ExitBootServices, 3, 0).unwrap();
     let reads = io.reads;
-    assert_eq!(
-        trace.record(&mut io, ExitBootServices, 4, 0),
-        Err(Status::ABORTED)
-    );
+    assert_eq!(trace.record(&mut io, ExitBootServices, 4, 0), Err(Status::ABORTED));
     assert_eq!(io.reads, reads);
     assert_eq!(io.writes, MAX_CALLBACK_RECORDS as usize * 9);
 }
@@ -198,10 +155,7 @@ fn candidate_result_survives_every_lifecycle_record_and_default_is_unmarked() {
         let mut io = Journal::new();
         for event in [ReadyToBoot, AfterReadyToBoot, ExitBootServices] {
             trace.record(&mut io, event, 1, 0).unwrap();
-            assert_eq!(
-                (io.last[7] >> 16) & 0x6000,
-                if success { 0x2000 } else { 0x4000 }
-            );
+            assert_eq!((io.last[7] >> 16) & 0x6000, if success { 0x2000 } else { 0x4000 });
             assert_eq!((io.last[7] >> 16) & 0xff, 4);
         }
     }
@@ -221,7 +175,10 @@ fn returning_outcome_survives_lifecycle_without_hiding_order_anomalies() {
         for event in [AfterReadyToBoot, ExitBootServices] {
             trace.record(&mut io, event, 1, 0).unwrap();
             let detail = io.last[7] >> 16;
-            assert_eq!(detail & 0xe000, if matches!(bits, 0x2000 | 0x4000 | 0x8000) { bits } else { 0x8000 });
+            assert_eq!(
+                detail & 0xe000,
+                if matches!(bits, 0x2000 | 0x4000 | 0x8000) { bits } else { 0x8000 }
+            );
             assert_eq!(detail & 0xff, 6);
             assert_ne!(detail & 0x100, 0);
         }

@@ -24,11 +24,7 @@ pub enum Error {
 
 impl BootstrapPaging {
     pub const fn empty() -> Self {
-        Self {
-            tables: [[0; 512]; TABLE_PAGES],
-            base: 0,
-            used: 0,
-        }
+        Self { tables: [[0; 512]; TABLE_PAGES], base: 0, used: 0 }
     }
 
     /// Root must fit the protected-mode trampoline's 32-bit MOV CR3.
@@ -36,9 +32,7 @@ impl BootstrapPaging {
     pub fn initialize(&mut self, base: u64) -> Result<(), Error> {
         if base == 0
             || base & (PAGE - 1) != 0
-            || base
-                .checked_add(core::mem::size_of::<Self>() as u64)
-                .is_none_or(|end| end > 1 << 32)
+            || base.checked_add(core::mem::size_of::<Self>() as u64).is_none_or(|end| end > 1 << 32)
         {
             return Err(Error::Address);
         }
@@ -53,12 +47,7 @@ impl BootstrapPaging {
     /// Admit only the existing native profile's low 40-bit physical aperture.
     /// Every leaf selects PAT entry 0; the bootstrap maps no device pages.
     /// Identical repeated leaves are allowed; conflicting leaves are refused.
-    pub fn map_page(
-        &mut self,
-        page: u64,
-        writable: bool,
-        executable: bool,
-    ) -> Result<(), Error> {
+    pub fn map_page(&mut self, page: u64, writable: bool, executable: bool) -> Result<(), Error> {
         if self.used == 0 || page >= 1 << 40 || page & (PAGE - 1) != 0 {
             return Err(Error::Address);
         }
@@ -79,10 +68,7 @@ impl BootstrapPaging {
             };
         }
         let index = ((page >> 12) & 511) as usize;
-        let leaf = page
-            | 1
-            | if writable { 2 } else { 0 }
-            | if executable { 0 } else { 1 << 63 };
+        let leaf = page | 1 | if writable { 2 } else { 0 } | if executable { 0 } else { 1 << 63 };
         if self.tables[table][index] != 0 && self.tables[table][index] != leaf {
             return Err(Error::Conflict);
         }

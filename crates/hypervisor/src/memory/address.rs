@@ -69,10 +69,7 @@ impl AddressPolicy {
         if encryption_bit.is_some_and(|bit| bit >= 64) {
             return Err(AddressError::InvalidEncryptionBit);
         }
-        Ok(Self {
-            physical_bits,
-            encryption_bit,
-        })
+        Ok(Self { physical_bits, encryption_bit })
     }
 
     pub const fn physical_bits(self) -> u8 {

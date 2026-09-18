@@ -52,18 +52,12 @@ pub fn startup_instruction(
         return Err(FetchError::UnsupportedMode);
     }
     let limit = u32::from_le_bytes(vmcb.bytes()[0x414..0x418].try_into().unwrap()) as u64;
-    let ip_limit = if cs & 0x400 != 0 {
-        u32::MAX as u64
-    } else {
-        u16::MAX as u64
-    };
+    let ip_limit = if cs & 0x400 != 0 { u32::MAX as u64 } else { u16::MAX as u64 };
     let next = exit.rip.checked_add(2).ok_or(FetchError::AddressOverflow)?;
     if next > limit || next > ip_limit {
         return Err(FetchError::SegmentLimit);
     }
-    let address = field(vmcb, 0x418)
-        .checked_add(exit.rip)
-        .ok_or(FetchError::AddressOverflow)?;
+    let address = field(vmcb, 0x418).checked_add(exit.rip).ok_or(FetchError::AddressOverflow)?;
     let end = address.checked_add(1).ok_or(FetchError::AddressOverflow)?;
     if end > u32::MAX as u64 || end >= 1u64 << physical_bits {
         return Err(FetchError::AddressOverflow);
@@ -115,27 +109,35 @@ pub fn instruction(
 /// APM2 1.3,2.3,4.8,5.3,15.7.1: long-mode compatibility code uses the same
 /// four-level walk after checked CS.base addition; legacy startup is unpaged.
 /// Linear/IP wrap, VM86, cache-disabled execution and legacy paging are refused.
-pub fn cpuid_instruction(vmcb: &Vmcb, physical_bits: u8, pat: u64,
-    length: usize, startup_owned: bool, mut read: impl FnMut(u64, usize) -> Option<u64>)
-    -> Result<[u8; 15], FetchError>
-{
+pub fn cpuid_instruction(
+    vmcb: &Vmcb,
+    physical_bits: u8,
+    pat: u64,
+    length: usize,
+    startup_owned: bool,
+    mut read: impl FnMut(u64, usize) -> Option<u64>,
+) -> Result<[u8; 15], FetchError> {
     let exit = vmcb.exit_snapshot();
-    if exit.code != 0x72 { return Err(FetchError::UnsupportedExit); }
+    if exit.code != 0x72 {
+        return Err(FetchError::UnsupportedExit);
+    }
     if !(3..=15).contains(&length) || exit.rip.checked_add(length as u64) != Some(exit.nrip) {
         return Err(FetchError::AddressOverflow);
     }
     if !(32..=52).contains(&physical_bits)
-        || !crate::svm::dispatch::native_cpuid_mode(vmcb, exit.nrip, startup_owned) {
+        || !crate::svm::dispatch::native_cpuid_mode(vmcb, exit.nrip, startup_owned)
+    {
         return Err(FetchError::UnsupportedMode);
     }
-    if field(vmcb, 0x558) & 0x6000_0000 != 0 { return Err(FetchError::UnsupportedCacheControl); }
+    if field(vmcb, 0x558) & 0x6000_0000 != 0 {
+        return Err(FetchError::UnsupportedCacheControl);
+    }
     let code64 = vmcb.guest_in_64_bit_code();
     let long_mode = field(vmcb, 0x4d0) & (1 << 10) != 0;
     let base = if code64 { 0 } else { field(vmcb, 0x418) };
     let start = base.checked_add(exit.rip).ok_or(FetchError::AddressOverflow)?;
     let end = start.checked_add(length as u64 - 1).ok_or(FetchError::AddressOverflow)?;
-    if (!code64 && end > u32::MAX as u64)
-        || (!long_mode && end >= 1u64 << physical_bits) {
+    if (!code64 && end > u32::MAX as u64) || (!long_mode && end >= 1u64 << physical_bits) {
         return Err(FetchError::AddressOverflow);
     }
     let mut bytes = [0; 15];
@@ -144,7 +146,8 @@ pub fn cpuid_instruction(vmcb: &Vmcb, physical_bits: u8, pat: u64,
         *byte = if long_mode {
             read_instruction_linear(vmcb, physical_bits, pat, address, false, true, &mut read)?
         } else {
-            read(address, 1).filter(|&value| value <= 255)
+            read(address, 1)
+                .filter(|&value| value <= 255)
                 .ok_or(FetchError::UnreadableInstruction { address })? as u8
         };
     }
@@ -157,11 +160,15 @@ pub fn cpuid_instruction(vmcb: &Vmcb, physical_bits: u8, pat: u64,
 /// (APM2 15.25.8, PPR memory-type priority) permits those host WB aliases. Every
 /// guest PAT selector and ordinary paging/permission check remains required.
 #[cfg(any(feature = "resident-runtime", test))]
-pub(crate) fn cache_disabled_instruction(vmcb: &Vmcb, physical_bits: u8, pat: u64,
-    mut read: impl FnMut(u64, usize) -> Option<u64>) -> Result<[u8; 2], FetchError>
-{
+pub(crate) fn cache_disabled_instruction(
+    vmcb: &Vmcb,
+    physical_bits: u8,
+    pat: u64,
+    mut read: impl FnMut(u64, usize) -> Option<u64>,
+) -> Result<[u8; 2], FetchError> {
     if !matches!(vmcb.exit_snapshot().code, 0x72 | 0x7c)
-        || field(vmcb, 0x558) & 0x6000_0000 != 0x4000_0000 {
+        || field(vmcb, 0x558) & 0x6000_0000 != 0x4000_0000
+    {
         return Err(FetchError::UnsupportedCacheControl);
     }
     let mut bytes = [0; 2];
@@ -174,24 +181,33 @@ pub(crate) fn cache_disabled_instruction(vmcb: &Vmcb, physical_bits: u8, pat: u6
 /// One byte of a bounded stopped long64 instruction, under the same owned,
 /// coherent WB physical-reader contract as `instruction`. The index is bounded
 /// by the architectural 15-byte instruction limit.
-fn instruction_byte(vmcb: &Vmcb, physical_bits: u8, pat: u64, index: usize,
-    owned_cd: bool, mut read: impl FnMut(u64, usize) -> Option<u64>) -> Result<u8, FetchError> {
+fn instruction_byte(
+    vmcb: &Vmcb,
+    physical_bits: u8,
+    pat: u64,
+    index: usize,
+    owned_cd: bool,
+    mut read: impl FnMut(u64, usize) -> Option<u64>,
+) -> Result<u8, FetchError> {
     if index >= 15 {
         return Err(FetchError::AddressOverflow);
     }
-    let address = vmcb
-        .exit_snapshot()
-        .rip
-        .checked_add(index as u64)
-        .ok_or(FetchError::AddressOverflow)?;
+    let address =
+        vmcb.exit_snapshot().rip.checked_add(index as u64).ok_or(FetchError::AddressOverflow)?;
     read_instruction_linear(vmcb, physical_bits, pat, address, owned_cd, false, &mut read)
 }
 
-fn read_instruction_linear(vmcb: &Vmcb, physical_bits: u8, pat: u64, address: u64,
-    owned_cd: bool, cpuid_compat: bool, mut read: impl FnMut(u64, usize) -> Option<u64>)
-    -> Result<u8, FetchError>
-{
-    let translated = translation(vmcb, physical_bits, pat, address, owned_cd, cpuid_compat, &mut read)?;
+fn read_instruction_linear(
+    vmcb: &Vmcb,
+    physical_bits: u8,
+    pat: u64,
+    address: u64,
+    owned_cd: bool,
+    cpuid_compat: bool,
+    mut read: impl FnMut(u64, usize) -> Option<u64>,
+) -> Result<u8, FetchError> {
+    let translated =
+        translation(vmcb, physical_bits, pat, address, owned_cd, cpuid_compat, &mut read)?;
     if !translated.executable {
         return Err(FetchError::NotExecutable);
     }
@@ -206,9 +222,7 @@ fn read_instruction_linear(vmcb: &Vmcb, physical_bits: u8, pat: u64, address: u6
     read(translated.physical_address, 1)
         .filter(|&value| value <= 255)
         .map(|value| value as u8)
-        .ok_or(FetchError::UnreadableInstruction {
-            address: translated.physical_address,
-        })
+        .ok_or(FetchError::UnreadableInstruction { address: translated.physical_address })
 }
 
 /// Resolve one long64 instruction address without dereferencing its backing.
@@ -218,10 +232,15 @@ fn read_instruction_linear(vmcb: &Vmcb, physical_bits: u8, pat: u64, address: u6
 /// WB from it; the reader separately proves compatible NPT/host PAT and MTRRs.
 /// Guest AVL bits are ignored; host mapping admission retains its strict policy.
 /// MPK does not apply to instruction fetch, so protection keys are ignored.
-fn translation(vmcb: &Vmcb, physical_bits: u8, pat: u64, address: u64,
-    owned_cd: bool, cpuid_compat: bool, mut read: impl FnMut(u64, usize) -> Option<u64>)
-    -> Result<paging::Translation, FetchError>
-{
+fn translation(
+    vmcb: &Vmcb,
+    physical_bits: u8,
+    pat: u64,
+    address: u64,
+    owned_cd: bool,
+    cpuid_compat: bool,
+    mut read: impl FnMut(u64, usize) -> Option<u64>,
+) -> Result<paging::Translation, FetchError> {
     let efer = field(vmcb, 0x4d0);
     let cr0 = field(vmcb, 0x558);
     let cr4 = field(vmcb, 0x548);
@@ -318,29 +337,58 @@ mod tests {
     fn cache_owner_entrypoint_retains_generic_cd_refusal_nw_and_selected_pat_checks() {
         let mut stopped = vmcb(false, true);
         for (offset, value) in [(0x70, 0x7cu64), (0x558, 0xc0000001)] {
-            unsafe { core::ptr::copy_nonoverlapping(value.to_le_bytes().as_ptr(),
-                (&mut stopped as *mut Vmcb).cast::<u8>().add(offset), 8); }
+            unsafe {
+                core::ptr::copy_nonoverlapping(
+                    value.to_le_bytes().as_ptr(),
+                    (&mut stopped as *mut Vmcb).cast::<u8>().add(offset),
+                    8,
+                );
+            }
         }
         let read = |address: u64, bytes: usize| match (address, bytes) {
-            (0x1000,8) => Some(0x2007), (0x2000,8) => Some(0x3007),
-            (0x3000,8) => Some(0x4007), (0x4000,8) => Some(0x9007),
-            (0x9000,1) => Some(0x0f), (0x9001,1) => Some(0x30), _ => None,
+            (0x1000, 8) => Some(0x2007),
+            (0x2000, 8) => Some(0x3007),
+            (0x3000, 8) => Some(0x4007),
+            (0x4000, 8) => Some(0x9007),
+            (0x9000, 1) => Some(0x0f),
+            (0x9001, 1) => Some(0x30),
+            _ => None,
         };
-        assert_eq!(instruction(&stopped,48,6,read), Err(FetchError::UnsupportedCacheControl));
-        assert_eq!(cache_disabled_instruction(&stopped,48,6,read), Ok([0x0f,0x30]));
-        assert_eq!(cache_disabled_instruction(&stopped,48,0,read), Err(FetchError::UnsupportedCacheControl));
-        assert!(matches!(cache_disabled_instruction(&stopped,48,6,|address, bytes| {
-            if address == 0x2000 { None } else { read(address, bytes) }
-        }), Err(FetchError::Walk(_))));
-        assert_eq!(cache_disabled_instruction(&stopped,48,6,|address, bytes| {
-            if bytes == 1 { None } else { read(address, bytes) }
-        }), Err(FetchError::UnreadableInstruction { address: 0x9000 }));
-        assert_eq!(cache_disabled_instruction(&stopped,48,6,|address, bytes| {
-            if address == 0x4000 { Some(0x8000_0000_0000_9007) } else { read(address, bytes) }
-        }), Err(FetchError::NotExecutable));
-        unsafe { core::ptr::copy_nonoverlapping(0xe0000001u64.to_le_bytes().as_ptr(),
-            (&mut stopped as *mut Vmcb).cast::<u8>().add(0x558), 8); }
-        assert_eq!(cache_disabled_instruction(&stopped,48,6,read), Err(FetchError::UnsupportedCacheControl));
+        assert_eq!(instruction(&stopped, 48, 6, read), Err(FetchError::UnsupportedCacheControl));
+        assert_eq!(cache_disabled_instruction(&stopped, 48, 6, read), Ok([0x0f, 0x30]));
+        assert_eq!(
+            cache_disabled_instruction(&stopped, 48, 0, read),
+            Err(FetchError::UnsupportedCacheControl)
+        );
+        assert!(matches!(
+            cache_disabled_instruction(&stopped, 48, 6, |address, bytes| {
+                if address == 0x2000 { None } else { read(address, bytes) }
+            }),
+            Err(FetchError::Walk(_))
+        ));
+        assert_eq!(
+            cache_disabled_instruction(&stopped, 48, 6, |address, bytes| {
+                if bytes == 1 { None } else { read(address, bytes) }
+            }),
+            Err(FetchError::UnreadableInstruction { address: 0x9000 })
+        );
+        assert_eq!(
+            cache_disabled_instruction(&stopped, 48, 6, |address, bytes| {
+                if address == 0x4000 { Some(0x8000_0000_0000_9007) } else { read(address, bytes) }
+            }),
+            Err(FetchError::NotExecutable)
+        );
+        unsafe {
+            core::ptr::copy_nonoverlapping(
+                0xe0000001u64.to_le_bytes().as_ptr(),
+                (&mut stopped as *mut Vmcb).cast::<u8>().add(0x558),
+                8,
+            );
+        }
+        assert_eq!(
+            cache_disabled_instruction(&stopped, 48, 6, read),
+            Err(FetchError::UnsupportedCacheControl)
+        );
     }
 
     fn vmcb(pke: bool, nxe: bool) -> Vmcb {
@@ -405,10 +453,7 @@ mod tests {
                     if selector == 0 {
                         unsafe {
                             core::ptr::write_unaligned(
-                                (&mut state as *mut Vmcb)
-                                    .cast::<u8>()
-                                    .add(0x550)
-                                    .cast::<u64>(),
+                                (&mut state as *mut Vmcb).cast::<u8>().add(0x550).cast::<u64>(),
                                 0x1008,
                             );
                         }
@@ -460,10 +505,7 @@ mod tests {
                         let other = if selector == 0 { 1 } else { 0 };
                         unsafe {
                             core::ptr::write_unaligned(
-                                (&mut state as *mut Vmcb)
-                                    .cast::<u8>()
-                                    .add(0x550)
-                                    .cast::<u64>(),
+                                (&mut state as *mut Vmcb).cast::<u8>().add(0x550).cast::<u64>(),
                                 0x1000 | (other << 3),
                             );
                         }
@@ -549,9 +591,7 @@ mod tests {
                 marked[index] |= 1 << 63;
                 assert_eq!(
                     walk(&vmcb(false, false), marked),
-                    Err(FetchError::Walk(WalkError::ReservedEntry {
-                        level: (4 - index) as u8
-                    }))
+                    Err(FetchError::Walk(WalkError::ReservedEntry { level: (4 - index) as u8 }))
                 );
                 assert!(!walk(&vmcb(false, true), marked).unwrap().executable);
                 marked[index] &= !(1 << 63);
@@ -565,9 +605,7 @@ mod tests {
                 marked[index] &= !1;
                 assert_eq!(
                     walk(&vmcb(false, true), marked),
-                    Err(FetchError::Walk(WalkError::NotPresent {
-                        level: (4 - index) as u8
-                    }))
+                    Err(FetchError::Walk(WalkError::NotPresent { level: (4 - index) as u8 }))
                 );
             }
             let mut marked = entries(leaf).map(|entry| entry | 0x7ff0_0000_0000_0000);
@@ -583,9 +621,7 @@ mod tests {
                     marked[leaf] |= 1 << bit;
                     assert_eq!(
                         walk(&vmcb(false, true), marked),
-                        Err(FetchError::Walk(WalkError::ReservedEntry {
-                            level: (4 - leaf) as u8
-                        }))
+                        Err(FetchError::Walk(WalkError::ReservedEntry { level: (4 - leaf) as u8 }))
                     );
                     marked[leaf] &= !(1 << bit);
                 }

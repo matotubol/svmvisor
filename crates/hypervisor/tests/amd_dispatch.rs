@@ -1,16 +1,16 @@
 //! Transactional stopped-state integration; these tests do not execute a CPU.
 use svmvisor_hypervisor::{
-    memory::address::{AddressPolicy, EncryptionState},
-    svm::dispatch::{DispatchError, DispatchOutcome, StopReason, handle_exit_with_cpu_model},
-    svm::exit::{ExitAction, ExitSnapshot, ResumeError},
-    guest::state::GuestStateRequest,
     arch::x86_64::registers::GuestRegisters,
+    arch::x86_64::xstate::{XstateCapabilities, XstateLayout},
+    guest::state::GuestStateRequest,
+    memory::address::{AddressPolicy, EncryptionState},
     svm::cpu_model::{
         AmdCpuModel, CpuIdentity, CpuModelError, GuestCpuState, HostCacheEvidence, HostCpuEvidence,
         RuntimeCpuContract,
     },
+    svm::dispatch::{DispatchError, DispatchOutcome, StopReason, handle_exit_with_cpu_model},
+    svm::exit::{ExitAction, ExitSnapshot, ResumeError},
     svm::vmcb::Vmcb,
-    arch::x86_64::xstate::{XstateCapabilities, XstateLayout},
 };
 
 const CPUID: &[u8] = &[0x0f, 0xa2];
@@ -71,13 +71,8 @@ fn model() -> AmdCpuModel {
 }
 
 fn stopped(rax: u64, rcx: u64, rip: u64) -> (Vmcb, GuestRegisters, GuestCpuState) {
-    let policy = AddressPolicy::new(
-        48,
-        EncryptionState::Unencrypted {
-            encryption_bit: None,
-        },
-    )
-    .unwrap();
+    let policy =
+        AddressPolicy::new(48, EncryptionState::Unencrypted { encryption_bit: None }).unwrap();
     let cr4 = layout().guest_cr4();
     let mut vmcb = Vmcb::new();
     vmcb.set_synthetic_state(
@@ -110,26 +105,12 @@ fn stopped(rax: u64, rcx: u64, rip: u64) -> (Vmcb, GuestRegisters, GuestCpuState
         r14: 0xaaaa_bbbb_cccc_dddd,
         r15: 0xbbbb_cccc_dddd_eeee,
     };
-    (
-        vmcb,
-        frame,
-        GuestCpuState {
-            vcpu_id: 1,
-            cr4,
-            xcr0: 7,
-        },
-    )
+    (vmcb, frame, GuestCpuState { vcpu_id: 1, cr4, xcr0: 7 })
 }
 
 fn snapshot(code: u64, rip: u64) -> ExitSnapshot {
     // Byte-provenance continuation must ignore undefined nRIP/EXITINFO.
-    ExitSnapshot {
-        code,
-        rip,
-        info1: u64::MAX,
-        info2: u64::MAX,
-        nrip: u64::MAX,
-    }
+    ExitSnapshot { code, rip, info1: u64::MAX, info2: u64::MAX, nrip: u64::MAX }
 }
 
 #[test]
@@ -139,11 +120,8 @@ fn cpuid_uses_low_input_dwords_and_zero_extends_only_four_outputs() {
         (0x0d, 2, [256, 576, 0, 0]),
         (0x0b, 1, [1, 2, 0x201, 1]),
     ] {
-        let (mut vmcb, mut frame, cpu) = stopped(
-            0xdead_beef_0000_0000 | leaf,
-            0xcafe_babe_0000_0000 | subleaf,
-            0x1000,
-        );
+        let (mut vmcb, mut frame, cpu) =
+            stopped(0xdead_beef_0000_0000 | leaf, 0xcafe_babe_0000_0000 | subleaf, 0x1000);
         let mut expected_vmcb = *vmcb.bytes();
         expected_vmcb[0x578..0x580].copy_from_slice(&0x1002u64.to_le_bytes());
         expected_vmcb[0x5f8..0x600].copy_from_slice(&u64::from(result[0]).to_le_bytes());
@@ -185,36 +163,11 @@ fn cpuid_uses_low_input_dwords_and_zero_extends_only_four_outputs() {
 fn mismatched_saved_cr4_and_invalid_cpu_contract_leave_all_state_unchanged() {
     for (id, cr4_xor, mask, expected) in [
         (1, 1 << 18, 7, DispatchError::CpuStateMismatch),
-        (
-            2,
-            0,
-            7,
-            DispatchError::CpuModel(CpuModelError::InvalidVcpuId),
-        ),
-        (
-            u32::MAX,
-            0,
-            7,
-            DispatchError::CpuModel(CpuModelError::InvalidVcpuId),
-        ),
-        (
-            1,
-            0,
-            0,
-            DispatchError::CpuModel(CpuModelError::InvalidGuestXstate),
-        ),
-        (
-            1,
-            0,
-            5,
-            DispatchError::CpuModel(CpuModelError::InvalidGuestXstate),
-        ),
-        (
-            1,
-            0,
-            0x1_0000_0007,
-            DispatchError::CpuModel(CpuModelError::InvalidGuestXstate),
-        ),
+        (2, 0, 7, DispatchError::CpuModel(CpuModelError::InvalidVcpuId)),
+        (u32::MAX, 0, 7, DispatchError::CpuModel(CpuModelError::InvalidVcpuId)),
+        (1, 0, 0, DispatchError::CpuModel(CpuModelError::InvalidGuestXstate)),
+        (1, 0, 5, DispatchError::CpuModel(CpuModelError::InvalidGuestXstate)),
+        (1, 0, 0x1_0000_0007, DispatchError::CpuModel(CpuModelError::InvalidGuestXstate)),
     ] {
         let (mut vmcb, mut frame, mut cpu) = stopped(0x0d, 0, 0x1000);
         cpu.vcpu_id = id;
@@ -240,13 +193,9 @@ fn mismatched_saved_cr4_and_invalid_cpu_contract_leave_all_state_unchanged() {
 
 #[test]
 fn invalid_instruction_and_noncanonical_continuation_are_transactional() {
-    for instruction in [
-        &[][..],
-        &[0x0f][..],
-        &[0x90][..],
-        &[0x66, 0x0f, 0xa2][..],
-        &[0x0f, 0xa2, 0x90][..],
-    ] {
+    for instruction in
+        [&[][..], &[0x0f][..], &[0x90][..], &[0x66, 0x0f, 0xa2][..], &[0x0f, 0xa2, 0x90][..]]
+    {
         let (mut vmcb, mut frame, cpu) = stopped(0, 0, 0x1000);
         let before_vmcb = *vmcb.bytes();
         let before_frame = frame;
@@ -259,9 +208,7 @@ fn invalid_instruction_and_noncanonical_continuation_are_transactional() {
                 &model(),
                 cpu,
             ),
-            Err(DispatchError::Resume(
-                ResumeError::UnsupportedInstructionBytes
-            ))
+            Err(DispatchError::Resume(ResumeError::UnsupportedInstructionBytes))
         );
         assert_eq!(vmcb.bytes(), &before_vmcb);
         assert_eq!(frame, before_frame);
@@ -299,9 +246,7 @@ fn xsetbv_is_terminal_until_the_separate_xstate_owner_commits_it() {
             &model(),
             cpu,
         ),
-        Ok(DispatchOutcome::Stop(StopReason::Exit(
-            ExitAction::Unsupported { code: 0x8d }
-        )))
+        Ok(DispatchOutcome::Stop(StopReason::Exit(ExitAction::Unsupported { code: 0x8d })))
     );
     assert_eq!(vmcb.bytes(), &before_vmcb);
     assert_eq!(frame, before_frame);
@@ -324,9 +269,7 @@ fn shutdown_never_interprets_undefined_guest_state_or_requests_continuation() {
             &model(),
             cpu,
         ),
-        Ok(DispatchOutcome::Stop(StopReason::Exit(
-            ExitAction::Shutdown
-        )))
+        Ok(DispatchOutcome::Stop(StopReason::Exit(ExitAction::Shutdown)))
     );
     assert_eq!(vmcb.bytes(), &before_vmcb);
     assert_eq!(frame, before_frame);
@@ -335,10 +278,7 @@ fn shutdown_never_interprets_undefined_guest_state_or_requests_continuation() {
 #[test]
 fn xsetbv_continuation_requires_exact_exit_bytes_and_canonical_checked_add() {
     let continuation = snapshot(0x8d, 0x1000).xsetbv_continuation(XSETBV).unwrap();
-    assert_eq!(
-        (continuation.address(), continuation.instruction_bytes()),
-        (0x1003, 3)
-    );
+    assert_eq!((continuation.address(), continuation.instruction_bytes()), (0x1003, 3));
     for code in [0x72, 0x7c, 0x8c, 0x1_0000_008d, u64::MAX] {
         assert_eq!(
             snapshot(code, 0x1000).xsetbv_continuation(XSETBV),
@@ -367,12 +307,6 @@ fn xsetbv_continuation_requires_exact_exit_bytes_and_canonical_checked_add() {
         assert_eq!(snapshot(0x8d, rip).xsetbv_continuation(XSETBV), Err(error));
     }
     for rip in [0x0000_7fff_ffff_fffc, 0xffff_8000_0000_0000, u64::MAX - 3] {
-        assert_eq!(
-            snapshot(0x8d, rip)
-                .xsetbv_continuation(XSETBV)
-                .unwrap()
-                .address(),
-            rip + 3
-        );
+        assert_eq!(snapshot(0x8d, rip).xsetbv_continuation(XSETBV).unwrap().address(), rip + 3);
     }
 }

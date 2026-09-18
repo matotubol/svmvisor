@@ -210,9 +210,7 @@ pub fn prepare_native_with_efer<'a>(
     if s.cr4 & (1 << 17) == 0 && s.cr3 & 0xfff & !0x18 != 0 {
         return Err(E::UnsupportedCr3);
     }
-    policy
-        .validate(s.cr3 & !0xfff, 4096, 4096)
-        .map_err(E::Address)?;
+    policy.validate(s.cr3 & !0xfff, 4096, 4096).map_err(E::Address)?;
     if request.dr6 >> 32 != 0
         || request.dr7 >> 32 != 0
         || request.dr7 & 0xff != 0
@@ -224,12 +222,7 @@ pub fn prepare_native_with_efer<'a>(
     if request.cr8 > 15 {
         return Err(E::InvalidCr8);
     }
-    if request
-        .pat
-        .to_le_bytes()
-        .iter()
-        .any(|b| !matches!(*b, 0 | 1 | 4 | 5 | 6 | 7))
-    {
+    if request.pat.to_le_bytes().iter().any(|b| !matches!(*b, 0 | 1 | 4 | 5 | 6 | 7)) {
         return Err(E::InvalidPat);
     }
     if !canonical_span(request.idtr.base, u64::from(request.idtr.limit) + 1) {
@@ -239,12 +232,7 @@ pub fn prepare_native_with_efer<'a>(
     if !canonical_span(table.base, u64::from(table.limit) + 1) {
         return Err(E::NoncanonicalAddress);
     }
-    let empty = SegmentState {
-        selector: 0,
-        attributes: 0,
-        limit: 0,
-        base: 0,
-    };
+    let empty = SegmentState { selector: 0, attributes: 0, limit: 0, base: 0 };
     let mut segments = [empty; 4];
     for (out, captured) in segments.iter_mut().zip(request.gdt.segments()) {
         *out = match *captured {
@@ -422,7 +410,9 @@ impl NativeBootstrapAck {
             || read_u64(vmcb.bytes(), 0x068) & 1 != 0
             || if vmcb.virtual_interrupt_control() & crate::svm::x2avic::ENABLE_BITS != 0 {
                 vmcb.validate_native_x2avic_controls().is_err()
-            } else { vmcb.virtual_interrupt_control() & !(0xf | (1 << 24)) != 0 }
+            } else {
+                vmcb.virtual_interrupt_control() & !(0xf | (1 << 24)) != 0
+            }
         {
             return Err(E::PendingEvent);
         }

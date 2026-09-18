@@ -27,35 +27,22 @@ fn capabilities(nrip: bool) -> ValidatedCapabilities {
         physical_address_bits: Some(48),
         vm_cr_svmdis: EvidenceFlag::Clear,
         hypervisor_present: EvidenceFlag::Clear,
-        encryption: EncryptionState::Unencrypted {
-            encryption_bit: None,
-        },
-        optional: OptionalFeatures {
-            nrip_save: nrip,
-            ..OptionalFeatures::default()
-        },
+        encryption: EncryptionState::Unencrypted { encryption_bit: None },
+        optional: OptionalFeatures { nrip_save: nrip, ..OptionalFeatures::default() },
     }
     .validate()
     .unwrap()
 }
 
 fn snapshot(info1: u64) -> ExitSnapshot {
-    ExitSnapshot {
-        code: 0x7b,
-        info1,
-        info2: 0x1001,
-        rip: 0x1000,
-        nrip: 0x1001,
-    }
+    ExitSnapshot { code: 0x7b, info1, info2: 0x1001, rip: 0x1000, nrip: 0x1001 }
 }
 
 #[test]
 fn ioio_metadata_preserves_width_direction_port_and_raw_unconsumed_fields() {
-    for (size, width, bytes) in [
-        (1, IoWidth::Byte, 1),
-        (2, IoWidth::Word, 2),
-        (4, IoWidth::Dword, 4),
-    ] {
+    for (size, width, bytes) in
+        [(1, IoWidth::Byte, 1), (2, IoWidth::Word, 2), (4, IoWidth::Dword, 4)]
+    {
         for (input, direction) in [(0, IoDirection::Out), (1, IoDirection::In)] {
             for port in [0, 7, 8, 0xff, 0x100, 0xfffc, 0xfffd, 0xfffe, 0xffff] {
                 for address in [0, 1, 2, 4, 7] {
@@ -87,14 +74,7 @@ fn ioio_metadata_preserves_width_direction_port_and_raw_unconsumed_fields() {
 #[test]
 fn only_ioio_defines_io_metadata_and_malformed_widths_or_reserved_bits_are_refused() {
     for code in [0, 0x72, 0x78, 0x7c, 0x400, 0x1_0000_007b, u64::MAX] {
-        assert_eq!(
-            ExitSnapshot {
-                code,
-                ..snapshot(0x10)
-            }
-            .ioio(),
-            Err(IoDecodeError::NotIoioExit)
-        );
+        assert_eq!(ExitSnapshot { code, ..snapshot(0x10) }.ioio(), Err(IoDecodeError::NotIoioExit));
     }
     for size in [0, 3, 5, 6, 7] {
         let value = snapshot(size << 4);
@@ -146,10 +126,7 @@ fn every_string_or_rep_form_is_explicitly_refused_without_memory_field_admission
                 let io = value.ioio().unwrap();
                 assert_eq!(io.string(), string);
                 assert_eq!(io.rep(), rep);
-                assert_eq!(
-                    value.action(),
-                    ExitAction::IoioRefused(IoRefusal::StringOrRep(io))
-                );
+                assert_eq!(value.action(), ExitAction::IoioRefused(IoRefusal::StringOrRep(io)));
             }
         }
     }
@@ -257,11 +234,7 @@ fn refusal_dispatch_preserves_entire_vmcb_gprs_flags_and_pending_events() {
 fn ioio_never_offers_nrip_or_instruction_completion_even_with_plausible_following_rip() {
     for info in [0x80_0010, 0x80_0011, 0x80_001c, 0xffff_0040, 0] {
         for following in [0, 0x1001, 0x1002, u64::MAX] {
-            let value = ExitSnapshot {
-                info2: following,
-                nrip: following,
-                ..snapshot(info)
-            };
+            let value = ExitSnapshot { info2: following, nrip: following, ..snapshot(info) };
             assert_eq!(
                 value.resume_candidate(&capabilities(true)),
                 Err(ResumeError::ExitDoesNotPermitCandidate)
@@ -279,10 +252,7 @@ fn ioio_never_offers_nrip_or_instruction_completion_even_with_plausible_followin
 #[test]
 fn stale_io_snapshot_refusal_preserves_all_stopped_state() {
     let (mut vmcb, mut frame) = stopped(0x80_0011, 0x8000_0351, 0x8000_0352);
-    let value = ExitSnapshot {
-        rip: 0x9999,
-        ..vmcb.exit_snapshot()
-    };
+    let value = ExitSnapshot { rip: 0x9999, ..vmcb.exit_snapshot() };
     let before = *vmcb.bytes();
     let before_frame = frame;
     assert_eq!(

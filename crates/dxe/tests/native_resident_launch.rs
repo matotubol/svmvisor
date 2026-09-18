@@ -168,7 +168,10 @@ fn backing_page_may_be_the_last_image_page_below_the_aliases() {
     }
     assert_eq!(common_backing_offset(&p), Some(0xd3000));
     let plan: Vec<_> = backing_aliases(&p, 5).unwrap().collect();
-    assert_eq!(plan[23], (0x700000 + 0xd4000 + 23 * 4096, Some(0x200000 + 23 * 0x100000 + 0xd3000)));
+    assert_eq!(
+        plan[23],
+        (0x700000 + 0xd4000 + 23 * 4096, Some(0x200000 + 23 * 0x100000 + 0xd3000))
+    );
     assert_eq!(plan[24].1, None);
 }
 

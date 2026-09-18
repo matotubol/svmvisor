@@ -30,14 +30,7 @@ pub fn native_paging_config(
     {
         return None;
     }
-    Some(PagingConfig {
-        cr3,
-        physical_bits,
-        la57: false,
-        nxe,
-        pcid,
-        page1gb: true,
-    })
+    Some(PagingConfig { cr3, physical_bits, la57: false, nxe, pcid, page1gb: true })
 }
 
 pub fn directory_valid(d: &ResidentDirectory, base: u64) -> bool {
@@ -71,20 +64,18 @@ pub fn directory_valid(d: &ResidentDirectory, base: u64) -> bool {
         (d.context, core::mem::size_of::<BridgeContext>() as u64, 16),
         (d.vmcb, 4096, 4096),
         (d.auxiliary, 4096, 4096),
+        (d.registers, core::mem::size_of::<GuestRegisters>() as u64, 8),
         (
-            d.registers,
-            core::mem::size_of::<GuestRegisters>() as u64,
-            8,
+            d.npt,
+            core::mem::size_of::<svmvisor_hypervisor::memory::npt::TableStorage>() as u64,
+            4096,
         ),
-        (d.npt, core::mem::size_of::<svmvisor_hypervisor::memory::npt::TableStorage>() as u64, 4096),
         (d.avic_backing, 4096, 4096),
     ];
     for (i, &(address, bytes, alignment)) in objects.iter().enumerate() {
         if address < d.data_start
             || address & (alignment - 1) != 0
-            || address
-                .checked_add(bytes)
-                .is_none_or(|last| last > d.memory_end)
+            || address.checked_add(bytes).is_none_or(|last| last > d.memory_end)
         {
             return false;
         }
@@ -115,16 +106,13 @@ pub fn common_backing_offset(directories: &[ResidentDirectory]) -> Option<u64> {
         .iter()
         .enumerate()
         .all(|(slot, d)| {
-            first
-                .pool_base
-                .checked_add(slot as u64 * ARENA_BYTES as u64)
-                .is_some_and(|base| {
-                    directory_valid(d, base)
-                        && d.cpu_slot == slot as u64
-                        && d.pool_base == first.pool_base
-                        && d.pool_bytes == pool_bytes
-                        && d.avic_backing.checked_sub(base) == Some(offset)
-                })
+            first.pool_base.checked_add(slot as u64 * ARENA_BYTES as u64).is_some_and(|base| {
+                directory_valid(d, base)
+                    && d.cpu_slot == slot as u64
+                    && d.pool_base == first.pool_base
+                    && d.pool_bytes == pool_bytes
+                    && d.avic_backing.checked_sub(base) == Some(offset)
+            })
         })
         .then_some(offset)
 }

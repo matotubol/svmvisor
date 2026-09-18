@@ -5,13 +5,7 @@ use svmvisor_hypervisor::memory::address::{
 };
 
 fn policy() -> AddressPolicy {
-    AddressPolicy::new(
-        48,
-        EncryptionState::Unencrypted {
-            encryption_bit: None,
-        },
-    )
-    .unwrap()
+    AddressPolicy::new(48, EncryptionState::Unencrypted { encryption_bit: None }).unwrap()
 }
 fn range(base: u64, bytes: u64) -> PhysicalRange {
     policy().validate(base, bytes, 1).unwrap()
@@ -31,12 +25,7 @@ fn arena() -> PhysicalRange {
     range(0x180000, RESIDENT_ARENA_BYTES)
 }
 fn descriptor(start: u64, pages: u64, kind: u32) -> MemoryDescriptor {
-    MemoryDescriptor {
-        memory_type: kind,
-        physical_start: start,
-        page_count: pages,
-        attributes: 8,
-    }
+    MemoryDescriptor { memory_type: kind, physical_start: start, page_count: pages, attributes: 8 }
 }
 fn descriptors() -> [MemoryDescriptor; 1] {
     [descriptor(0, 1024, 1)]
@@ -72,10 +61,7 @@ fn smp_wire_offsets_and_owned_roundtrip() {
         let offset = 96 + index * 32;
         assert_eq!(&wire[offset..offset + 8], &cpu.processor_id.to_le_bytes());
         assert_eq!(&wire[offset + 8..offset + 12], &cpu.apic_id.to_le_bytes());
-        assert_eq!(
-            &wire[offset + 12..offset + 16],
-            &cpu.signature.to_le_bytes()
-        );
+        assert_eq!(&wire[offset + 12..offset + 16], &cpu.signature.to_le_bytes());
         assert_eq!(&wire[offset + 16..offset + 28], &cpu.vendor);
     }
     assert_eq!(&wire[160..164], &1u32.to_le_bytes());
@@ -129,14 +115,9 @@ fn supplied_cpu_topology_and_callback_evidence_are_exact() {
 
 #[test]
 fn supplied_sipi_extent_is_one_aligned_nonzero_page_below_one_megabyte() {
-    for (base, bytes) in [
-        (0, 4096),
-        (1, 4096),
-        (0x8001, 4096),
-        (0x8000, 4095),
-        (0x8000, 8192),
-        (0x100000, 4096),
-    ] {
+    for (base, bytes) in
+        [(0, 4096), (1, 4096), (0x8001, 4096), (0x8000, 4095), (0x8000, 8192), (0x100000, 4096)]
+    {
         assert_eq!(
             SmpResources::new(range(base, bytes), cpus(), 1),
             Err(OwnershipError::SmpLowPage)
@@ -181,22 +162,13 @@ fn both_reservations_split_one_descriptor_without_losing_bytes_or_attributes() {
 fn low_page_map_eligibility_and_disjointness_refuse_transactionally() {
     for (low_descriptor, error) in [
         (descriptor(0x9000, 1, 1), OwnershipError::SmpPageUncovered),
+        (descriptor(0x8000, 1, 2), OwnershipError::SmpPageNotLoaderCode),
         (
-            descriptor(0x8000, 1, 2),
-            OwnershipError::SmpPageNotLoaderCode,
-        ),
-        (
-            MemoryDescriptor {
-                attributes: 0,
-                ..descriptor(0x8000, 1, 1)
-            },
+            MemoryDescriptor { attributes: 0, ..descriptor(0x8000, 1, 1) },
             OwnershipError::Map(MemoryError::MissingWriteBackCapability),
         ),
         (
-            MemoryDescriptor {
-                attributes: 0x2008,
-                ..descriptor(0x8000, 1, 1)
-            },
+            MemoryDescriptor { attributes: 0x2008, ..descriptor(0x8000, 1, 1) },
             OwnershipError::Map(MemoryError::ReadProtected),
         ),
     ] {
@@ -255,19 +227,12 @@ fn decode_revalidates_smp_metadata_and_address_policy() {
         (0, 4096, OwnershipError::SmpLowPage),
         (0x100000, 4096, OwnershipError::SmpLowPage),
         (0x8000, 8192, OwnershipError::SmpLowPage),
-        (
-            0x8001,
-            4096,
-            OwnershipError::Address(AddressError::Misaligned),
-        ),
+        (0x8001, 4096, OwnershipError::Address(AddressError::Misaligned)),
     ] {
         let mut bytes = page();
         put64(&mut bytes, 64, base);
         put64(&mut bytes, 72, length);
-        assert_eq!(
-            OwnershipRecord::decode(&bytes, &policy()).unwrap_err(),
-            error
-        );
+        assert_eq!(OwnershipRecord::decode(&bytes, &policy()).unwrap_err(), error);
     }
     let mut bytes = page();
     put64(&mut bytes, 24, 0x1000);
@@ -313,18 +278,10 @@ fn version_specific_capacity_is_exact_and_extra_descriptors_are_not_dropped() {
     }
     let mut bytes = [0xa5; HANDOFF_PAGE_BYTES];
     OwnershipRecord::encode_with_smp(&mut bytes, &map[..138], arena(), 48, 1, Some(smp())).unwrap();
-    assert_eq!(
-        OwnershipRecord::decode(&bytes, &policy())
-            .unwrap()
-            .descriptor_count(),
-        138
-    );
+    assert_eq!(OwnershipRecord::decode(&bytes, &policy()).unwrap().descriptor_count(), 138);
     assert_eq!(&bytes[4088..], &[0; 8]);
     assert_eq!(
-        OwnershipRecord::decode(&bytes, &policy())
-            .unwrap()
-            .descriptors()
-            .collect::<Vec<_>>(),
+        OwnershipRecord::decode(&bytes, &policy()).unwrap().descriptors().collect::<Vec<_>>(),
         map[..138]
     );
     let previous = bytes;
@@ -359,16 +316,8 @@ fn version_specific_capacity_is_exact_and_extra_descriptors_are_not_dropped() {
         );
     }
     OwnershipRecord::encode_into(&mut bytes, &map[..124], arena(), 48, 1).unwrap();
-    assert_eq!(
-        OwnershipRecord::decode(&bytes, &policy())
-            .unwrap()
-            .descriptor_count(),
-        124
-    );
-    assert_eq!(
-        OwnershipRecord::decode(&bytes, &policy()).unwrap().smp(),
-        None
-    );
+    assert_eq!(OwnershipRecord::decode(&bytes, &policy()).unwrap().descriptor_count(), 124);
+    assert_eq!(OwnershipRecord::decode(&bytes, &policy()).unwrap().smp(), None);
     let mut explicit_none = [0xa5; HANDOFF_PAGE_BYTES];
     OwnershipRecord::encode_with_smp(&mut explicit_none, &map[..124], arena(), 48, 1, None)
         .unwrap();
@@ -383,27 +332,15 @@ fn decode_rechecks_low_page_final_map_permissions_and_coverage() {
     for (offset, value, error) in [
         (160, 2, OwnershipError::SmpPageNotLoaderCode),
         (164, 0x9000, OwnershipError::SmpPageUncovered),
-        (
-            180,
-            0,
-            OwnershipError::Map(MemoryError::MissingWriteBackCapability),
-        ),
+        (180, 0, OwnershipError::Map(MemoryError::MissingWriteBackCapability)),
         (180, 0x2008, OwnershipError::Map(MemoryError::ReadProtected)),
     ] {
         let mut bytes = valid;
         put32(&mut bytes, offset, value);
-        assert_eq!(
-            OwnershipRecord::decode(&bytes, &policy()).unwrap_err(),
-            error
-        );
+        assert_eq!(OwnershipRecord::decode(&bytes, &policy()).unwrap_err(), error);
     }
-    let encryption = AddressPolicy::new(
-        48,
-        EncryptionState::Unencrypted {
-            encryption_bit: Some(15),
-        },
-    )
-    .unwrap();
+    let encryption =
+        AddressPolicy::new(48, EncryptionState::Unencrypted { encryption_bit: Some(15) }).unwrap();
     assert_eq!(
         OwnershipRecord::decode(&valid, &encryption).unwrap_err(),
         OwnershipError::Address(AddressError::EncryptionBitEncoded)
@@ -418,10 +355,7 @@ fn allocated_low_page_boundaries_accept_coexisting_wb_capabilities() {
     for base in [0x9f000, 0xff000] {
         let resources = SmpResources::new(range(base, 4096), cpus(), 1).unwrap();
         let map = [
-            MemoryDescriptor {
-                attributes: 0xf,
-                ..descriptor(base, 1, 1)
-            },
+            MemoryDescriptor { attributes: 0xf, ..descriptor(base, 1, 1) },
             descriptor(0x100000, 512, 1),
         ];
         let mut bytes = [0; HANDOFF_PAGE_BYTES];
@@ -431,10 +365,7 @@ fn allocated_low_page_boundaries_accept_coexisting_wb_capabilities() {
         assert_eq!(record.smp(), Some(resources));
         assert_eq!(
             record.guest_descriptors().next().unwrap(),
-            MemoryDescriptor {
-                memory_type: 0,
-                ..map[0]
-            }
+            MemoryDescriptor { memory_type: 0, ..map[0] }
         );
     }
 }

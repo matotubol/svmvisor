@@ -6,12 +6,12 @@ mod card_load;
 use sha2::{Digest, Sha256};
 use std::{
     ffi::c_void,
-    mem::{size_of, MaybeUninit},
+    mem::{MaybeUninit, size_of},
     sync::Mutex,
 };
 use uefi_raw::{
-    table::boot::{AllocateType, BootServices, MemoryType},
     Status,
+    table::boot::{AllocateType, BootServices, MemoryType},
 };
 const ARENA: usize = 0x100000;
 struct State {
@@ -41,11 +41,7 @@ mod pci_io {
     use svmvisor_dxe::diagnostics::journal::JournalIo;
     pub struct Bar0;
     pub fn status_result(s: Status) -> Result<(), Status> {
-        if s.is_error() {
-            Err(s)
-        } else {
-            Ok(())
-        }
+        if s.is_error() { Err(s) } else { Ok(()) }
     }
     impl Bar0 {
         pub fn card_word(&self, offset: u64) -> Result<u32, Status> {
@@ -56,11 +52,7 @@ mod pci_io {
             if s.mode == 3 && offset >= 128 {
                 return Err(Status::DEVICE_ERROR);
             }
-            Ok(u32::from_le_bytes(
-                s.slot[offset as usize..offset as usize + 4]
-                    .try_into()
-                    .unwrap(),
-            ))
+            Ok(u32::from_le_bytes(s.slot[offset as usize..offset as usize + 4].try_into().unwrap()))
         }
     }
     impl JournalIo for Bar0 {
@@ -111,9 +103,7 @@ unsafe extern "efiapi" fn free_pool(p: *mut u8) -> Status {
         return Status::DEVICE_ERROR;
     }
     unsafe {
-        drop(Box::from_raw(std::ptr::slice_from_raw_parts_mut(
-            p, s.pool_len,
-        )));
+        drop(Box::from_raw(std::ptr::slice_from_raw_parts_mut(p, s.pool_len)));
     }
     s.pool = 0;
     s.frees += 1;
@@ -134,11 +124,7 @@ unsafe extern "efiapi" fn allocate_pages(
     }
     assert_eq!(s.pages, 0);
     let requested = unsafe { *out };
-    let actual = if s.mode == 6 {
-        requested + 0x100000
-    } else {
-        requested
-    };
+    let actual = if s.mode == 6 { requested + 0x100000 } else { requested };
     let p = unsafe { VirtualAlloc(actual as *mut c_void, ARENA, 0x3000, 4) };
     if p.is_null() {
         return Status::OUT_OF_RESOURCES;

@@ -62,9 +62,7 @@ impl Range {
         if self.length == 0 || (self.base | self.length) & (PAGE_SIZE - 1) != 0 {
             return Err(Error::InvalidParameter);
         }
-        self.base
-            .checked_add(self.length)
-            .ok_or(Error::InvalidParameter)
+        self.base.checked_add(self.length).ok_or(Error::InvalidParameter)
     }
 
     fn overlaps(self, other: Self) -> bool {
@@ -98,13 +96,7 @@ impl<'a, R: QualifiedTableReader, S: Setter> FirmwareAttributes<'a, R, S> {
     ) -> Result<Self, Error> {
         validate_policy(owned)?;
         validate_policy(protected)?;
-        Ok(Self {
-            reader,
-            setter,
-            owned,
-            protected,
-            poisoned: false,
-        })
+        Ok(Self { reader, setter, owned, protected, poisoned: false })
     }
 
     /// Inspect diagnostics such as the complete last raw firmware status.
@@ -145,11 +137,7 @@ impl<'a, R: QualifiedTableReader, S: Setter> FirmwareAttributes<'a, R, S> {
             x86::get(&mut ReadOnly(&mut self.reader), config, base, length).map_err(|error| {
                 // Get reports heterogeneous permissions as NO_MAPPING. Such a
                 // range is outside this setter's single-leaf mutation profile.
-                if error == Error::NoMapping {
-                    Error::Unsupported
-                } else {
-                    error
-                }
+                if error == Error::NoMapping { Error::Unsupported } else { error }
             })?;
         let absolute = if clear { old & !mask } else { old | mask };
         // A proven uniform no-op needs no writable policy grant or firmware call.
@@ -255,11 +243,7 @@ impl LeafPath {
             return false;
         }
         for index in 0..self.count {
-            let mask = if index + 1 == self.count {
-                !(PRESENT | WRITABLE | NX)
-            } else {
-                u64::MAX
-            };
+            let mask = if index + 1 == self.count { !(PRESENT | WRITABLE | NX) } else { u64::MAX };
             if self.values[index] & mask != other.values[index] & mask {
                 return false;
             }
@@ -280,10 +264,7 @@ fn qualify_single_leaf<R: QualifiedTableReader>(
     let mut table = config.root;
     let mut path = LeafPath::default();
     for level in (1u32..=4).rev() {
-        if request.overlaps(Range {
-            base: table,
-            length: PAGE_SIZE,
-        }) {
+        if request.overlaps(Range { base: table, length: PAGE_SIZE }) {
             return Err(Error::AccessDenied);
         }
         let shift = 12 + 9 * (level - 1);
@@ -387,13 +368,7 @@ impl<C: QualifiedCpuContext> CpuArchSetter<C> {
     /// context must qualify that exact interface and original address space.
     /// Retain the provider's lifetime externally; this type does not own it.
     pub unsafe fn new(protocol: NonNull<CpuArchProtocol>, context: C) -> Self {
-        Self {
-            protocol,
-            context,
-            last_status: None,
-            last_after_error: None,
-            poisoned: false,
-        }
+        Self { protocol, context, last_status: None, last_after_error: None, poisoned: false }
     }
 
     /// Last actual firmware callback status; rejected/preflight requests leave

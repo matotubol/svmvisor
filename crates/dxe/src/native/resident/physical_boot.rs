@@ -3,56 +3,98 @@
 //! The diagnostic consumer and native boot interposer share this startup owner.
 use super::*;
 use core::sync::atomic::AtomicU32;
-use svmvisor_hypervisor::arch::x86_64::msr::{MTRR_DEF_TYPE, VM_CR_R_INIT};
-use svmvisor_hypervisor::memory::mtrrs::{CAP_FIX, DEF_TYPE_E, DEF_TYPE_FE};
 use resident::bootstrap_paging::BootstrapPaging;
 use resident::physical::{ACTIVATION_GUID, ActivationInterface};
-use svmvisor_hypervisor::host::descriptors::HostDescriptorRequest;
-use uefi_raw::table::boot::AllocateType;
 use svmvisor_dxe::diagnostics::resident_boot::AdmissionFailure;
+use svmvisor_hypervisor::arch::x86_64::msr::{MTRR_DEF_TYPE, VM_CR_R_INIT};
+use svmvisor_hypervisor::host::descriptors::HostDescriptorRequest;
+use svmvisor_hypervisor::memory::mtrrs::{CAP_FIX, DEF_TYPE_E, DEF_TYPE_FE};
+use uefi_raw::table::boot::AllocateType;
 // One blocking MP observer at a time. No card access from this context.
-static mut ADMISSION_CONTEXT:Option<AdmissionFailure>=None;
-static ADMISSION_ACTIVE:AtomicBool=AtomicBool::new(false);
-pub(super) fn admission_clear(){ADMISSION_ACTIVE.store(false,Ordering::Release);unsafe{ADMISSION_CONTEXT=None;}}
-pub(super) fn admission_begin(operation:u32,processor:u32,apic_id:u32){
-    let mut value=AdmissionFailure::new(operation,0,0,0,0,0);
-    value.processor=processor;value.apic_id=apic_id;
-    unsafe{ADMISSION_CONTEXT=Some(value);}
-    ADMISSION_ACTIVE.store(true,Ordering::Release);
+static mut ADMISSION_CONTEXT: Option<AdmissionFailure> = None;
+static ADMISSION_ACTIVE: AtomicBool = AtomicBool::new(false);
+pub(super) fn admission_clear() {
+    ADMISSION_ACTIVE.store(false, Ordering::Release);
+    unsafe {
+        ADMISSION_CONTEXT = None;
+    }
 }
-pub(super) fn admission_cpu_id(apic_id:u32){
-    if !ADMISSION_ACTIVE.load(Ordering::Acquire){return;}
-    unsafe{if let Some(value)=&mut *ptr::addr_of_mut!(ADMISSION_CONTEXT){value.apic_id=apic_id;}}
+pub(super) fn admission_begin(operation: u32, processor: u32, apic_id: u32) {
+    let mut value = AdmissionFailure::new(operation, 0, 0, 0, 0, 0);
+    value.processor = processor;
+    value.apic_id = apic_id;
+    unsafe {
+        ADMISSION_CONTEXT = Some(value);
+    }
+    ADMISSION_ACTIVE.store(true, Ordering::Release);
 }
-pub(super) fn admission_hint(predicate:u32,item:u64,observed:u64,expected:u64){
-    if !ADMISSION_ACTIVE.load(Ordering::Acquire){return;}
-    unsafe{if let Some(value)=&mut *ptr::addr_of_mut!(ADMISSION_CONTEXT){
-        if value.predicate==0{value.predicate=predicate;value.item=item;value.observed=observed;value.expected=expected;}
-    }}
+pub(super) fn admission_cpu_id(apic_id: u32) {
+    if !ADMISSION_ACTIVE.load(Ordering::Acquire) {
+        return;
+    }
+    unsafe {
+        if let Some(value) = &mut *ptr::addr_of_mut!(ADMISSION_CONTEXT) {
+            value.apic_id = apic_id;
+        }
+    }
 }
-pub(super) fn admission_walk(error:paging::WalkError,cfg:PagingConfig,address:u64,last:Option<(u64,u64)>){
+pub(super) fn admission_hint(predicate: u32, item: u64, observed: u64, expected: u64) {
+    if !ADMISSION_ACTIVE.load(Ordering::Acquire) {
+        return;
+    }
+    unsafe {
+        if let Some(value) = &mut *ptr::addr_of_mut!(ADMISSION_CONTEXT) {
+            if value.predicate == 0 {
+                value.predicate = predicate;
+                value.item = item;
+                value.observed = observed;
+                value.expected = expected;
+            }
+        }
+    }
+}
+pub(super) fn admission_walk(
+    error: paging::WalkError,
+    cfg: PagingConfig,
+    address: u64,
+    last: Option<(u64, u64)>,
+) {
     use paging::WalkError::*;
-    let(reason,level)=match error{UnsupportedPhysicalWidth=>(1,0),FiveLevelUnsupported=>(2,0),NoncanonicalAddress=>(3,0),
-        InvalidCr3=>(4,0),UnreadableTable{level,..}=>(5,level),NotPresent{level}=>(6,level),ReservedEntry{level}=>(7,level),
-        UnsupportedEntryBits{level}=>(8,level),OneGiBUnsupported=>(9,0),IncompleteWalk=>(10,0)};
-    let(item,observed)=match error {
-        UnreadableTable{address,..}=>(address,0),
-        InvalidCr3=>(3,cfg.cr3),UnsupportedPhysicalWidth=>(0x80000008,cfg.physical_bits as u64),
-        FiveLevelUnsupported=>(4,1<<12),NoncanonicalAddress=>(address,address),
-        _=>last.unwrap_or((cfg.cr3,0)),
+    let (reason, level) = match error {
+        UnsupportedPhysicalWidth => (1, 0),
+        FiveLevelUnsupported => (2, 0),
+        NoncanonicalAddress => (3, 0),
+        InvalidCr3 => (4, 0),
+        UnreadableTable { level, .. } => (5, level),
+        NotPresent { level } => (6, level),
+        ReservedEntry { level } => (7, level),
+        UnsupportedEntryBits { level } => (8, level),
+        OneGiBUnsupported => (9, 0),
+        IncompleteWalk => (10, 0),
     };
-    admission_hint(400+reason+u32::from(level)*16,item,observed,address);
+    let (item, observed) = match error {
+        UnreadableTable { address, .. } => (address, 0),
+        InvalidCr3 => (3, cfg.cr3),
+        UnsupportedPhysicalWidth => (0x80000008, cfg.physical_bits as u64),
+        FiveLevelUnsupported => (4, 1 << 12),
+        NoncanonicalAddress => (address, address),
+        _ => last.unwrap_or((cfg.cr3, 0)),
+    };
+    admission_hint(400 + reason + u32::from(level) * 16, item, observed, address);
 }
-fn admission_end(code:u64)->AdmissionFailure{
-    ADMISSION_ACTIVE.store(false,Ordering::Release);
-    let mut value=unsafe{ptr::addr_of_mut!(ADMISSION_CONTEXT).replace(None)}
-        .unwrap_or(AdmissionFailure::new(3,0,0,0,0,0));
-    if value.predicate==0 {value.predicate=code as u32;}
-    value.status=code;value
+fn admission_end(code: u64) -> AdmissionFailure {
+    ADMISSION_ACTIVE.store(false, Ordering::Release);
+    let mut value = unsafe { ptr::addr_of_mut!(ADMISSION_CONTEXT).replace(None) }
+        .unwrap_or(AdmissionFailure::new(3, 0, 0, 0, 0, 0));
+    if value.predicate == 0 {
+        value.predicate = code as u32;
+    }
+    value.status = code;
+    value
 }
-fn admission_refused(value:AdmissionFailure)->Status{
-    #[cfg(feature="native-resident-boot")]
-    card_boot::admission_failure(value,unsafe{CPU_COUNT} as u32);
+fn admission_refused(value: AdmissionFailure) -> Status {
+    #[cfg(feature = "native-resident-boot")]
+    card_boot::admission_failure(value, unsafe { CPU_COUNT } as u32);
     Status::UNSUPPORTED
 }
 /// Serialized BSP preparation stages 16/17, before CPU/MAP are retained: end
@@ -61,18 +103,27 @@ fn admission_refused(value:AdmissionFailure)->Status{
 /// while the caller's collected map still backs the transport validation.
 /// # Safety
 /// Same BSP-only pre-loader context as `admission_refused`; `map` is current.
-pub(super) unsafe fn slot_admission_refused(reason:u32,count:usize,code:u64,processor:Cpu,map:&[MemoryDescriptor])->Status{
-    let value=admission_end(code);
-    #[cfg(feature="native-resident-boot")]
-    unsafe{card_boot::slot_admission_failure(value,count as u32,reason,processor,map);}
-    #[cfg(not(feature="native-resident-boot"))]
-    let _=(value,count,reason,processor,map);
+pub(super) unsafe fn slot_admission_refused(
+    reason: u32,
+    count: usize,
+    code: u64,
+    processor: Cpu,
+    map: &[MemoryDescriptor],
+) -> Status {
+    let value = admission_end(code);
+    #[cfg(feature = "native-resident-boot")]
+    unsafe {
+        card_boot::slot_admission_failure(value, count as u32, reason, processor, map);
+    }
+    #[cfg(not(feature = "native-resident-boot"))]
+    let _ = (value, count, reason, processor, map);
     unsupported(code)
 }
 const BOOT_BYTES: usize = 128 * 1024;
 const AP_FAILURE_OFFSET: u64 = 120;
 use svmvisor_dxe::diagnostics::resident_boot::ApFailureObservation;
-const _: () = assert!(AP_FAILURE_OFFSET as usize + core::mem::size_of::<ApFailureObservation>() <= 256);
+const _: () =
+    assert!(AP_FAILURE_OFFSET as usize + core::mem::size_of::<ApFailureObservation>() <= 256);
 #[repr(C, align(4096))]
 struct Bootstrap([u8; BOOT_BYTES]);
 static mut BOOT: [Bootstrap; abi::MAX_RESIDENT_CPUS] =
@@ -84,15 +135,19 @@ static CACHE_SURVEY: svmvisor_hypervisor::svm::native_cache::CacheSurvey =
 #[cfg(feature = "native-resident-boot")]
 static CACHE_FAILURE_SLOT: AtomicU32 = AtomicU32::new(u32::MAX);
 #[cfg(feature = "native-resident-boot")]
-static mut CACHE_SAMPLE_FAILURES: [svmvisor_hypervisor::svm::native_cache::CacheAdmissionFailure; 32] =
-    [svmvisor_hypervisor::svm::native_cache::CacheAdmissionFailure::new(0,0,0,0); 32];
+static mut CACHE_SAMPLE_FAILURES: [svmvisor_hypervisor::svm::native_cache::CacheAdmissionFailure;
+    32] = [svmvisor_hypervisor::svm::native_cache::CacheAdmissionFailure::new(0, 0, 0, 0); 32];
 static mut LOW: u64 = 0;
 static mut BOOT_CFG: Option<PagingConfig> = None;
 static mut AP_TABLES: BootstrapPaging = BootstrapPaging::empty();
 static mut BSP: usize = 0;
 /// Inventory is immutable before any activation callback executes.
-pub(super) unsafe fn is_bsp(slot: usize) -> bool { slot == unsafe { BSP } }
-pub(super) unsafe fn bsp_slot()->usize{unsafe{BSP}}
+pub(super) unsafe fn is_bsp(slot: usize) -> bool {
+    slot == unsafe { BSP }
+}
+pub(super) unsafe fn bsp_slot() -> usize {
+    unsafe { BSP }
+}
 #[cfg(feature = "native-resident-guest-startup")]
 static mut BSP_INITIAL_ICR: u64 = 0;
 #[cfg(feature = "native-resident-guest-startup")]
@@ -200,23 +255,14 @@ pub(super) unsafe fn prepare(
     preparation_step(21, 0xfffff);
     let mut low = 0xfffff;
     let status = unsafe {
-        (bs.allocate_pages)(
-            AllocateType::MAX_ADDRESS,
-            MemoryType::LOADER_CODE,
-            1,
-            &mut low,
-        )
+        (bs.allocate_pages)(AllocateType::MAX_ADDRESS, MemoryType::LOADER_CODE, 1, &mut low)
     };
     if status != Status::SUCCESS {
         preparation_failure(1, status.0 as u64, low);
         return Err(status);
     }
     preparation_step(21, low);
-    let allocation = LowAllocation {
-        bs,
-        base: low,
-        retained: false,
-    };
+    let allocation = LowAllocation { bs, base: low, retained: false };
     if low == 0 || low >= 0x100000 || low & 4095 != 0 {
         return Err(Status::UNSUPPORTED);
     }
@@ -237,11 +283,7 @@ pub(super) unsafe fn prepare(
     }
     unsafe {
         ptr::write_bytes(low as *mut u8, 0, 4096);
-        ptr::copy_nonoverlapping(
-            ptr::addr_of!(svmvisor_ap_trampoline),
-            low as *mut u8,
-            length,
-        );
+        ptr::copy_nonoverlapping(ptr::addr_of!(svmvisor_ap_trampoline), low as *mut u8, length);
     }
     let offset = |p: *const u8| p as usize - ptr::addr_of!(svmvisor_ap_trampoline) as usize;
     for (field, value) in [
@@ -249,18 +291,9 @@ pub(super) unsafe fn prepare(
             ptr::addr_of!(svmvisor_ap_protected_target),
             low + offset(ptr::addr_of!(svmvisor_ap_protected)) as u64,
         ),
-        (
-            ptr::addr_of!(svmvisor_ap_gdt_base),
-            low + offset(ptr::addr_of!(svmvisor_ap_gdt)) as u64,
-        ),
-        (
-            ptr::addr_of!(svmvisor_ap_root),
-            ptr::addr_of!(AP_TABLES) as u64,
-        ),
-        (
-            ptr::addr_of!(svmvisor_ap_long_target),
-            svmvisor_ap_entry64 as *const () as u64,
-        ),
+        (ptr::addr_of!(svmvisor_ap_gdt_base), low + offset(ptr::addr_of!(svmvisor_ap_gdt)) as u64),
+        (ptr::addr_of!(svmvisor_ap_root), ptr::addr_of!(AP_TABLES) as u64),
+        (ptr::addr_of!(svmvisor_ap_long_target), svmvisor_ap_entry64 as *const () as u64),
     ] {
         if value > u32::MAX as u64 || offset(field) + 4 > length {
             return Err(Status::UNSUPPORTED);
@@ -313,7 +346,9 @@ pub(super) unsafe fn prepare(
             // The callback revalidates its mapping; copied code has no fixup.
             ((base + 112) as *mut u64).write(ptr::addr_of!(GUEST_ACK) as u64);
             ((base + AP_FAILURE_OFFSET) as *mut ApFailureObservation).write(ApFailureObservation {
-                reason: 0, reserved: 0, observation: 0,
+                reason: 0,
+                reserved: 0,
+                observation: 0,
             });
             ptr::copy_nonoverlapping(wait as *const u8, (base + 256) as *mut u8, wait_bytes);
             ptr::copy_nonoverlapping(descriptors.gdt().as_ptr(), (base + 4096) as *mut u8, 40);
@@ -339,47 +374,77 @@ pub(super) unsafe fn validate(
     validate_x2apic()?;
     for slot in 0..count {
         unsafe {
-            mapped(
-                map,
-                cfg,
-                mt,
-                pat,
-                boot_address(slot),
-                BOOT_BYTES as u64,
-                true,
-                false,
-            )?;
+            mapped(map, cfg, mt, pat, boot_address(slot), BOOT_BYTES as u64, true, false)?;
         }
     }
     let low = unsafe { LOW };
-    if !ram_span(map,low,4096){admission_hint(130,low,4096,1);return Err(30);}
-    let enabled=DEF_TYPE_E|DEF_TYPE_FE;
-    if mt.default&enabled!=enabled{admission_hint(131,MTRR_DEF_TYPE as u64,mt.default,enabled);return Err(30);}
-    let capability=unsafe{rdmsr(MTRR_CAP)};
-    if capability&CAP_FIX==0{admission_hint(132,MTRR_CAP as u64,capability,CAP_FIX);return Err(30);}
-    let (msr,shift)=Mtrrs::fixed_range_register(low).ok_or_else(||{admission_hint(133,low,low,0x100000);30u64})?;
-    let fixed=unsafe{rdmsr(msr)};
-    if (fixed>>shift)&255!=6{admission_hint(134,msr as u64,fixed,shift as u64|(6u64<<32));return Err(30);}
-    if pat&255!=6{admission_hint(135,PAT as u64,pat,6);return Err(30);}
-    let mut last=None;
+    if !ram_span(map, low, 4096) {
+        admission_hint(130, low, 4096, 1);
+        return Err(30);
+    }
+    let enabled = DEF_TYPE_E | DEF_TYPE_FE;
+    if mt.default & enabled != enabled {
+        admission_hint(131, MTRR_DEF_TYPE as u64, mt.default, enabled);
+        return Err(30);
+    }
+    let capability = unsafe { rdmsr(MTRR_CAP) };
+    if capability & CAP_FIX == 0 {
+        admission_hint(132, MTRR_CAP as u64, capability, CAP_FIX);
+        return Err(30);
+    }
+    let (msr, shift) = Mtrrs::fixed_range_register(low).ok_or_else(|| {
+        admission_hint(133, low, low, 0x100000);
+        30u64
+    })?;
+    let fixed = unsafe { rdmsr(msr) };
+    if (fixed >> shift) & 255 != 6 {
+        admission_hint(134, msr as u64, fixed, shift as u64 | (6u64 << 32));
+        return Err(30);
+    }
+    if pat & 255 != 6 {
+        admission_hint(135, PAT as u64, pat, 6);
+        return Err(30);
+    }
+    let mut last = None;
     let translation = paging::translate(cfg, low, |address| {
         if !ram_span(map, address, 8) || !mt.page_is_wb(address & !4095) {
-            admission_hint(108,address,u64::from(ram_span(map,address,8))|u64::from(mt.page_is_wb(address&!4095))<<1,3);
+            admission_hint(
+                108,
+                address,
+                u64::from(ram_span(map, address, 8))
+                    | u64::from(mt.page_is_wb(address & !4095)) << 1,
+                3,
+            );
             return None;
         }
         let entry = unsafe { ptr::read_volatile(address as *const u64) };
-        last=Some((address,entry));
-        if entry & 0x18 != 0 {admission_hint(109,address,entry,0x18);None} else { Some(entry) }
+        last = Some((address, entry));
+        if entry & 0x18 != 0 {
+            admission_hint(109, address, entry, 0x18);
+            None
+        } else {
+            Some(entry)
+        }
     })
-    .map_err(|error|{admission_walk(error,cfg,low,last);30u64})?;
+    .map_err(|error| {
+        admission_walk(error, cfg, low, last);
+        30u64
+    })?;
     if translation.physical_address != low
         || !translation.writable
         || !translation.executable
         || (pat >> (translation.pat_index * 8)) & 255 != 6
     {
-        let(predicate,observed,expected)=if translation.physical_address!=low{(110,translation.physical_address,low)}
-            else if !translation.writable{(111,0,1)}else if !translation.executable{(112,0,1)}else{(114,pat,translation.pat_index as u64)};
-        admission_hint(predicate,low,observed,expected);
+        let (predicate, observed, expected) = if translation.physical_address != low {
+            (110, translation.physical_address, low)
+        } else if !translation.writable {
+            (111, 0, 1)
+        } else if !translation.executable {
+            (112, 0, 1)
+        } else {
+            (114, pat, translation.pat_index as u64)
+        };
+        admission_hint(predicate, low, observed, expected);
         return Err(30);
     }
     Ok(())
@@ -399,7 +464,7 @@ const X2APIC_BASE_EXPECTED: u64 = apic::APIC_BASE_DEFAULT_ADDRESS | apic::APIC_B
 pub(super) fn validate_x2apic() -> Result<(), u64> {
     let base = unsafe { rdmsr(apic::APIC_BASE) };
     if !x2apic_base_valid(base) {
-        admission_hint(139,apic::APIC_BASE as u64,base,X2APIC_BASE_EXPECTED);
+        admission_hint(139, apic::APIC_BASE as u64, base, X2APIC_BASE_EXPECTED);
         return Err(39);
     }
     Ok(())
@@ -419,32 +484,34 @@ pub(super) unsafe fn publish(
     let status = unsafe {
         (bs.install_configuration_table)(&ACTIVATION_GUID, ptr::addr_of_mut!(INTERFACE).cast())
     };
-    if status == Status::SUCCESS {
-        Ok(())
-    } else {
-        Err(status)
-    }
+    if status == Status::SUCCESS { Ok(()) } else { Err(status) }
 }
 /// Returning MP reader: complete AP-local controls, capability, cache and all
 /// retained resource mappings are admitted before the first physical INIT.
 /// Firmware can still change AP state afterward; capture revalidates locally.
 fn admission_observer() -> Result<resident::processors::Identity, resident::processors::Error> {
-    admission_begin(3,u32::MAX,u32::MAX);
+    admission_begin(3, u32::MAX, u32::MAX);
     let result = (|| -> Result<(), u64> {
         let processor = unsafe { cpu() }?;
-        unsafe{if let Some(value)=&mut *ptr::addr_of_mut!(ADMISSION_CONTEXT){
-            value.apic_id=processor.apic_id;
-            value.processor=CPU_IDS[..CPU_COUNT].iter().position(|&id|id==processor.apic_id).map_or(u32::MAX,|v|v as u32);
-        }}
+        unsafe {
+            if let Some(value) = &mut *ptr::addr_of_mut!(ADMISSION_CONTEXT) {
+                value.apic_id = processor.apic_id;
+                value.processor = CPU_IDS[..CPU_COUNT]
+                    .iter()
+                    .position(|&id| id == processor.apic_id)
+                    .map_or(u32::MAX, |v| v as u32);
+            }
+        }
         let current = unsafe { config(processor) }?;
-        let vm_cr=unsafe { rdmsr(VM_CR) };
+        let vm_cr = unsafe { rdmsr(VM_CR) };
         if vm_cr & VM_CR_R_INIT != 0 {
-            admission_hint(38,VM_CR as u64,vm_cr,0);
+            admission_hint(38, VM_CR as u64, vm_cr, 0);
             return Err(38);
         }
         let apic_base = unsafe { rdmsr(apic::APIC_BASE) };
         if !x2apic_base_valid(apic_base) {
-            admission_hint(138,apic::APIC_BASE as u64,apic_base,X2APIC_BASE_EXPECTED);return Err(38);
+            admission_hint(138, apic::APIC_BASE as u64, apic_base, X2APIC_BASE_EXPECTED);
+            return Err(38);
         }
         let mt = unsafe { mtrrs(processor.physical_bits) }?;
         let pat = unsafe { rdmsr(PAT) };
@@ -469,10 +536,17 @@ fn admission_observer() -> Result<resident::processors::Identity, resident::proc
         let map = unsafe {
             core::slice::from_raw_parts(ptr::addr_of!(MAP).cast::<MemoryDescriptor>(), MAP_COUNT)
         };
-        let cfg = unsafe { BOOT_CFG }.ok_or_else(||{admission_hint(140,0,0,1);38u64})?;
+        let cfg = unsafe { BOOT_CFG }.ok_or_else(|| {
+            admission_hint(140, 0, 0, 1);
+            38u64
+        })?;
         if current.nxe != cfg.nxe || current.physical_bits != cfg.physical_bits {
-            admission_hint(238,0,(current.physical_bits as u64)<<1|u64::from(current.nxe),
-                (cfg.physical_bits as u64)<<1|u64::from(cfg.nxe));
+            admission_hint(
+                238,
+                0,
+                (current.physical_bits as u64) << 1 | u64::from(current.nxe),
+                (cfg.physical_bits as u64) << 1 | u64::from(cfg.nxe),
+            );
             return Err(38);
         }
         let count = unsafe { CPU_COUNT };
@@ -483,16 +557,7 @@ fn admission_observer() -> Result<resident::processors::Identity, resident::proc
         let prepared = unsafe { directories() };
         for (slot, d) in prepared.iter().enumerate() {
             unsafe {
-                mapped(
-                    map,
-                    current,
-                    &mt,
-                    pat,
-                    d.arena_base,
-                    d.arena_bytes,
-                    true,
-                    true,
-                )?;
+                mapped(map, current, &mt, pat, d.arena_base, d.arena_bytes, true, true)?;
                 host_closure(prepared, slot, map, processor, &mt, pat)?;
             }
         }
@@ -502,24 +567,29 @@ fn admission_observer() -> Result<resident::processors::Identity, resident::proc
         // under our bootstrap owner, before any guest entry.
         Ok(())
     })();
-    result.map_err(|code|resident::processors::Error::Admission(admission_end(code)))?;
-    let identity=resident::processors::capture_identity().map_err(|error|match error{
-        resident::processors::Error::Admission(mut value)=>{
-            if let Some(context)=unsafe{ADMISSION_CONTEXT}{value.apic_id=context.apic_id;value.processor=context.processor;}
+    result.map_err(|code| resident::processors::Error::Admission(admission_end(code)))?;
+    let identity = resident::processors::capture_identity().map_err(|error| match error {
+        resident::processors::Error::Admission(mut value) => {
+            if let Some(context) = unsafe { ADMISSION_CONTEXT } {
+                value.apic_id = context.apic_id;
+                value.processor = context.processor;
+            }
             resident::processors::Error::Admission(value)
-        }});
+        }
+    });
     admission_clear();
     identity
 }
 pub(super) unsafe fn admit_processors(bs: &BootServices) -> Result<(), Status> {
-    admission_begin(1,unsafe{BSP} as u32,unsafe{CPU_IDS[BSP]});
-    unsafe { build_owned_root() }.map_err(|code|admission_refused(admission_end(code)))?;
+    admission_begin(1, unsafe { BSP } as u32, unsafe { CPU_IDS[BSP] });
+    unsafe { build_owned_root() }.map_err(|code| admission_refused(admission_end(code)))?;
     admission_clear();
     let inventory =
         unsafe { resident::processors::inspect_with(bs, admission_observer) }.map_err(|error| {
             admission_clear();
             trace_detail(&error);
-            let resident::processors::Error::Admission(value)=error;admission_refused(value)
+            let resident::processors::Error::Admission(value) = error;
+            admission_refused(value)
         })?;
     if inventory.processors().len() != unsafe { CPU_COUNT }
         || inventory.bsp_number() != unsafe { BSP }
@@ -529,13 +599,27 @@ pub(super) unsafe fn admit_processors(bs: &BootServices) -> Result<(), Status> {
             .enumerate()
             .any(|(slot, p)| p.identity.apic_id != unsafe { CPU_IDS[slot] })
     {
-        let(observed,expected,item)=if inventory.processors().len()!=unsafe{CPU_COUNT}{(inventory.processors().len()as u64,unsafe{CPU_COUNT}as u64,0)}
-            else if inventory.bsp_number()!=unsafe{BSP}{(inventory.bsp_number()as u64,unsafe{BSP}as u64,1)}
-            else{let(slot,p)=inventory.processors().iter().enumerate().find(|(s,p)|p.identity.apic_id!=unsafe{CPU_IDS[*s]}).unwrap();
-                (p.identity.apic_id as u64,unsafe{CPU_IDS[slot]}as u64,2+slot as u64)};
-        let mut failure=AdmissionFailure::new(5,1,item,observed,expected,0);
-        if item>=2 { failure.processor=(item-2) as u32;failure.apic_id=observed as u32; }
-        else {failure.processor=unsafe{BSP} as u32;failure.apic_id=unsafe{CPU_IDS[BSP]};}
+        let (observed, expected, item) = if inventory.processors().len() != unsafe { CPU_COUNT } {
+            (inventory.processors().len() as u64, unsafe { CPU_COUNT } as u64, 0)
+        } else if inventory.bsp_number() != unsafe { BSP } {
+            (inventory.bsp_number() as u64, unsafe { BSP } as u64, 1)
+        } else {
+            let (slot, p) = inventory
+                .processors()
+                .iter()
+                .enumerate()
+                .find(|(s, p)| p.identity.apic_id != unsafe { CPU_IDS[*s] })
+                .unwrap();
+            (p.identity.apic_id as u64, unsafe { CPU_IDS[slot] } as u64, 2 + slot as u64)
+        };
+        let mut failure = AdmissionFailure::new(5, 1, item, observed, expected, 0);
+        if item >= 2 {
+            failure.processor = (item - 2) as u32;
+            failure.apic_id = observed as u32;
+        } else {
+            failure.processor = unsafe { BSP } as u32;
+            failure.apic_id = unsafe { CPU_IDS[BSP] };
+        }
         return Err(admission_refused(failure));
     }
     Ok(())
@@ -547,11 +631,14 @@ unsafe fn cache_capture() -> *mut svmvisor_hypervisor::svm::native_cache::CacheC
 }
 
 #[cfg(feature = "native-resident-boot")]
-unsafe fn cache_failure(operation: u32, slot: usize,
-    f: svmvisor_hypervisor::svm::native_cache::CacheAdmissionFailure) -> u64
-{
+unsafe fn cache_failure(
+    operation: u32,
+    slot: usize,
+    f: svmvisor_hypervisor::svm::native_cache::CacheAdmissionFailure,
+) -> u64 {
     CACHE_SURVEY.abort();
-    let mut value = AdmissionFailure::new(operation,f.predicate,f.index as u64,f.observed,f.expected,0);
+    let mut value =
+        AdmissionFailure::new(operation, f.predicate, f.index as u64, f.observed, f.expected, 0);
     value.processor = slot as u32;
     value.apic_id = if slot < unsafe { CPU_COUNT } { unsafe { CPU_IDS[slot] } } else { u32::MAX };
     let _ = admission_refused(value);
@@ -566,18 +653,33 @@ unsafe fn sample_cache(processor: Cpu, slot: usize) -> Result<(), u64> {
     let sample = unsafe { cache_observation_detailed(processor) };
     let sample = sample.and_then(|value| {
         let capture = unsafe { &mut *cache_capture() };
-        if !capture.seed(slot,value) {
-            let (count,valid) = capture.capture_state();
-            Err(CacheAdmissionFailure::new(11,slot as u32,valid as u64,count as u64))
-        } else { Ok(()) }
+        if !capture.seed(slot, value) {
+            let (count, valid) = capture.capture_state();
+            Err(CacheAdmissionFailure::new(11, slot as u32, valid as u64, count as u64))
+        } else {
+            Ok(())
+        }
     });
     if let Err(f) = sample {
-        unsafe { ptr::addr_of_mut!(CACHE_SAMPLE_FAILURES).cast::<CacheAdmissionFailure>().add(slot).write(f); }
-        let _ = CACHE_FAILURE_SLOT.compare_exchange(u32::MAX,slot as u32,Ordering::Release,Ordering::Relaxed);
+        unsafe {
+            ptr::addr_of_mut!(CACHE_SAMPLE_FAILURES)
+                .cast::<CacheAdmissionFailure>()
+                .add(slot)
+                .write(f);
+        }
+        let _ = CACHE_FAILURE_SLOT.compare_exchange(
+            u32::MAX,
+            slot as u32,
+            Ordering::Release,
+            Ordering::Relaxed,
+        );
         CACHE_SURVEY.abort();
         return Err(48);
     }
-    if !CACHE_SURVEY.complete_sample(slot) { CACHE_SURVEY.abort(); return Err(48); }
+    if !CACHE_SURVEY.complete_sample(slot) {
+        CACHE_SURVEY.abort();
+        return Err(48);
+    }
     Ok(())
 }
 
@@ -585,25 +687,38 @@ unsafe fn sample_cache(processor: Cpu, slot: usize) -> Result<(), u64> {
 unsafe fn report_cache_survey_failure() -> u64 {
     let slot = CACHE_FAILURE_SLOT.load(Ordering::Acquire) as usize;
     if slot < unsafe { CPU_COUNT } {
-        let f = unsafe { ptr::addr_of!(CACHE_SAMPLE_FAILURES)
-            .cast::<svmvisor_hypervisor::svm::native_cache::CacheAdmissionFailure>().add(slot).read() };
-        unsafe { cache_failure(4,slot,f) }
-    } else { 48 }
+        let f = unsafe {
+            ptr::addr_of!(CACHE_SAMPLE_FAILURES)
+                .cast::<svmvisor_hypervisor::svm::native_cache::CacheAdmissionFailure>()
+                .add(slot)
+                .read()
+        };
+        unsafe { cache_failure(4, slot, f) }
+    } else {
+        48
+    }
 }
 
 /// Before arm/VMRUN: owned APs retain the captured callback and park. BSP
 /// consumes every sample and publishes the owner before any activation release.
 /// No firmware service, allocation or routing write occurs here.
 #[cfg(feature = "native-resident-boot")]
-pub(super) unsafe fn cache_sample_before_activation(processor: Cpu, slot: usize) -> Result<(), u64> {
-    if !unsafe { (&*cache_capture()).enabled() } { return Ok(()); }
+pub(super) unsafe fn cache_sample_before_activation(
+    processor: Cpu,
+    slot: usize,
+) -> Result<(), u64> {
+    if !unsafe { (&*cache_capture()).enabled() } {
+        return Ok(());
+    }
     if unsafe { is_bsp(slot) } {
         return if CACHE_SURVEY.admitted() { Ok(()) } else { Err(48) };
     }
-    unsafe { sample_cache(processor,slot) }?;
-    let release = unsafe { &*((boot_address(slot)+108) as *const AtomicU32) };
+    unsafe { sample_cache(processor, slot) }?;
+    let release = unsafe { &*((boot_address(slot) + 108) as *const AtomicU32) };
     for _ in 0..0x7fff_ffffu32 {
-        if CACHE_SURVEY.failed() || interface().failed.load(Ordering::Acquire) != 0 { return Err(48); }
+        if CACHE_SURVEY.failed() || interface().failed.load(Ordering::Acquire) != 0 {
+            return Err(48);
+        }
         if release.load(Ordering::Acquire) == 2 {
             return if CACHE_SURVEY.admitted() { Ok(()) } else { Err(48) };
         }
@@ -616,16 +731,27 @@ pub(super) unsafe fn cache_sample_before_activation(processor: Cpu, slot: usize)
 #[cfg(feature = "native-resident-boot")]
 unsafe fn finish_cache_survey() -> Result<(), u64> {
     let capture = unsafe { &*cache_capture() };
-    let ids = unsafe { core::slice::from_raw_parts(ptr::addr_of!(CPU_IDS).cast::<u32>(), CPU_COUNT) };
-    capture.agrees_with_bsp_detailed(unsafe { BSP },ids.len())
-        .map_err(|(slot,f)| unsafe { cache_failure(6,slot,f) })?;
+    let ids =
+        unsafe { core::slice::from_raw_parts(ptr::addr_of!(CPU_IDS).cast::<u32>(), CPU_COUNT) };
+    capture
+        .agrees_with_bsp_detailed(unsafe { BSP }, ids.len())
+        .map_err(|(slot, f)| unsafe { cache_failure(6, slot, f) })?;
     for slot in 0..ids.len() {
-        capture.domain_mask_detailed(slot,ids).map_err(|(slot,f)| unsafe { cache_failure(7,slot,f) })?;
+        capture
+            .domain_mask_detailed(slot, ids)
+            .map_err(|(slot, f)| unsafe { cache_failure(7, slot, f) })?;
     }
-    let owner = unsafe { &mut *((DIRECTORIES[0].pool_base+abi::CACHE_OWNER_OFFSET)
-        as *mut svmvisor_hypervisor::svm::native_cache::CacheOwner) };
-    owner.initialize_detailed(capture,ids).map_err(|(slot,f)| unsafe { cache_failure(8,slot,f) })?;
-    if !CACHE_SURVEY.admit(ids.len()) { CACHE_SURVEY.abort(); return Err(48); }
+    let owner = unsafe {
+        &mut *((DIRECTORIES[0].pool_base + abi::CACHE_OWNER_OFFSET)
+            as *mut svmvisor_hypervisor::svm::native_cache::CacheOwner)
+    };
+    owner
+        .initialize_detailed(capture, ids)
+        .map_err(|(slot, f)| unsafe { cache_failure(8, slot, f) })?;
+    if !CACHE_SURVEY.admit(ids.len()) {
+        CACHE_SURVEY.abort();
+        return Err(48);
+    }
     Ok(())
 }
 
@@ -634,7 +760,10 @@ unsafe fn finish_cache_survey() -> Result<(), u64> {
 /// No firmware paging page is copied or linked into the owned root. APM2
 /// 5.3.3/5.4; UEFI2.11 7.2/Table7.10 and 8.4.1 runtime image fixups.
 unsafe fn build_owned_root() -> Result<(), u64> {
-    let cfg = unsafe { BOOT_CFG }.ok_or_else(||{admission_hint(140,0,0,1);43u64})?;
+    let cfg = unsafe { BOOT_CFG }.ok_or_else(|| {
+        admission_hint(140, 0, 0, 1);
+        43u64
+    })?;
     let mt = unsafe { mtrrs(cfg.physical_bits) }?;
     let pat = unsafe { rdmsr(PAT) };
     let map = unsafe {
@@ -642,9 +771,10 @@ unsafe fn build_owned_root() -> Result<(), u64> {
     };
     let (image, bytes) = unsafe { IMAGE };
     let tables = unsafe { &mut *ptr::addr_of_mut!(AP_TABLES) };
-    tables
-        .initialize(ptr::addr_of!(AP_TABLES) as u64)
-        .map_err(|error|{admission_hint(141,ptr::addr_of!(AP_TABLES)as u64,error as u64,0);43u64})?;
+    tables.initialize(ptr::addr_of!(AP_TABLES) as u64).map_err(|error| {
+        admission_hint(141, ptr::addr_of!(AP_TABLES) as u64, error as u64, 0);
+        43u64
+    })?;
     let count = unsafe { CPU_COUNT };
     for (base, length, raw) in
         core::iter::once((image, bytes, false)).chain((0..count).map(|slot| {
@@ -652,9 +782,12 @@ unsafe fn build_owned_root() -> Result<(), u64> {
             (d.arena_base, d.arena_bytes, true)
         }))
     {
-        let end = base.checked_add(length).ok_or_else(||{admission_hint(142,base,length,u64::MAX-base);43u64})?;
+        let end = base.checked_add(length).ok_or_else(|| {
+            admission_hint(142, base, length, u64::MAX - base);
+            43u64
+        })?;
         if base & 4095 != 0 || length == 0 || length > 16 * 1024 * 1024 || end > 1 << 40 {
-            admission_hint(142,base,length,16*1024*1024);
+            admission_hint(142, base, length, 16 * 1024 * 1024);
             return Err(43);
         }
         // Validate current firmware accesses before reading/copying leaf policy.
@@ -668,22 +801,29 @@ unsafe fn build_owned_root() -> Result<(), u64> {
         }
         let mut page = base;
         while page < end {
-            let mut last=None;
+            let mut last = None;
             let t = paging::translate(cfg, page, |address| {
                 // The preceding mapped() proves this exact table-fetch closure.
-                let entry=unsafe { ptr::read_volatile(address as *const u64) };last=Some((address,entry));Some(entry)
+                let entry = unsafe { ptr::read_volatile(address as *const u64) };
+                last = Some((address, entry));
+                Some(entry)
             })
-            .map_err(|error|{admission_walk(error,cfg,page,last);43u64})?;
+            .map_err(|error| {
+                admission_walk(error, cfg, page, last);
+                43u64
+            })?;
             let wait_page = (0..count).any(|slot| page == boot_address(slot));
-            tables
-                .map_page(page, t.writable, t.executable || wait_page)
-                .map_err(|error|{admission_hint(143,page,error as u64,0);43u64})?;
+            tables.map_page(page, t.writable, t.executable || wait_page).map_err(|error| {
+                admission_hint(143, page, error as u64, 0);
+                43u64
+            })?;
             page += 4096;
         }
     }
-    tables
-        .map_page(unsafe { LOW }, true, true)
-        .map_err(|error|{admission_hint(144,unsafe{LOW},error as u64,0);43u64})?;
+    tables.map_page(unsafe { LOW }, true, true).map_err(|error| {
+        admission_hint(144, unsafe { LOW }, error as u64, 0);
+        43u64
+    })?;
     for slot in 0..count {
         unsafe {
             ((boot_address(slot) + 72) as *mut u32).write(CPU_IDS[slot]);
@@ -699,7 +839,10 @@ unsafe fn build_owned_root() -> Result<(), u64> {
 /// callback closure. Original firmware configuration remains BOOT_CFG; APs
 /// capture this root with NXE explicitly enabled by physical.S.
 unsafe fn validate_owned_root(map: &[MemoryDescriptor], mt: &Mtrrs, pat: u64) -> Result<(), u64> {
-    let mut cfg = unsafe { BOOT_CFG }.ok_or_else(||{admission_hint(140,0,0,1);43u64})?;
+    let mut cfg = unsafe { BOOT_CFG }.ok_or_else(|| {
+        admission_hint(140, 0, 0, 1);
+        43u64
+    })?;
     cfg.cr3 = ptr::addr_of!(AP_TABLES) as u64;
     cfg.nxe = true;
     let count = unsafe { CPU_COUNT };
@@ -720,13 +863,25 @@ unsafe fn validate_owned_root(map: &[MemoryDescriptor], mt: &Mtrrs, pat: u64) ->
         unsafe {
             mapped(map, cfg, mt, pat, d.arena_base, d.arena_bytes, true, true)?;
         }
-        let mut last=None;
+        let mut last = None;
         let t = paging::translate(cfg, boot_address(slot), |address| unsafe {
-            let entry=(&*ptr::addr_of!(AP_TABLES)).read(address);if let Some(value)=entry{last=Some((address,value));}entry
+            let entry = (&*ptr::addr_of!(AP_TABLES)).read(address);
+            if let Some(value) = entry {
+                last = Some((address, value));
+            }
+            entry
         })
-        .map_err(|error|{admission_walk(error,cfg,boot_address(slot),last);43u64})?;
+        .map_err(|error| {
+            admission_walk(error, cfg, boot_address(slot), last);
+            43u64
+        })?;
         if !t.executable || !t.writable || t.user {
-            admission_hint(150,boot_address(slot),u64::from(t.writable)|u64::from(t.executable)<<1|u64::from(t.user)<<2,3);
+            admission_hint(
+                150,
+                boot_address(slot),
+                u64::from(t.writable) | u64::from(t.executable) << 1 | u64::from(t.user) << 2,
+                3,
+            );
             return Err(43);
         }
     }
@@ -763,11 +918,18 @@ unsafe fn validate_current_closure(
     owned.nxe = true;
     let mut page = image;
     while page < image + bytes {
-        let mut last=None;
+        let mut last = None;
         let expected = paging::translate(owned, page, |address| unsafe {
-            let entry=(&*ptr::addr_of!(AP_TABLES)).read(address);if let Some(value)=entry{last=Some((address,value));}entry
+            let entry = (&*ptr::addr_of!(AP_TABLES)).read(address);
+            if let Some(value) = entry {
+                last = Some((address, value));
+            }
+            entry
         })
-        .map_err(|error|{admission_walk(error,owned,page,last);43u64})?;
+        .map_err(|error| {
+            admission_walk(error, owned, page, last);
+            43u64
+        })?;
         let wait_page = (0..count).any(|slot| page == boot_address(slot));
         unsafe {
             mapped(
@@ -837,8 +999,11 @@ pub(super) unsafe extern "efiapi" fn start() -> u64 {
     let cache_survey = false;
     #[cfg(feature = "native-resident-boot")]
     if cache_survey {
-        let processor = match unsafe { cpu() } { Ok(value) => value, Err(code) => return code };
-        if unsafe { sample_cache(processor,BSP) }.is_err() {
+        let processor = match unsafe { cpu() } {
+            Ok(value) => value,
+            Err(code) => return code,
+        };
+        if unsafe { sample_cache(processor, BSP) }.is_err() {
             return unsafe { report_cache_survey_failure() };
         }
     }
@@ -893,7 +1058,9 @@ pub(super) unsafe extern "efiapi" fn start() -> u64 {
     for pass in 0..=usize::from(cache_survey) {
         #[cfg(feature = "native-resident-boot")]
         if pass == 1 {
-            if let Err(code) = unsafe { finish_cache_survey() } { return code; }
+            if let Err(code) = unsafe { finish_cache_survey() } {
+                return code;
+            }
         }
         for slot in 0..count {
             if slot == unsafe { BSP } {
@@ -904,7 +1071,7 @@ pub(super) unsafe extern "efiapi" fn start() -> u64 {
             unsafe {
                 card_boot::stage(3, slot as u32, 0)
             };
-            release.store((pass+1) as u32, Ordering::Release);
+            release.store((pass + 1) as u32, Ordering::Release);
             let mut done = false;
             for _ in 0..20_000_000 {
                 #[cfg(feature = "native-resident-boot")]
@@ -924,7 +1091,8 @@ pub(super) unsafe extern "efiapi" fn start() -> u64 {
                     #[cfg(feature = "native-resident-boot")]
                     if failed == 1u32 << slot {
                         let sample = unsafe {
-                            ((boot_address(slot) + AP_FAILURE_OFFSET) as *const ApFailureObservation)
+                            ((boot_address(slot) + AP_FAILURE_OFFSET)
+                                as *const ApFailureObservation)
                                 .read_volatile()
                         };
                         unsafe { card_boot::ap_failure(slot as u32, count as u32, sample) };
@@ -939,7 +1107,8 @@ pub(super) unsafe extern "efiapi" fn start() -> u64 {
                 if interface().completed.load(Ordering::Acquire) & (1u32 << slot) != 0 {
                     // The copied guest continuation stores CR3 before its locked
                     // completion publication; this acquire precedes the read.
-                    let observed = unsafe { ((boot_address(slot) + 96) as *const u64).read_volatile() };
+                    let observed =
+                        unsafe { ((boot_address(slot) + 96) as *const u64).read_volatile() };
                     trace_detail(&("native-ap-owned-root", slot, observed));
                     if observed != ptr::addr_of!(AP_TABLES) as u64 {
                         interface().failed.fetch_or(1u32 << slot, Ordering::AcqRel);
@@ -952,7 +1121,9 @@ pub(super) unsafe extern "efiapi" fn start() -> u64 {
             }
             if !done {
                 #[cfg(feature = "native-resident-boot")]
-                if cache_survey { CACHE_SURVEY.abort(); }
+                if cache_survey {
+                    CACHE_SURVEY.abort();
+                }
                 interface().failed.fetch_or(1u32 << slot, Ordering::AcqRel);
                 return 34;
             }
@@ -968,9 +1139,7 @@ pub(super) unsafe extern "efiapi" fn start() -> u64 {
     if GUEST_ACK.load(Ordering::Acquire) & (1u32 << unsafe { BSP }) == 0 {
         return 35;
     }
-    interface()
-        .completed
-        .fetch_or(1u32 << unsafe { BSP }, Ordering::Release);
+    interface().completed.fetch_or(1u32 << unsafe { BSP }, Ordering::Release);
     0
 }
 /// BSP-only before resident capture, IF=0 and admitted x2APIC. APM2 16.5/16.13:
