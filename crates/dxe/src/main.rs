@@ -7,10 +7,6 @@
 #![cfg_attr(target_os = "uefi", no_std)]
 #![forbid(unsafe_op_in_unsafe_fn)]
 
-// Binary-only modules keep their established crate-local names. The paths group
-// firmware ownership and fixtures without changing the reviewed call graph or
-// compiling these image-specific modules into the host-testable library.
-
 #[cfg(all(
     feature = "native-preflight",
     any(feature = "card-load-only", feature = "card-returning-loader", feature = "card-resident")
@@ -18,15 +14,27 @@
 compile_error!("native child and resident card loader are separate images");
 #[cfg(all(feature = "card-returning-loader", feature = "card-load-only"))]
 compile_error!("returning PE delivery is a separate resident loader mode");
-#[cfg(all(target_os = "uefi", any(feature = "card-returning-loader", feature = "card-resident")))]
-#[path = "delivery/adapter.rs"]
-mod card_returning_adapter;
-
 #[cfg(all(
     feature = "card-resident",
     any(feature = "card-returning-loader", feature = "card-load-only")
 ))]
 compile_error!("resident PE delivery is a separate parent image");
+#[cfg(all(feature = "native-returning", feature = "native-transition-test"))]
+compile_error!("native returning admission cannot combine with a TCG transition fixture");
+
+#[cfg(target_os = "uefi")]
+use uefi_raw::{Handle, Status, table::system::SystemTable};
+
+// Binary-only modules keep their established crate-local names. The paths group
+// firmware ownership and fixtures without changing the reviewed call graph or
+// compiling these image-specific modules into the host-testable library.
+
+#[cfg(all(target_os = "uefi", feature = "card-load-only"))]
+#[path = "delivery/load.rs"]
+mod card_load;
+#[cfg(all(target_os = "uefi", any(feature = "card-returning-loader", feature = "card-resident")))]
+#[path = "delivery/adapter.rs"]
+mod card_returning_adapter;
 
 // Native child entry, resource ownership, and the returning SVM execution path.
 #[cfg(all(target_os = "uefi", feature = "native-preflight", not(feature = "native-resident")))]
@@ -56,21 +64,12 @@ mod native_returning;
 #[cfg(all(target_os = "uefi", feature = "native-preflight", not(feature = "native-resident")))]
 #[path = "native/resources/tables/mod.rs"]
 mod native_tables;
-#[cfg(all(target_os = "uefi", feature = "native-resident"))]
-#[path = "native/resident/activation/mod.rs"]
-mod resident_activation;
-#[cfg(all(feature = "native-returning", feature = "native-transition-test"))]
-compile_error!("native returning admission cannot combine with a TCG transition fixture");
 #[cfg(all(target_os = "uefi", feature = "native-transition-test"))]
 #[path = "fixtures/transition.rs"]
 mod native_transition_fixture;
-
-#[cfg(all(target_os = "uefi", feature = "card-load-only"))]
-#[path = "delivery/load.rs"]
-mod card_load;
-
-#[cfg(target_os = "uefi")]
-use uefi_raw::{Handle, Status, table::system::SystemTable};
+#[cfg(all(target_os = "uefi", feature = "native-resident"))]
+#[path = "native/resident/activation/mod.rs"]
+mod resident_activation;
 
 // Resident option-ROM driver binding and firmware lifecycle observation.
 #[cfg(all(target_os = "uefi", not(feature = "native-preflight")))]
