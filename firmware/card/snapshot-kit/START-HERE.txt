@@ -39,12 +39,14 @@ No test-signing mode or disabling Secure Boot is part of this setup.
 If selection or installation fails, keep the error and device hardware IDs.
 
 4. CAPTURE
-Close any other software using the programming interface. Double-click
-READ-SNAPSHOT.cmd. Normally this takes a few seconds (20-second read timeout).
-The console prints the decoded summary (stage, stop code, failing check).
-Send back the ZIP it creates in RESULTS, even if it says capture failed.
-If no ZIP was created, send the console text or a photo of the error.
-Repeated reads are allowed; keep the target powered while investigating.
+Double-click READ-SNAPSHOT.cmd. It checks the kit, then WAITS for the card to
+appear on USB (plug it in when asked), checks that interface 0 uses WinUSB
+(offers to open Zadig if not), reads the snapshot and prints the decoded result:
+stage, refusal/stop code, the failing check with observed/expected values, and
+any per-CPU records. A ZIP with the raw log and full JSON is written to RESULTS.
+Keep that ZIP, even if it says capture failed. If no ZIP was created, keep the
+console text or a photo of the error. Repeated reads are allowed; keep the
+target powered while investigating. RECOVER-USB.cmd is only a last resort.
 
 EXPECTED IMAGE (kit @KIT_DATE@, decoder @SOURCE_COMMIT@, @LOADER_MODE@ loader)
 FPGA: @FPGA_BUILD_ID@
