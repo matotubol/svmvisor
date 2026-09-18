@@ -54,7 +54,7 @@ mod native_resources;
 #[path = "native/returning.rs"]
 mod native_returning;
 #[cfg(all(target_os = "uefi", feature = "native-preflight", not(feature = "native-resident")))]
-#[path = "native/resources/tables.rs"]
+#[path = "native/resources/tables/mod.rs"]
 mod native_tables;
 #[cfg(all(target_os = "uefi", feature = "native-resident"))]
 #[path = "native/resident/activation.rs"]
