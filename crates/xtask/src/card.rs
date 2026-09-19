@@ -18,11 +18,7 @@ use std::{
 };
 
 use sha2::{Digest, Sha256};
-use svmvisor_card_abi::envelope::{
-    DIGEST_BYTES, DIGEST_OFFSET, FLAGS_OFFSET, FLAGS_RESIDENT_BOOT, HEADER_BYTES, MIN_PE_BYTES,
-    PAYLOAD_BYTES_OFFSET, PAYLOAD_OFFSET_OFFSET, RESIDENT_BOOT_MAGIC, SLOT_BYTES,
-    SLOT_BYTES_OFFSET,
-};
+use svmvisor_card_abi::envelope::{Envelope, HEADER_BYTES, ImageKind};
 
 use crate::{json::Value, resident};
 
@@ -331,28 +327,15 @@ fn utc_stamp(seconds: u64) -> String {
     )
 }
 
-/// The fields of the 128-byte `SVMBPE01` envelope this tool reports. The
-/// loader (`crates/card-loader/src/delivery/child_image.rs`) and `flash-card.ps1` own
-/// the full policy; this only refuses to describe something else.
+/// The fields of the 128-byte `SVMBPE01` envelope this tool reports, accepted by the
+/// parser the loader uses (`svmvisor_card_abi::envelope`); `flash-card.ps1` keeps its own
+/// policy. This only refuses to describe something else.
 fn parse_header(header: &[u8]) -> Result<Header, String> {
-    let word = |offset: usize| u64::from_le_bytes(header[offset..offset + 8].try_into().unwrap());
-    if header.len() != HEADER_BYTES || header[..8] != RESIDENT_BOOT_MAGIC {
-        return Err("pe-header.bin is not a 128-byte SVMBPE01 envelope".into());
-    }
-    let payload_bytes = word(PAYLOAD_BYTES_OFFSET);
-    if word(SLOT_BYTES_OFFSET) != SLOT_BYTES as u64
-        || word(PAYLOAD_OFFSET_OFFSET) != HEADER_BYTES as u64
-        || word(FLAGS_OFFSET) != FLAGS_RESIDENT_BOOT
-        || !(MIN_PE_BYTES as u64..=(SLOT_BYTES - HEADER_BYTES) as u64).contains(&payload_bytes)
-    {
-        return Err("pe-header.bin does not describe a resident payload slot".into());
-    }
+    let envelope = Envelope::parse(header, ImageKind::ResidentBoot)
+        .map_err(|error| format!("pe-header.bin is not a resident SVMBPE01 envelope: {error:?}"))?;
     Ok(Header {
-        payload_bytes,
-        digest: header[DIGEST_OFFSET..DIGEST_OFFSET + DIGEST_BYTES]
-            .iter()
-            .map(|byte| format!("{byte:02x}"))
-            .collect(),
+        payload_bytes: envelope.payload_bytes as u64,
+        digest: envelope.digest.iter().map(|byte| format!("{byte:02x}")).collect(),
     })
 }
 
@@ -467,6 +450,22 @@ mod tests {
             header[offset..offset + 8].copy_from_slice(&value.to_le_bytes());
         }
         header[48..80].fill(0xab);
+        // The shared parser also checks the version, header size and PE metadata.
+        for (offset, value) in [(80, 0x8664u16), (82, 12), (84, 0x20b)] {
+            header[offset..offset + 2].copy_from_slice(&value.to_le_bytes());
+        }
+        for (offset, value) in [
+            (8, 1u32),
+            (12, 128),
+            (88, 4096),
+            (92, 8192),
+            (96, 512),
+            (100, 4096),
+            (104, 512),
+            (108, 1),
+        ] {
+            header[offset..offset + 4].copy_from_slice(&value.to_le_bytes());
+        }
         header
     }
 
