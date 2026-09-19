@@ -555,7 +555,7 @@ instead of restating it.
 
 | What | Home |
 |---|---|
-| MSR numbers and their bits | `hypervisor::arch::x86_64::msr` (the TSC MSRs in `clock.rs` are still to move in) |
+| MSR numbers and their bits | `hypervisor::arch::x86_64::msr` |
 | APIC / x2APIC registers | `hypervisor::arch::x86_64::apic` |
 | page size, address mask, page-table bits | `hypervisor::memory::address`. A `u64` view is derived from it (`PAGE_BYTES as u64`), never a second literal |
 | memory-map descriptor bound `MAX_DESCRIPTORS` | `hypervisor::boot::memory` |
@@ -622,7 +622,12 @@ the `read_u32`-style helpers instead.
 
 **V1.** Private by default. Then `pub(crate)`. `pub` only for items named
 from outside the crate — by another crate or by `tests/`. An item nothing
-outside the crate names is not `pub`.
+outside the crate names is not `pub`. Two exceptions, both measured: an item
+stays `pub` when `pub(crate)` would make it warn as dead code in some feature
+configuration (items only the `resident-runtime` feature uses), and when
+narrowing it changes the payload's machine code (visibility changes linkage,
+and LLVM may then inline the function) — that is a code change and needs a
+boot test, not a style commit.
 
 **V2.** `pub(super)` has exactly one use: an item — function, method, type,
 constant or field — shared between sibling files of one directory module (M2),
@@ -757,7 +762,7 @@ what the code does.
 | `cargo fmt` | changing any expression, condition, constant value or control flow |
 | moving items between files and modules | reordering statements inside a function |
 | reordering items within a file (L1, L4) | splitting or merging functions |
-| renaming files, modules, types, functions, constants, locals | renaming exported symbols (N12), wire codes, Cargo features, `.S` labels |
+| renaming files, modules, types, functions, constants, locals (a longer name may re-wrap a line and move panic line numbers in the binaries; instructions stay identical) | renaming exported symbols (N12), wire codes, Cargo features, `.S` labels |
 | fixing imports and visibility | editing `///` and `//!` doc text (update a renamed identifier inside it, nothing else) |
 | replacing a literal with a named constant **of the identical value** | deleting code, including code that becomes visibly dead |
 | replacing a duplicate constant with an import of the one home (K3) | changing `#[repr]`, field order, field types, derives that affect layout or ABI |
