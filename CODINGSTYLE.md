@@ -568,8 +568,8 @@ instead of restating it.
 | card image format | needs a `dxe` module compiled under every `card-*` feature (none exists yet); until then `delivery/card.rs`, `delivery/child_image.rs` and `xtask/card.rs` each keep a copy |
 
 A crate that depends on `hypervisor` imports these; it never re-declares
-them. A deliberately standalone crate (`memory-attributes`, `rompack`) may
-keep its own copy, with a comment naming the authoritative one.
+them. A deliberately standalone crate (`card-loader`, `memory-attributes`,
+`rompack`) may keep its own copy, with a comment naming the authoritative one.
 
 Same value is not same concept: `APIC_BASE_ADDRESS` and the AVIC pointer
 masks equal `ADDRESS_MASK` numerically and stay separate. A constant whose only
@@ -593,7 +593,8 @@ named for the ABI, not next to the first function that happened to use them.
 `hypervisor::arch::x86_64` (`msr::read`, `msr::write`, `cpuid`, port I/O,
 `invlpga`, ...). Everything else calls the wrapper. Inline `asm!` outside
 `arch::x86_64` is limited to world-switch and entry sequences that cannot be
-a function call.
+a function call. The standalone `card-loader` does not depend on `hypervisor`:
+its architectural instructions live in its `firmware::{cpu, pci_io}`.
 
 **U2.** `static mut` and exported statics appear only in section 5 of the
 file layout (L1), as one block, each with a comment stating its single writer

@@ -11,6 +11,12 @@ use crate::mmio::JournalMapping;
 
 const MEMORY: u64 = 0x0200;
 const MSE: u32 = 2;
+// Standalone copy of `svmvisor_hypervisor::arch::x86_64::msr::TARGET_SIGNATURE`.
+#[cfg(feature = "card-resident")]
+const TARGET_SIGNATURE: u32 = 0x00b4_0f40;
+// Standalone copy of `svmvisor_hypervisor::arch::x86_64::msr::MMIO_CFG_BASE_ADDR`.
+#[cfg(feature = "card-resident")]
+const MMIO_CFG_BASE_ADDR: u32 = 0xc001_0058;
 
 // Prefix through Attributes. UINT32 width is enum value 2.
 // Unused slots are pointer-sized; no Map/AllocateBuffer/requester API is exposed.
@@ -155,8 +161,7 @@ impl Bar0 {
             || vendor.edx != 0x6974_6e65
             || vendor.ecx != 0x444d_4163
             || vendor.eax < 1
-            || core::arch::x86_64::__cpuid(1).eax
-                != svmvisor_hypervisor::arch::x86_64::msr::TARGET_SIGNATURE
+            || core::arch::x86_64::__cpuid(1).eax != TARGET_SIGNATURE
         {
             return Err(Status::UNSUPPORTED);
         }
@@ -172,7 +177,7 @@ impl Bar0 {
         let high: u32;
         // Exact CPU identity above admits this processor-specific, read-only MSR.
         unsafe {
-            core::arch::asm!("rdmsr", in("ecx") 0xc001_0058u32,
+            core::arch::asm!("rdmsr", in("ecx") MMIO_CFG_BASE_ADDR,
             out("eax") low, out("edx") high, options(nostack, preserves_flags));
         }
         let mmio_config_msr = u64::from(low) | (u64::from(high) << 32);
