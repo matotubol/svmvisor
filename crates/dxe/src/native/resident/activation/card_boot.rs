@@ -5,12 +5,9 @@
 use svmvisor_card_abi::{
     boot_options::ResidentBootOptions,
     endpoint::{self as card_endpoint, PCI_CLASS_REVISION, PCI_VENDOR_DEVICE, TerminalEndpoint},
-    journal as card_journal,
+    journal::{self as card_journal, JournalIo},
 };
-use svmvisor_dxe::diagnostics::{
-    journal::{self, JournalIo},
-    resident_boot::{ApFailureObservation, ap_failure_words},
-};
+use svmvisor_dxe::diagnostics::resident_boot::{ApFailureObservation, ap_failure_words};
 use svmvisor_hypervisor::arch::x86_64::msr::MMIO_CFG_BASE_ADDR;
 
 use super::*;
@@ -154,6 +151,7 @@ impl Prepared {
 struct Direct(u64);
 
 impl JournalIo for Direct {
+    type Error = Status;
     fn read(&mut self, offset: u64) -> Result<u32, Status> {
         if offset > 0x9c || offset & 3 != 0 {
             return Err(Status::INVALID_PARAMETER);
@@ -170,16 +168,6 @@ impl JournalIo for Direct {
             ((self.0 + offset) as *mut u32).write_volatile(value);
         }
         Ok(())
-    }
-}
-
-impl card_journal::JournalIo for Direct {
-    type Error = Status;
-    fn read(&mut self, offset: u64) -> Result<u32, Status> {
-        JournalIo::read(self, offset)
-    }
-    fn write(&mut self, offset: u64, value: u32) -> Result<(), Status> {
-        JournalIo::write(self, offset, value)
     }
 }
 
@@ -406,10 +394,11 @@ unsafe fn commit_words(words: [u32; 3]) {
         unsafe {
             asm!("rdtsc", out("eax") low, out("edx") high, options(nostack, preserves_flags));
         }
-        journal::commit(
+        card_journal::commit_record(
             &mut io,
             [sequence, boot_id, low, high, words[0], words[1], words[2], 0x0008_0013],
         )
+        .map_err(|_| Status::DEVICE_ERROR)
     })();
     if result.is_err() {
         JOURNAL_LOST.store(true, Ordering::Release);
