@@ -96,11 +96,10 @@ section order, not from ASCII art.
 
 **C1.** Dependency direction is fixed: `card-abi` is the leaf (it knows
 nothing about UEFI or SVM); `hypervisor` depends on it and knows nothing about
-UEFI; `card-loader` depends on `card-abi` only, plus `firmware-handoff` under
-`card-load-only`, and knows nothing about SVM; `dxe` depends on `card-abi` and
-`hypervisor`; `firmware-handoff` and `resident-payload` depend on
-`hypervisor`; `xtask` depends on `card-abi`; `memory-attributes` and
-`rompack` stand alone. A crate never reaches into another crate's source tree
+UEFI; `card-loader` depends on `card-abi` only and knows nothing about SVM;
+`dxe` depends on `card-abi` and `hypervisor`; `firmware-handoff` depends on
+`card-abi` and `hypervisor`; `resident-payload` depends on `hypervisor`;
+`xtask` depends on `card-abi`; `memory-attributes` and `rompack` stand alone. A crate never reaches into another crate's source tree
 with `#[path]` or `include!`. Shared code is shared through a Cargo
 dependency.
 
@@ -569,6 +568,7 @@ instead of restating it.
 | resident bridge ABI | `hypervisor::host::resident` |
 | card loader<->child contract (boot options, native result, journal record, terminal endpoint) | `card-abi` |
 | card image format (the 128-byte envelope: sizes, magics, flags, field offsets, PE policy limits) | `card-abi::envelope` |
+| `SVMRELO1` relocatable package (arena size, handoff offset, parser and relocator) | `card-abi::package` |
 
 A crate that depends on `hypervisor` imports these; it never re-declares
 them. A deliberately standalone crate (`card-loader`, `memory-attributes`,
