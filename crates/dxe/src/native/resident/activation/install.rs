@@ -64,19 +64,19 @@ pub(crate) unsafe fn install(image: Handle, table: *mut SystemTable) -> Status {
     if table.is_null() || INSTALLED.swap(true, Ordering::AcqRel) {
         return Status::UNSUPPORTED;
     }
-    let bs = unsafe { (*table).boot_services };
-    if bs.is_null() {
+    let boot_services = unsafe { (*table).boot_services };
+    if boot_services.is_null() {
         return Status::INVALID_PARAMETER;
     }
     #[cfg(feature = "native-resident-boot")]
-    let card = match unsafe { card_boot::Prepared::new(image, &*bs) } {
+    let card = match unsafe { card_boot::Prepared::new(image, &*boot_services) } {
         Ok(value) => value,
         Err(status) => return status,
     };
     #[cfg(feature = "native-resident-boot")]
     let handoff = match {
-        preparation_step(1, bs as u64);
-        unsafe { boot_handoff::Prepared::new(bs) }
+        preparation_step(1, boot_services as u64);
+        unsafe { boot_handoff::Prepared::new(boot_services) }
     } {
         Ok(value) => value,
         Err(status) => {
@@ -86,10 +86,10 @@ pub(crate) unsafe fn install(image: Handle, table: *mut SystemTable) -> Status {
             return status;
         }
     };
-    let result = unsafe { install_inner(image, &*bs) };
+    let result = unsafe { install_inner(image, &*boot_services) };
     #[cfg(feature = "native-resident-boot")]
     if result.is_ok() && READY.load(Ordering::Acquire) {
-        unsafe { handoff.commit(bs) };
+        unsafe { handoff.commit(boot_services) };
         unsafe { card_boot::stage(1, 0, 0) };
     }
     #[cfg(feature = "native-resident-boot")]
@@ -112,13 +112,13 @@ pub(crate) unsafe fn install(image: Handle, table: *mut SystemTable) -> Status {
     }
 }
 
-unsafe fn install_inner(image: Handle, bs: &BootServices) -> Result<(), Status> {
+unsafe fn install_inner(image: Handle, boot_services: &BootServices) -> Result<(), Status> {
     trace(b'a');
     preparation_step(2, 0);
     let processor = unsafe { cpu() }.map_err(unsupported)?;
     trace(b'b');
     preparation_step(3, 0);
-    let inventory = unsafe { resident::processors::inspect(bs) }.map_err(|error| {
+    let inventory = unsafe { resident::processors::inspect(boot_services) }.map_err(|error| {
         trace_detail(&error);
         Status::UNSUPPORTED
     })?;
@@ -148,7 +148,8 @@ unsafe fn install_inner(image: Handle, bs: &BootServices) -> Result<(), Status> 
     trace(b'c');
     preparation_step(4, 0);
     let mut loaded = ptr::null_mut();
-    let status = unsafe { (bs.handle_protocol)(image, &LoadedImageProtocol::GUID, &mut loaded) };
+    let status =
+        unsafe { (boot_services.handle_protocol)(image, &LoadedImageProtocol::GUID, &mut loaded) };
     if status != Status::SUCCESS {
         return Err(status);
     }
@@ -178,12 +179,13 @@ unsafe fn install_inner(image: Handle, bs: &BootServices) -> Result<(), Status> 
     })?;
     trace(b'e');
     preparation_step(6, 0);
-    let mut arena = unsafe { allocation::allocate_for_processors(bs, count) }.map_err(|error| {
-        trace_detail(&error);
-        let (reason, status, address) = error.diagnostic();
-        preparation_failure(reason, status, address);
-        Status::OUT_OF_RESOURCES
-    })?;
+    let mut arena =
+        unsafe { allocation::allocate_for_processors(boot_services, count) }.map_err(|error| {
+            trace_detail(&error);
+            let (reason, status, address) = error.diagnostic();
+            preparation_failure(reason, status, address);
+            Status::OUT_OF_RESOURCES
+        })?;
     trace(b'f');
     preparation_step(7, arena.base());
     let cfg = unsafe { config(processor) }.map_err(unsupported)?;
@@ -196,7 +198,7 @@ unsafe fn install_inner(image: Handle, bs: &BootServices) -> Result<(), Status> 
     {
         trace(b'h');
         preparation_step(9, 0);
-        let mut map = unsafe { memory::collect(bs) }.map_err(|error| {
+        let mut map = unsafe { memory::collect(boot_services) }.map_err(|error| {
             trace_detail(&error);
             preparation_map_failure(error)
         })?;
@@ -235,7 +237,7 @@ unsafe fn install_inner(image: Handle, bs: &BootServices) -> Result<(), Status> 
     #[cfg(feature = "native-resident-smp-activate")]
     let mut physical_storage = {
         preparation_step(13, 0);
-        unsafe { physical_boot::prepare(bs, bsp, count, cfg)? }
+        unsafe { physical_boot::prepare(boot_services, bsp, count, cfg)? }
     };
     trace(b'l');
     for (slot, directory) in directories.iter_mut().enumerate().take(count) {
@@ -334,7 +336,7 @@ unsafe fn install_inner(image: Handle, bs: &BootServices) -> Result<(), Status> 
     #[cfg(feature = "native-resident-smp-prepare")]
     {
         preparation_step(15, 0);
-        let mut map = unsafe { memory::collect(bs) }.map_err(preparation_map_failure)?;
+        let mut map = unsafe { memory::collect(boot_services) }.map_err(preparation_map_failure)?;
         arena.validate_map(policy, map.descriptors()).map_err(|_| Status::UNSUPPORTED)?;
         let pool = policy
             .validate(arena.base(), arena.bytes() as u64, 4096)
@@ -401,7 +403,7 @@ unsafe fn install_inner(image: Handle, bs: &BootServices) -> Result<(), Status> 
     #[cfg(feature = "native-resident-smp-activate")]
     {
         preparation_step(15, 0);
-        let mut map = unsafe { memory::collect(bs) }.map_err(preparation_map_failure)?;
+        let mut map = unsafe { memory::collect(boot_services) }.map_err(preparation_map_failure)?;
         arena.validate_map(policy, map.descriptors()).map_err(|_| Status::UNSUPPORTED)?;
         ValidatedMemoryMap::new(map.descriptors(), processor.physical_bits.min(40))
             .map_err(|_| Status::UNSUPPORTED)?;
@@ -496,11 +498,11 @@ unsafe fn install_inner(image: Handle, bs: &BootServices) -> Result<(), Status> 
         map.release()?;
         preparation_step(19, 0);
         unsafe {
-            physical_boot::admit_processors(bs)?;
+            physical_boot::admit_processors(boot_services)?;
         }
         preparation_step(20, arena.base());
         let _retained = arena.register_and_publish(|base, bytes| unsafe {
-            physical_boot::publish(bs, count, base, bytes as u64)
+            physical_boot::publish(boot_services, count, base, bytes as u64)
         })?;
         physical_storage.retain();
         READY.store(true, Ordering::Release);
@@ -512,7 +514,7 @@ unsafe fn install_inner(image: Handle, bs: &BootServices) -> Result<(), Status> 
     let mut event = ptr::null_mut();
     let mut group = guid!("7ce88fb3-4bd7-4679-87a8-a8d8dee50d2b");
     let status = unsafe {
-        (bs.create_event_ex)(
+        (boot_services.create_event_ex)(
             EventType::NOTIFY_SIGNAL,
             Tpl::NOTIFY,
             Some(abi::svmvisor_resident_callback),
@@ -529,7 +531,7 @@ unsafe fn install_inner(image: Handle, bs: &BootServices) -> Result<(), Status> 
     }
     let finish = (|| {
         trace(b'n');
-        let mut map = unsafe { memory::collect(bs) }.map_err(|error| {
+        let mut map = unsafe { memory::collect(boot_services) }.map_err(|error| {
             trace_detail(&error);
             preparation_map_failure(error)
         })?;
@@ -562,7 +564,7 @@ unsafe fn install_inner(image: Handle, bs: &BootServices) -> Result<(), Status> 
         Ok(())
     })();
     if let Err(error) = finish {
-        let close = unsafe { (bs.close_event)(event) };
+        let close = unsafe { (boot_services.close_event)(event) };
         if close != Status::SUCCESS {
             // Returning an EFI error permits image unload while the event can
             // still call its assembly. Retain both image and raw allocation as

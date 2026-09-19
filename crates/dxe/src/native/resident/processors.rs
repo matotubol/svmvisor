@@ -96,8 +96,8 @@ pub enum Error {
 /// Callback CPUID and WhoAmI must be permitted. Firmware retains AP ownership;
 /// all allocations and subsequent irreversible activation remain caller-owned.
 /// PI1.10 II-13.4.1/.5/.8, Table13.5; UEFI2.11 7.4.6; AMD APM2 3.44 15.4.
-pub unsafe fn inspect(bs: &BootServices) -> Result<Inventory, Error> {
-    unsafe { inspect_with(bs, capture_identity) }
+pub unsafe fn inspect(boot_services: &BootServices) -> Result<Inventory, Error> {
+    unsafe { inspect_with(boot_services, capture_identity) }
 }
 
 /// Returning CPU-local admission using the same bounded MP owner.
@@ -106,11 +106,12 @@ pub unsafe fn inspect(bs: &BootServices) -> Result<Inventory, Error> {
 /// preserve CPU state, and make no allocation, firmware call, or persistent
 /// activation. It must return the current native CPUID identity.
 pub unsafe fn inspect_with(
-    bs: &BootServices,
+    boot_services: &BootServices,
     read: fn() -> Result<Identity, Error>,
 ) -> Result<Inventory, Error> {
     let mut raw = ptr::null_mut();
-    let status = unsafe { (bs.locate_protocol)(&MP_SERVICES_GUID, ptr::null_mut(), &mut raw) };
+    let status =
+        unsafe { (boot_services.locate_protocol)(&MP_SERVICES_GUID, ptr::null_mut(), &mut raw) };
     if status != Status::SUCCESS {
         return Err(admission_error(1, usize::MAX, 0, 0, 0, status));
     }

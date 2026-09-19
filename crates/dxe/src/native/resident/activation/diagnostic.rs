@@ -18,14 +18,14 @@ pub(super) fn admission_hint(predicate: u32, item: u64, observed: u64, expected:
 
 pub(super) fn admission_walk(
     error: paging::WalkError,
-    cfg: PagingConfig,
+    config: PagingConfig,
     address: u64,
     last: Option<(u64, u64)>,
 ) {
     #[cfg(feature = "native-resident-smp-activate")]
-    physical_boot::admission_walk(error, cfg, address, last);
+    physical_boot::admission_walk(error, config, address, last);
     #[cfg(not(feature = "native-resident-smp-activate"))]
-    let _ = (error, cfg, address, last);
+    let _ = (error, config, address, last);
 }
 
 pub(super) fn unsupported(code: u64) -> Status {

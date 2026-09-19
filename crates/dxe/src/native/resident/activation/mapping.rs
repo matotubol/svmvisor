@@ -12,8 +12,8 @@ use super::diagnostic::{admission_hint, admission_walk, trace_detail};
 
 pub(super) unsafe fn mapped(
     map: &[MemoryDescriptor],
-    cfg: PagingConfig,
-    mt: &Mtrrs,
+    config: PagingConfig,
+    mtrrs: &Mtrrs,
     pat: u64,
     base: u64,
     bytes: u64,
@@ -31,19 +31,19 @@ pub(super) unsafe fn mapped(
     let mut page = base & !4095;
     while page < end {
         let mut last = None;
-        let translated = paging::translate(cfg, page, |address| {
-            if !ram_span(map, address, 8) || !mt.page_is_wb(address & !4095) {
+        let translated = paging::translate(config, page, |address| {
+            if !ram_span(map, address, 8) || !mtrrs.page_is_wb(address & !4095) {
                 trace_detail(&(
                     "table-backing",
                     address,
                     ram_span(map, address, 8),
-                    mt.page_is_wb(address & !4095),
+                    mtrrs.page_is_wb(address & !4095),
                 ));
                 admission_hint(
                     108,
                     address,
                     u64::from(ram_span(map, address, 8))
-                        | u64::from(mt.page_is_wb(address & !4095)) << 1,
+                        | u64::from(mtrrs.page_is_wb(address & !4095)) << 1,
                     3,
                 );
                 return None;
@@ -60,24 +60,24 @@ pub(super) unsafe fn mapped(
         })
         .map_err(|error| {
             trace_detail(&error);
-            admission_walk(error, cfg, page, last);
+            admission_walk(error, config, page, last);
             8u64
         })?;
         if translated.physical_address != page
             || (write && !translated.writable)
             || (execute && !translated.executable)
-            || !mt.page_is_wb(page)
+            || !mtrrs.page_is_wb(page)
             || ((pat >> (translated.pat_index * 8)) & 255) != 6
             || pat & 255 != 6
         {
-            trace_detail(&("mapping", page, translated, mt.page_is_wb(page), pat));
+            trace_detail(&("mapping", page, translated, mtrrs.page_is_wb(page), pat));
             let (predicate, observed, expected) = if translated.physical_address != page {
                 (110, translated.physical_address, page)
             } else if write && !translated.writable {
                 (111, 0, 1)
             } else if execute && !translated.executable {
                 (112, 0, 1)
-            } else if !mt.page_is_wb(page) {
+            } else if !mtrrs.page_is_wb(page) {
                 (113, 0, 1)
             } else {
                 (114, pat, translated.pat_index as u64)
@@ -95,8 +95,8 @@ pub(super) unsafe fn mapped(
 #[cfg(feature = "native-resident-boot")]
 pub(super) unsafe fn validate_uc_mmio(
     map: &[MemoryDescriptor],
-    cfg: PagingConfig,
-    mt: &Mtrrs,
+    config: PagingConfig,
+    mtrrs: &Mtrrs,
     pat: u64,
     base: u64,
 ) -> Result<(), u64> {
@@ -106,13 +106,13 @@ pub(super) unsafe fn validate_uc_mmio(
     }
     let mut level = 4;
     let mut last = None;
-    let translated = paging::translate(cfg, base, |address| {
-        if !ram_span(map, address, 8) || !mt.page_is_wb(address & !4095) {
+    let translated = paging::translate(config, base, |address| {
+        if !ram_span(map, address, 8) || !mtrrs.page_is_wb(address & !4095) {
             admission_hint(
                 108,
                 address,
                 u64::from(ram_span(map, address, 8))
-                    | u64::from(mt.page_is_wb(address & !4095)) << 1,
+                    | u64::from(mtrrs.page_is_wb(address & !4095)) << 1,
                 3,
             );
             return None;
@@ -129,13 +129,13 @@ pub(super) unsafe fn validate_uc_mmio(
         }
     })
     .map_err(|error| {
-        admission_walk(error, cfg, base, last);
+        admission_walk(error, config, base, last);
         47u64
     })?;
     if translated.physical_address != base
         || !translated.writable
         || translated.user
-        || !mt.page_is_uc(base, ((pat >> (translated.pat_index * 8)) & 255) as u8)
+        || !mtrrs.page_is_uc(base, ((pat >> (translated.pat_index * 8)) & 255) as u8)
     {
         let (predicate, observed, expected) = if translated.physical_address != base {
             (110, translated.physical_address, base)

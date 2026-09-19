@@ -36,9 +36,13 @@ pub(super) struct Prepared(*mut ResidentBootOptions);
 impl Prepared {
     /// Copy options under the current validated mapping. Only the StartImage
     /// call retains this pointer; the later EBS path retains numeric inputs.
-    pub(super) unsafe fn new(image: Handle, bs: &BootServices) -> Result<Option<Self>, Status> {
+    pub(super) unsafe fn new(
+        image: Handle,
+        boot_services: &BootServices,
+    ) -> Result<Option<Self>, Status> {
         let mut raw = ptr::null_mut();
-        let status = unsafe { (bs.handle_protocol)(image, &LoadedImageProtocol::GUID, &mut raw) };
+        let status =
+            unsafe { (boot_services.handle_protocol)(image, &LoadedImageProtocol::GUID, &mut raw) };
         if status != Status::SUCCESS {
             return Err(status);
         }
@@ -59,7 +63,8 @@ impl Prepared {
         let cfg = unsafe { config(processor) }.map_err(unsupported)?;
         let mt = unsafe { mtrrs(processor.physical_bits) }.map_err(unsupported)?;
         let pat = unsafe { rdmsr(PAT) };
-        let mut map = unsafe { memory::collect(bs) }.map_err(|_| Status::OUT_OF_RESOURCES)?;
+        let mut map =
+            unsafe { memory::collect(boot_services) }.map_err(|_| Status::OUT_OF_RESOURCES)?;
         let checked = (|| {
             unsafe {
                 mapped(map.descriptors(), cfg, &mt, pat, options as u64, bytes as u64, true, false)

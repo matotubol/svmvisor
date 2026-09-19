@@ -402,12 +402,12 @@ pub(crate) fn hardware_msr_instruction(
     vmcb: &Vmcb,
     caps: &ValidatedCapabilities,
 ) -> Result<super::exit::MsrInstruction<'static>, NativeEferError> {
-    let b = vmcb.bytes();
-    let cr0 = u64::from_le_bytes(b[0x558..0x560].try_into().unwrap());
-    let cr4 = u64::from_le_bytes(b[0x548..0x550].try_into().unwrap());
-    let cs = u16::from_le_bytes(b[0x412..0x414].try_into().unwrap());
+    let bytes = vmcb.bytes();
+    let cr0 = u64::from_le_bytes(bytes[0x558..0x560].try_into().unwrap());
+    let cr4 = u64::from_le_bytes(bytes[0x548..0x550].try_into().unwrap());
+    let cs = u16::from_le_bytes(bytes[0x412..0x414].try_into().unwrap());
     if !vmcb.guest_in_64_bit_code()
-        || b[0x4cb] != 0
+        || bytes[0x4cb] != 0
         || cs & 0x600 != 0x200
         || cr0 & 0x8000_0001 != 0x8000_0001
         || cr4 & (1 << 5) == 0
@@ -438,12 +438,12 @@ pub(crate) fn validate_native_msr_boundary(
 /// Retain the existing 48-bit native profile and checked, nonwrapping legacy
 /// continuation. Compat segmentation remains enabled (APM2 1.3/Table1-1, 2.3).
 pub(crate) fn native_cpuid_mode(vmcb: &Vmcb, next: u64, startup_owned: bool) -> bool {
-    let b = vmcb.bytes();
-    let cr0 = u64::from_le_bytes(b[0x558..0x560].try_into().unwrap());
-    let cr4 = u64::from_le_bytes(b[0x548..0x550].try_into().unwrap());
-    let efer = u64::from_le_bytes(b[0x4d0..0x4d8].try_into().unwrap());
-    let cs = u16::from_le_bytes(b[0x412..0x414].try_into().unwrap());
-    let cpl = b[0x4cb];
+    let bytes = vmcb.bytes();
+    let cr0 = u64::from_le_bytes(bytes[0x558..0x560].try_into().unwrap());
+    let cr4 = u64::from_le_bytes(bytes[0x548..0x550].try_into().unwrap());
+    let efer = u64::from_le_bytes(bytes[0x4d0..0x4d8].try_into().unwrap());
+    let cs = u16::from_le_bytes(bytes[0x412..0x414].try_into().unwrap());
+    let cpl = bytes[0x4cb];
     if cpl > 3 || cs & 0x98 != 0x98 || vmcb.guest_rflags() & (1 << 17) != 0 {
         return false;
     }
@@ -462,7 +462,7 @@ pub(crate) fn native_cpuid_mode(vmcb: &Vmcb, next: u64, startup_owned: bool) -> 
     {
         return false;
     }
-    let limit = u32::from_le_bytes(b[0x414..0x418].try_into().unwrap()) as u64;
+    let limit = u32::from_le_bytes(bytes[0x414..0x418].try_into().unwrap()) as u64;
     let ip_limit = if cs & 0x400 != 0 { u32::MAX as u64 } else { u16::MAX as u64 };
     next <= limit.min(ip_limit)
 }
@@ -471,10 +471,10 @@ pub(crate) fn native_cpuid_mode(vmcb: &Vmcb, next: u64, startup_owned: bool) -> 
 /// applying long64 RIP arithmetic to a 16/32-bit instruction. Actual opcode
 /// provenance and physical backing are checked by the caller's fetch owner.
 pub(crate) fn native_startup_instruction_mode(vmcb: &Vmcb, length: usize) -> bool {
-    let b = vmcb.bytes();
-    let cr0 = u64::from_le_bytes(b[0x558..0x560].try_into().unwrap());
-    let efer = u64::from_le_bytes(b[0x4d0..0x4d8].try_into().unwrap());
-    let cs = u16::from_le_bytes(b[0x412..0x414].try_into().unwrap());
+    let bytes = vmcb.bytes();
+    let cr0 = u64::from_le_bytes(bytes[0x558..0x560].try_into().unwrap());
+    let efer = u64::from_le_bytes(bytes[0x4d0..0x4d8].try_into().unwrap());
+    let cs = u16::from_le_bytes(bytes[0x412..0x414].try_into().unwrap());
     if vmcb.guest_in_64_bit_code() {
         return true;
     }
@@ -486,7 +486,7 @@ pub(crate) fn native_startup_instruction_mode(vmcb: &Vmcb, length: usize) -> boo
     {
         return false;
     }
-    let limit = u32::from_le_bytes(b[0x414..0x418].try_into().unwrap()) as u64;
+    let limit = u32::from_le_bytes(bytes[0x414..0x418].try_into().unwrap()) as u64;
     let ip_limit = if cs & 0x400 != 0 { u32::MAX as u64 } else { u16::MAX as u64 };
     vmcb.guest_rip().checked_add(length as u64).is_some_and(|next| next <= limit.min(ip_limit))
 }

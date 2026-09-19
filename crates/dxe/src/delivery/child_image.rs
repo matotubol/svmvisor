@@ -177,28 +177,28 @@ impl State {
     /// the parent. Failed child unload keeps its LoadOptions pool alive.
     /// # Safety
     /// Boot services remain live; serialize this state across firmware callbacks.
-    pub unsafe fn cleanup(&mut self, bs: &BootServices) -> Result<(), Status> {
+    pub unsafe fn cleanup(&mut self, boot_services: &BootServices) -> Result<(), Status> {
         // SUCCESS can leave callbacks/EBS hooks into the runtime child, even if
         // its acknowledgement is malformed. Never unload it or its inputs.
         if self.retained {
             return Err(Status::UNSUPPORTED);
         }
         if !self.child.is_null() {
-            let status = unsafe { (bs.unload_image)(self.child) };
+            let status = unsafe { (boot_services.unload_image)(self.child) };
             if status != Status::SUCCESS {
                 return Err(status);
             }
             self.child = ptr::null_mut();
         }
         if !self.exit_data.is_null() {
-            let status = unsafe { (bs.free_pool)(self.exit_data) };
+            let status = unsafe { (boot_services.free_pool)(self.exit_data) };
             if status != Status::SUCCESS {
                 return Err(status);
             }
             self.exit_data = ptr::null_mut();
         }
         if !self.pool.is_null() {
-            let status = unsafe { (bs.free_pool)(self.pool) };
+            let status = unsafe { (boot_services.free_pool)(self.pool) };
             if status != Status::SUCCESS {
                 return Err(status);
             }
@@ -250,13 +250,13 @@ pub fn parse_pe(pe: &[u8]) -> Result<PeMetadata, Status> {
 /// No reference to `state` may be formed by reentrant callbacks during this call.
 pub unsafe fn execute(
     state: &mut State,
-    bs: &BootServices,
+    boot_services: &BootServices,
     parent: Handle,
     controller: Handle,
     pin: &Pin,
     read: impl FnMut(u64) -> Result<u32, Status>,
 ) -> Delivery {
-    unsafe { execute_inner(state, bs, parent, controller, pin, None, read) }
+    unsafe { execute_inner(state, boot_services, parent, controller, pin, None, read) }
 }
 
 /// Same firmware ownership requirements as execute. The numeric journal range
@@ -268,14 +268,14 @@ pub unsafe fn execute(
 /// is_retained becomes true. No cleanup/unload may revoke the installed hook.
 pub unsafe fn execute_resident(
     state: &mut State,
-    bs: &BootServices,
+    boot_services: &BootServices,
     parent: Handle,
     controller: Handle,
     pin: &Pin,
     options: ResidentBootOptions,
     read: impl FnMut(u64) -> Result<u32, Status>,
 ) -> Delivery {
-    unsafe { execute_inner(state, bs, parent, controller, pin, Some(options), read) }
+    unsafe { execute_inner(state, boot_services, parent, controller, pin, Some(options), read) }
 }
 
 /// Development delivery (`card-resident-dev-loader`): no header is compiled
@@ -289,7 +289,7 @@ pub unsafe fn execute_resident(
 #[cfg(feature = "card-resident-dev-loader")]
 pub unsafe fn execute_resident_dev(
     state: &mut State,
-    bs: &BootServices,
+    boot_services: &BootServices,
     parent: Handle,
     controller: Handle,
     options: ResidentBootOptions,
@@ -302,7 +302,7 @@ pub unsafe fn execute_resident_dev(
     };
     match pin {
         Ok(pin) => unsafe {
-            execute_inner(state, bs, parent, controller, &pin, Some(options), read)
+            execute_inner(state, boot_services, parent, controller, &pin, Some(options), read)
         },
         // Same stage-0 report a pinned parent gives for a header mismatch.
         Err(error) => Delivery {
@@ -417,7 +417,7 @@ fn parse_pe_kind(pe: &[u8], kind: ImageKind) -> Result<PeMetadata, Status> {
 
 unsafe fn execute_inner(
     state: &mut State,
-    bs: &BootServices,
+    boot_services: &BootServices,
     parent: Handle,
     controller: Handle,
     pin: &Pin,
@@ -456,7 +456,7 @@ unsafe fn execute_inner(
         let result_offset = rounded + MAX_PATH + 64;
         let total = result_offset + core::mem::size_of::<NativeResult>();
         status(unsafe {
-            (bs.allocate_pool)(
+            (boot_services.allocate_pool)(
                 if options.is_some() {
                     MemoryType::RUNTIME_SERVICES_DATA
                 } else {
@@ -481,7 +481,7 @@ unsafe fn execute_inner(
         pin.verify(pe)?;
         report.stage = 2;
         let path = unsafe { state.pool.add(rounded) };
-        unsafe { copy_path(bs, parent, controller, path, &pin.digest, pin.kind) }?;
+        unsafe { copy_path(boot_services, parent, controller, path, &pin.digest, pin.kind) }?;
         let mailbox = unsafe { state.pool.add(result_offset).cast::<NativeResult>() };
         unsafe {
             if let Some(options) = options {
@@ -491,7 +491,7 @@ unsafe fn execute_inner(
             }
         };
         let loaded = unsafe {
-            (bs.load_image)(
+            (boot_services.load_image)(
                 false.into(),
                 parent,
                 path.cast(),
@@ -509,11 +509,19 @@ unsafe fn execute_inner(
             return Err(Status::DEVICE_ERROR);
         }
         unsafe {
-            set_options(bs, parent, state.child, mailbox, pin.metadata.image_bytes, pin.kind)
+            set_options(
+                boot_services,
+                parent,
+                state.child,
+                mailbox,
+                pin.metadata.image_bytes,
+                pin.kind,
+            )
         }?;
         let mut exit_size = 0;
         let mut exit_data = ptr::null_mut();
-        let started = unsafe { (bs.start_image)(state.child, &mut exit_size, &mut exit_data) };
+        let started =
+            unsafe { (boot_services.start_image)(state.child, &mut exit_size, &mut exit_data) };
         state.exit_data = exit_data.cast();
         report.start_status = Some(started);
         report.stage = 4;
@@ -569,7 +577,7 @@ unsafe fn execute_inner(
         report.operation_status = error;
     }
     if !state.retained {
-        if let Err(error) = unsafe { state.cleanup(bs) } {
+        if let Err(error) = unsafe { state.cleanup(boot_services) } {
             report.cleanup_status = error;
         }
     }
@@ -589,7 +597,7 @@ fn read_header(
 }
 
 unsafe fn set_options(
-    bs: &BootServices,
+    boot_services: &BootServices,
     parent: Handle,
     child: Handle,
     result: *mut NativeResult,
@@ -598,7 +606,14 @@ unsafe fn set_options(
 ) -> Result<(), Status> {
     let mut raw = ptr::null_mut();
     status(unsafe {
-        (bs.open_protocol)(child, &LoadedImageProtocol::GUID, &mut raw, parent, ptr::null_mut(), 2)
+        (boot_services.open_protocol)(
+            child,
+            &LoadedImageProtocol::GUID,
+            &mut raw,
+            parent,
+            ptr::null_mut(),
+            2,
+        )
     })?;
     let operation = (|| {
         let loaded =
@@ -633,13 +648,13 @@ unsafe fn set_options(
         return operation;
     }
     let closed = status(unsafe {
-        (bs.close_protocol)(child, &LoadedImageProtocol::GUID, parent, ptr::null_mut())
+        (boot_services.close_protocol)(child, &LoadedImageProtocol::GUID, parent, ptr::null_mut())
     });
     closed.and(operation)
 }
 
 unsafe fn copy_path(
-    bs: &BootServices,
+    boot_services: &BootServices,
     parent: Handle,
     controller: Handle,
     dest: *mut u8,
@@ -648,7 +663,7 @@ unsafe fn copy_path(
 ) -> Result<(), Status> {
     let mut raw = ptr::null_mut();
     status(unsafe {
-        (bs.open_protocol)(
+        (boot_services.open_protocol)(
             controller,
             &DevicePathProtocol::GUID,
             &mut raw,
@@ -702,7 +717,12 @@ unsafe fn copy_path(
         return operation;
     }
     let closed = status(unsafe {
-        (bs.close_protocol)(controller, &DevicePathProtocol::GUID, parent, ptr::null_mut())
+        (boot_services.close_protocol)(
+            controller,
+            &DevicePathProtocol::GUID,
+            parent,
+            ptr::null_mut(),
+        )
     });
     closed.and(operation)
 }

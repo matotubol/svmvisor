@@ -99,11 +99,11 @@ pub(super) unsafe fn prepare(endpoint: TerminalEndpoint, slot: usize, count: usi
     let Some(uc) = (0..8).find(|i| (pat >> (i * 8)) & 255 == 0) else {
         return false;
     };
-    let Some(mt) = (unsafe { native_mtrrs(__cpuid_count(0x80000008, 0).eax as u8) }) else {
+    let Some(mtrrs) = (unsafe { native_mtrrs(__cpuid_count(0x80000008, 0).eax as u8) }) else {
         return false;
     };
     for page in [endpoint.config_page, endpoint.bar0_host_page] {
-        if (page < pool + bytes && pool < page + 4096) || !mt.terminal_page_is_uc(page, 0) {
+        if (page < pool + bytes && pool < page + 4096) || !mtrrs.terminal_page_is_uc(page, 0) {
             return false;
         }
     }
@@ -439,9 +439,9 @@ unsafe fn checked_endpoint_locked() -> Option<(TerminalEndpoint, u64)> {
         control.diagnostic_revoke();
         return None;
     }
-    let mt = unsafe { native_mtrrs(PHYSICAL_BITS) }?;
-    if !mt.terminal_page_is_uc(endpoint.config_page, 0)
-        || !mt.terminal_page_is_uc(endpoint.bar0_host_page, 0)
+    let mtrrs = unsafe { native_mtrrs(PHYSICAL_BITS) }?;
+    if !mtrrs.terminal_page_is_uc(endpoint.config_page, 0)
+        || !mtrrs.terminal_page_is_uc(endpoint.bar0_host_page, 0)
     {
         return None;
     }

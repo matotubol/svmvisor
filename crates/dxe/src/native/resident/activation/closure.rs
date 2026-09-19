@@ -32,7 +32,7 @@ pub(super) unsafe fn host_closure(
     slot: usize,
     map: &[MemoryDescriptor],
     cpu: Cpu,
-    mt: &Mtrrs,
+    mtrrs: &Mtrrs,
     pat: u64,
 ) -> Result<(), u64> {
     let (Some(d), Some(aliases)) = (directories.get(slot), backing_aliases(directories, slot))
@@ -99,7 +99,7 @@ pub(super) unsafe fn host_closure(
     reject!(c.host_extra_pa == d.vmcb, 618, d.context, c.host_extra_pa, d.vmcb, 24);
     reject!(c.host_extra_pa == d.auxiliary, 619, d.context, c.host_extra_pa, d.auxiliary, 24);
     reject!(c.host_extra_pa == c.hsave_pa, 620, d.context, c.host_extra_pa, c.hsave_pa, 24);
-    let cfg = PagingConfig {
+    let config = PagingConfig {
         cr3: c.host_cr3,
         physical_bits: cpu.physical_bits,
         la57: false,
@@ -110,7 +110,7 @@ pub(super) unsafe fn host_closure(
     // NXE is the runtime's explicit entry commitment; this walk checks the
     // constructed root with that setting before any live CR3/EFER change.
     unsafe {
-        mapped(map, cfg, mt, pat, d.arena_base, d.text_end - d.arena_base, false, true)?;
+        mapped(map, config, mtrrs, pat, d.arena_base, d.text_end - d.arena_base, false, true)?;
         for (address, bytes) in [
             (d.context, core::mem::size_of::<abi::BridgeContext>() as u64),
             (d.vmcb, 4096),
@@ -121,16 +121,16 @@ pub(super) unsafe fn host_closure(
             (c.host_stack_top - 65536, 65536),
             (c.owner_context, 1),
         ] {
-            mapped(map, cfg, mt, pat, address, bytes, true, false)?;
+            mapped(map, config, mtrrs, pat, address, bytes, true, false)?;
         }
         for header in [c.host_gdtr_va, c.host_idtr_va] {
-            mapped(map, cfg, mt, pat, header, 10, false, false)?;
+            mapped(map, config, mtrrs, pat, header, 10, false, false)?;
         }
     }
     // Private root tables must lie in this image's retained data.
     let walk = |address| {
         let mut last = None;
-        paging::translate(cfg, address, |physical| {
+        paging::translate(config, address, |physical| {
             if !inside(physical & !4095, 4096, 4096) {
                 admission_hint(621, physical, physical & !4095, d.memory_end);
                 return None;
@@ -144,7 +144,7 @@ pub(super) unsafe fn host_closure(
     // Shared aliases retain one qualified backing and their exact permissions.
     let check_alias = |address, expected, writable, check_wb| -> Result<(), u64> {
         let translated = walk(address).map_err(|(error, last)| {
-            admission_walk(error, cfg, address, last);
+            admission_walk(error, config, address, last);
             24u64
         })?;
         reject!(
@@ -175,7 +175,7 @@ pub(super) unsafe fn host_closure(
         );
         // page_is_wb answers for a 4KiB page base only; aliases are also probed at +4095.
         reject!(
-            check_wb && !mt.page_is_wb(translated.physical_address & !4095),
+            check_wb && !mtrrs.page_is_wb(translated.physical_address & !4095),
             632,
             address,
             translated.physical_address,
@@ -218,7 +218,7 @@ pub(super) unsafe fn host_closure(
             None => match walk(alias) {
                 Err((paging::WalkError::NotPresent { level: 1 }, _)) => {}
                 Err((error, last)) => {
-                    admission_walk(error, cfg, alias, last);
+                    admission_walk(error, config, alias, last);
                     return Err(24);
                 }
                 Ok(t) => {
@@ -251,8 +251,8 @@ pub(super) unsafe fn host_closure(
     reject!(!inside(gdt, 40, 8), 627, c.host_gdtr_va, gdt, d.memory_end, 25);
     reject!(!inside(idt, 4096, 16), 628, c.host_idtr_va, idt, d.memory_end, 25);
     unsafe {
-        mapped(map, cfg, mt, pat, gdt, 40, true, false)?;
-        mapped(map, cfg, mt, pat, idt, 4096, false, false)?;
+        mapped(map, config, mtrrs, pat, gdt, 40, true, false)?;
+        mapped(map, config, mtrrs, pat, idt, 4096, false, false)?;
     }
     let tss_descriptor = unsafe { core::slice::from_raw_parts((gdt + 24) as *const u8, 16) };
     let tss = u64::from_le_bytes([
@@ -268,7 +268,7 @@ pub(super) unsafe fn host_closure(
     reject!(tss_descriptor[5] != 0x89, 629, gdt + 24, tss_descriptor[5], 0x89, 26);
     reject!(!inside(tss, 104, 8), 630, gdt + 24, tss, d.memory_end, 26);
     unsafe {
-        mapped(map, cfg, mt, pat, tss, 104, true, false)?;
+        mapped(map, config, mtrrs, pat, tss, 104, true, false)?;
     }
     let fault_top = unsafe { ptr::read_unaligned((tss + 36) as *const u64) };
     let fault_base = fault_top.checked_sub(16384).ok_or_else(|| {
@@ -277,7 +277,7 @@ pub(super) unsafe fn host_closure(
     })?;
     reject!(!inside(fault_base, 16384, 16), 631, tss + 36, fault_top, d.memory_end, 26);
     unsafe {
-        mapped(map, cfg, mt, pat, fault_top - 16384, 16384, true, false)?;
+        mapped(map, config, mtrrs, pat, fault_top - 16384, 16384, true, false)?;
     }
     Ok(())
 }

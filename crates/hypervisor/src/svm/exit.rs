@@ -414,7 +414,7 @@ impl<'a> MsrInstruction<'a> {
     }
     pub(crate) fn length(self) -> usize {
         match self {
-            Self::Bytes(b) => b.len(),
+            Self::Bytes(bytes) => bytes.len(),
             Self::Hardware { next, .. } => next.instruction_bytes as usize,
         }
     }
@@ -424,7 +424,7 @@ impl<'a> MsrInstruction<'a> {
     ) -> Result<ResumeCandidate, ResumeError> {
         self.validate(stopped)?;
         match self {
-            Self::Bytes(b) => stopped.msr_continuation(b),
+            Self::Bytes(bytes) => stopped.msr_continuation(bytes),
             Self::Hardware { next, .. } => Ok(next),
         }
     }

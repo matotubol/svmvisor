@@ -24,8 +24,8 @@ impl Prepared {
     /// BSP driver install, exclusive ownership of this live firmware table's
     /// EBS slot until commit; no other interposer may replace the slot meanwhile.
     /// Refuse non-writable/nonidentity tables without changing page permissions.
-    pub(super) unsafe fn new(bs: *mut BootServices) -> Result<Self, Status> {
-        let services = unsafe { &*bs };
+    pub(super) unsafe fn new(boot_services: *mut BootServices) -> Result<Self, Status> {
+        let services = unsafe { &*boot_services };
         if services.header.size as usize != core::mem::size_of::<BootServices>()
             || services.header.reserved != 0
         {
@@ -41,7 +41,7 @@ impl Prepared {
                 cfg,
                 &mt,
                 rdmsr(PAT),
-                bs as u64,
+                boot_services as u64,
                 core::mem::size_of::<BootServices>() as u64,
                 true,
                 false,
@@ -55,14 +55,14 @@ impl Prepared {
     /// # Safety
     /// Same exclusively owned table as new, with all allocation/MP work done.
     /// No shared Rust reference to the table is used across these raw writes.
-    pub(super) unsafe fn commit(self, bs: *mut BootServices) {
+    pub(super) unsafe fn commit(self, boot_services: *mut BootServices) {
         unsafe {
-            let raise = (*bs).raise_tpl;
-            let restore = (*bs).restore_tpl;
+            let raise = (*boot_services).raise_tpl;
+            let restore = (*boot_services).restore_tpl;
             let old = raise(Tpl::HIGH_LEVEL);
             // Snapshot the CURRENT table after all firmware allocation/MP calls.
             // No events can change its fields while this bounded CRC is computed.
-            let mut candidate = ptr::read(bs);
+            let mut candidate = ptr::read(boot_services);
             svmvisor_original_exit_boot_services = candidate.exit_boot_services as usize;
             candidate.exit_boot_services = svmvisor_exit_boot_services;
             candidate.header.crc = 0;
@@ -77,8 +77,9 @@ impl Prepared {
                     crc = (crc >> 1) ^ (0xedb8_8320 & 0u32.wrapping_sub(crc & 1));
                 }
             }
-            ptr::addr_of_mut!((*bs).exit_boot_services).write(svmvisor_exit_boot_services);
-            ptr::addr_of_mut!((*bs).header.crc).write(!crc);
+            ptr::addr_of_mut!((*boot_services).exit_boot_services)
+                .write(svmvisor_exit_boot_services);
+            ptr::addr_of_mut!((*boot_services).header.crc).write(!crc);
             restore(old);
         }
     }
