@@ -61,8 +61,10 @@ fast iteration loop in `firmware/card/README.md`. Both share the internal
 ## Loading a different child
 
 The resident loaders start whatever image the payload slot holds, as long as it
-meets the policy in `delivery/child_image.rs`. Nothing in that policy is
-specific to the hypervisor. A child must be:
+meets the policy in `svmvisor_card_abi::envelope` (`Envelope::parse` for the
+header, `parse_pe_kind` for the image; `delivery/child_image.rs` binds the two
+with the SHA-256). Nothing in that policy is specific to the hypervisor. A
+child must be:
 
 - A PE32+ x86-64 image (machine `0x8664`, optional-header magic `0x20b`) with
   PE subsystem 12, EFI runtime driver: the firmware loads it as runtime
@@ -75,7 +77,8 @@ specific to the hypervisor. A child must be:
   image, header and alignment sizes, section count) the loader compares with
   what it parses. `firmware/card/package-payload.py --resident` writes it;
   `svmvisor_card_abi::envelope` documents the layout field by field and owns
-  its constants.
+  its constants and parser, so a Rust packager can check its output with the
+  code the loader runs.
 - At most 1 MiB minus the header (`SLOT_BYTES - HEADER_BYTES`), at least 512
   bytes.
 

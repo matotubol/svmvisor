@@ -567,7 +567,7 @@ instead of restating it.
 | exit codes | `hypervisor::svm::exit` |
 | resident bridge ABI | `hypervisor::host::resident` |
 | card loader<->child contract (boot options, native result, journal record, terminal endpoint) | `card-abi` |
-| card image format (the 128-byte envelope: sizes, magics, flags, field offsets, PE policy limits) | `card-abi::envelope` |
+| card image format (the 128-byte envelope: sizes, magics, flags, field offsets, PE policy limits, and the parser) | `card-abi::envelope` |
 | `SVMRELO1` relocatable package (arena size, handoff offset, parser and relocator) | `card-abi::package` |
 
 A crate that depends on `hypervisor` imports these; it never re-declares
