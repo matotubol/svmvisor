@@ -5,14 +5,13 @@
 
 use core::{mem::size_of, ptr::NonNull};
 
-use svmvisor_hypervisor::boot::memory::MemoryDescriptor;
+use svmvisor_hypervisor::boot::memory::{MAX_DESCRIPTORS, MemoryDescriptor};
 use uefi_raw::{
     Status,
     table::boot::{BootServices, MemoryType},
 };
 
 const MAX_MAP_BYTES: usize = 1024 * 1024;
-const MAX_DESCRIPTORS: usize = 4096;
 /// Maximum pages touched by any exact pool extent, including unaligned ends.
 pub const MAX_STORAGE_COVERING_PAGES: usize =
     (MAX_MAP_BYTES + MAX_DESCRIPTORS * size_of::<MemoryDescriptor>() + 8190) / 4096;
