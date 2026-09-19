@@ -688,8 +688,10 @@ for compressed code.
 
 ## 13. Verifying a change
 
-A style change is correct when all of this passes (each command verified on
-2026-09-19):
+A style change is correct when all of this passes. `bash
+crates/xtask/style-check/verify.sh full` runs every command below and the
+disassembly comparison (see its README); each command was verified on
+2026-09-19:
 
 ```
 cargo fmt --all -- --check
