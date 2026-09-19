@@ -1,16 +1,17 @@
-# DXE firmware integration
+# DXE native child
 
-This crate owns UEFI driver binding, image delivery, admission, resource
-allocation, and firmware lifecycle observation. The CPU and VM-exit runtime
-belongs in [`../hypervisor`](../hypervisor/README.md).
+This crate is the SVM-specific EFI child image: admission, resource
+allocation, and the launch of the resident runtime. The CPU and VM-exit runtime
+belongs in [`../hypervisor`](../hypervisor/README.md). The card option-ROM
+driver that binds the card, delivers this image and observes the firmware
+lifecycle is [`../card-loader`](../card-loader/README.md); the records the two
+exchange live in [`../card-abi`](../card-abi/README.md).
 
 ## Where to work
 
 | Source directory | Responsibility |
 | --- | --- |
-| `firmware/` | Option-ROM driver binding, PCI I/O, BAR mapping, CPU sampling, and lifecycle events. |
-| `delivery/` | Card payload validation, EFI child loading, and parent-side ownership and cleanup. |
-| `diagnostics/` | Journal serialization, lifecycle traces, resident launcher failure records, and outcome classification. The records exchanged with a child (`ResidentBootOptions`, `NativeResult`) live in [`../card-abi`](../card-abi/README.md). |
+| `diagnostics/` | Resident launcher failure records. The records exchanged with the loader (`ResidentBootOptions`, `NativeResult`) live in [`../card-abi`](../card-abi/README.md). |
 | `memory_attributes/` | Memory Attribute Protocol provider, registration, firmware access, and the F7 table qualification path. |
 | `native/admission/` | Entry boundary capture and CPU, memory, cache, and rendezvous admission evidence. |
 | `native/resources/` | Firmware-owned tables, image ranges, guest pages, arena allocation, and cache preparation. |
@@ -21,37 +22,24 @@ belongs in [`../hypervisor`](../hypervisor/README.md).
 
 `lib.rs` exposes only the grouped library namespaces, for example
 `native::transition::state`, `native::admission::cpu` or
-`diagnostics::outcome`; there are no root compatibility aliases. Library files
-that are also compiled by a test through `#[path]` name their siblings with
-`super::` (for example `native::admission::cache_rendezvous`), and that test's
-crate root provides the same sibling names.
+`diagnostics::resident_boot`; there are no root compatibility aliases. Library
+files that are also compiled by a test through `#[path]` name their siblings
+with `super::` (for example `native::admission::cache_rendezvous`), and that
+test's crate root provides the same sibling names.
 
 `main.rs` selects the binary-only modules with explicit paths and feature gates.
-These include firmware driver state, image entry, resource ownership, and
-fixtures. They do not become part of the library merely because they share a
-directory with public modules. Assembly lives beside the Rust contract it
-implements and is selected by `build.rs`.
+These include image entry, resource ownership, and fixtures. They do not become
+part of the library merely because they share a directory with public modules.
+Assembly lives beside the Rust contract it implements and is selected by
+`build.rs`.
 
 ## Entry flow
 
-The card returning-loader image follows:
+Every image of this package is a `native-*` feature selection; a UEFI build
+without one is rejected. `cargo xtask resident` builds the production resident
+image (`native-resident-boot`).
 
-```text
-main.rs: efi_main
-  -> firmware/driver.rs: install and bind
-  -> delivery/adapter.rs + delivery/child_image.rs: validate and start child
-  -> diagnostics/: classify the returned child result
-  -> firmware/lifecycle.rs: journal firmware lifecycle events
-```
-
-The resident loader has two mutually exclusive builds: `card-resident-loader`
-compiles in the exact 128-byte payload header (`SVMVISOR_CARD_PE_HEADER`);
-`card-resident-dev-loader` adopts the header found in the card's payload slot
-after the same `Pin::parse_resident` policy (`execute_resident_dev`), for the
-fast iteration loop in `firmware/card/README.md`. Both share the internal
-`card-resident` feature; the child stays bound to the header's SHA-256.
-
-The separately built native returning child follows:
+The native returning child follows:
 
 ```text
 native/admission/boundary.S: capture original firmware state

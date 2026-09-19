@@ -10,10 +10,10 @@ The rules cover **organization, naming and layout**. They say nothing about
 what the hypervisor does. Rule IDs (`F2`, `N7`, ...) exist so reviews and
 commits can cite them.
 
-Scope: all Rust under `crates/`. The `no_std` crates (`card-abi`, `hypervisor`,
-`dxe`, `firmware-handoff`, `resident-payload`, `memory-attributes`) and the
-host tools (`xtask`, `rompack`) follow the same style; rules marked
-**[no_std]** bind only the former.
+Scope: all Rust under `crates/`. The `no_std` crates (`card-abi`,
+`card-loader`, `hypervisor`, `dxe`, `firmware-handoff`, `resident-payload`,
+`memory-attributes`) and the host tools (`xtask`, `rompack`) follow the same
+style; rules marked **[no_std]** bind only the former.
 
 Where these rules come from: the habits of a very consistent reference
 codebase (BurntSushi's `jiff`), filtered down to what makes sense for a
@@ -96,8 +96,10 @@ section order, not from ASCII art.
 
 **C1.** Dependency direction is fixed: `card-abi` is the leaf (it knows
 nothing about UEFI or SVM); `hypervisor` depends on it and knows nothing about
-UEFI; `dxe` depends on both; `firmware-handoff` and `resident-payload` depend
-on `hypervisor`; `memory-attributes`, `rompack` and `xtask` stand alone. A
+UEFI; `card-loader` depends on `card-abi` only, plus `firmware-handoff` under
+`card-load-only`, and knows nothing about SVM; `dxe` depends on `card-abi` and
+`hypervisor`; `firmware-handoff` and `resident-payload` depend on
+`hypervisor`; `memory-attributes`, `rompack` and `xtask` stand alone. A
 crate never reaches into another crate's source tree with `#[path]` or
 `include!`. Shared code is shared through a Cargo dependency.
 
@@ -112,10 +114,10 @@ An `#[allow(...)]` anywhere else is on the narrowest item possible and has a
 comment on the line above saying why.
 
 **C4.** Cargo features are named `<area>-<noun>` in kebab case, grouped by
-area prefix (`card-*`, `native-*`, `memory-attribute-*`), each with a `#`
-comment above it in `Cargo.toml` stating what it selects. Mutually exclusive
-features are rejected by a `compile_error!` in the crate root, never silently
-resolved.
+area prefix (`card-*` in `card-loader`; `native-*` and `memory-attribute-*` in
+`dxe`), each with a `#` comment above it in `Cargo.toml` stating what it
+selects. Mutually exclusive features are rejected by a `compile_error!` in the
+crate root, never silently resolved.
 
 **C5. [no_std]** No `alloc`, no floating point, no `std` behind a feature.
 Anything that needs them belongs in `xtask` or `rompack`.
@@ -342,9 +344,9 @@ never repeated.
 place: `use super::*;` as the first line of `mod tests`. A child module names
 its parent's private items through `crate::` like anything else.
 Exception while M10 debt exists: a file mounted by `#[path]` from more than
-one place (the `dxe` binary-only files and the `src/` files that `tests/`
-mount) keeps whatever import paths resolve in every mount; only the grouping
-and ordering of its imports is normalized.
+one place (the `card-loader` and `dxe` binary-only files and the `src/` files
+that `tests/` mount) keeps whatever import paths resolve in every mount; only
+the grouping and ordering of its imports is normalized.
 
 **I4.** No glob imports, with two exceptions: `use super::*;` in `mod tests`
 (I3), and `use SomeEnum::*;` as the *first statement of a function* whose body
@@ -565,7 +567,7 @@ instead of restating it.
 | exit codes | `hypervisor::svm::exit` |
 | resident bridge ABI | `hypervisor::host::resident` |
 | card loader<->child contract (boot options, native result, journal record, terminal endpoint) | `card-abi` |
-| card image format | needs a `dxe` module compiled under every `card-*` feature (none exists yet); until then `delivery/card.rs`, `delivery/child_image.rs` and `xtask/card.rs` each keep a copy |
+| card image format | needs a `card-loader` module compiled under every `card-*` feature (none exists yet); until then `card-loader/src/delivery/card.rs`, `card-loader/src/delivery/child_image.rs` and `xtask/src/card.rs` each keep a copy |
 
 A crate that depends on `hypervisor` imports these; it never re-declares
 them. A deliberately standalone crate (`card-loader`, `memory-attributes`,
