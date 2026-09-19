@@ -1,4 +1,4 @@
-use svmvisor_dxe::diagnostics::{
+use svmvisor_card_loader::diagnostics::{
     journal::JournalIo,
     trace::{EventKind::*, MAX_CALLBACK_RECORDS, Trace},
 };
@@ -82,7 +82,7 @@ fn same_boot_id_fresh_timestamps_and_ordered_counts() {
 
 #[test]
 fn missing_reversed_and_duplicate_events_survive_in_final_snapshot() {
-    let cases: &[(&[svmvisor_dxe::diagnostics::trace::EventKind], u32, [u32; 2])] = &[
+    let cases: &[(&[svmvisor_card_loader::diagnostics::trace::EventKind], u32, [u32; 2])] = &[
         (&[ReadyToBoot, ExitBootServices], 0x08040040, [1, 1]),
         (&[ExitBootServices], 0x09040040, [0, 1]),
         (&[AfterReadyToBoot, ReadyToBoot, ExitBootServices], 0x11040040, [0x10001, 1]),

@@ -219,7 +219,7 @@ pub fn loader_dev() -> Result<(), String> {
             "--manifest-path".as_ref(),
             manifest.as_os_str(),
             "--package".as_ref(),
-            "svmvisor-dxe".as_ref(),
+            "svmvisor-card-loader".as_ref(),
             "--profile".as_ref(),
             "dxe".as_ref(),
             "--features".as_ref(),
@@ -233,7 +233,7 @@ pub fn loader_dev() -> Result<(), String> {
     )?;
     let (efi, rom, memory) =
         (out.join("svmvisor-dxe.efi"), out.join("svmvisor-dxe.rom"), out.join("svmvisor-dxe.mem"));
-    let built = loader_target.join("x86_64-unknown-uefi/dxe/svmvisor-dxe.efi");
+    let built = loader_target.join("x86_64-unknown-uefi/dxe/svmvisor-card-loader.efi");
     io(fs::copy(&built, &efi).map(drop), "copy", &built)?;
     run(
         &root,
@@ -329,7 +329,7 @@ fn utc_stamp(seconds: u64) -> String {
 }
 
 /// The fields of the 128-byte `SVMBPE01` envelope this tool reports. The
-/// loader (`crates/dxe/src/delivery/child_image.rs`) and `flash-card.ps1` own
+/// loader (`crates/card-loader/src/delivery/child_image.rs`) and `flash-card.ps1` own
 /// the full policy; this only refuses to describe something else.
 fn parse_header(header: &[u8]) -> Result<Header, String> {
     let word = |offset: usize| u64::from_le_bytes(header[offset..offset + 8].try_into().unwrap());

@@ -37,7 +37,7 @@ use core::{
 use std::sync::Mutex;
 
 use svmvisor_card_abi::native_result::NativeResult;
-use svmvisor_dxe::{
+use svmvisor_card_loader::{
     delivery::child_image::Delivery,
     diagnostics::{
         journal::{self, JournalIo},

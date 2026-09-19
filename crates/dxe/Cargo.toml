@@ -34,15 +34,6 @@ native-transition-multi-exit = ["native-transition-test"]
 native-transition-multi-exit-unexpected = ["native-transition-multi-exit"]
 native-transition-multi-exit-mismatch = ["native-transition-multi-exit"]
 native-transition-multi-exit-bad-mode = ["native-transition-multi-exit"]
-card-load-only = ["dep:svmvisor-firmware-handoff", "dep:sha2"]
-card-returning-loader = ["dep:sha2"]
-# Shared resident-loader code. Select exactly one of the two loaders below.
-card-resident = ["dep:sha2"]
-# Production: the exact 128-byte payload header is compiled in (SVMVISOR_CARD_PE_HEADER).
-card-resident-loader = ["card-resident"]
-# Development: trust the structurally valid header found in the card's payload
-# slot; the child is still bound to that header's SHA-256. Owner's bench only.
-card-resident-dev-loader = ["card-resident"]
 
 [dependencies]
 svmvisor-card-abi = { path = "../card-abi" }
@@ -50,6 +41,4 @@ svmvisor-memory-attributes = { path = "../memory-attributes", optional = true }
 svmvisor-hypervisor = { path = "../hypervisor" }
 
 uefi-raw = "0.15.1"
-sha2 = { version = "0.11", default-features = false, optional = true }
-svmvisor-firmware-handoff = { path = "../firmware-handoff", optional = true }
 

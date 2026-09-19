@@ -1,6 +1,6 @@
 #![cfg(feature = "card-load-only")]
 
-use svmvisor_dxe::delivery::card::{self, Manifest};
+use svmvisor_card_loader::delivery::card::{self, Manifest};
 
 fn word(bytes: &[u8], offset: usize) -> u64 {
     u64::from_le_bytes(bytes[offset..offset + 8].try_into().unwrap())

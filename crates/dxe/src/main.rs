@@ -7,18 +7,8 @@
 #![cfg_attr(target_os = "uefi", no_std)]
 #![forbid(unsafe_op_in_unsafe_fn)]
 
-#[cfg(all(
-    feature = "native-preflight",
-    any(feature = "card-load-only", feature = "card-returning-loader", feature = "card-resident")
-))]
-compile_error!("native child and resident card loader are separate images");
-#[cfg(all(feature = "card-returning-loader", feature = "card-load-only"))]
-compile_error!("returning PE delivery is a separate resident loader mode");
-#[cfg(all(
-    feature = "card-resident",
-    any(feature = "card-returning-loader", feature = "card-load-only")
-))]
-compile_error!("resident PE delivery is a separate parent image");
+#[cfg(all(target_os = "uefi", not(feature = "native-preflight")))]
+compile_error!("select a native-* image; the card loader is svmvisor-card-loader");
 #[cfg(all(feature = "native-returning", feature = "native-transition-test"))]
 compile_error!("native returning admission cannot combine with a TCG transition fixture");
 
@@ -28,13 +18,6 @@ use uefi_raw::{Handle, Status, table::system::SystemTable};
 // Binary-only modules keep their established crate-local names. The paths group
 // firmware ownership and fixtures without changing the reviewed call graph or
 // compiling these image-specific modules into the host-testable library.
-
-#[cfg(all(target_os = "uefi", feature = "card-load-only"))]
-#[path = "delivery/load.rs"]
-mod card_load;
-#[cfg(all(target_os = "uefi", any(feature = "card-returning-loader", feature = "card-resident")))]
-#[path = "delivery/adapter.rs"]
-mod card_returning_adapter;
 
 // Native child entry, resource ownership, and the returning SVM execution path.
 #[cfg(all(target_os = "uefi", feature = "native-preflight", not(feature = "native-resident")))]
@@ -71,27 +54,7 @@ mod native_transition_fixture;
 #[path = "native/resident/activation/mod.rs"]
 mod resident_activation;
 
-// Resident option-ROM driver binding and firmware lifecycle observation.
-#[cfg(all(target_os = "uefi", not(feature = "native-preflight")))]
-#[path = "firmware/cpu.rs"]
-mod cpu;
-#[cfg(all(target_os = "uefi", not(feature = "native-preflight")))]
-#[path = "firmware/driver.rs"]
-mod driver;
-#[cfg(all(target_os = "uefi", not(feature = "native-preflight")))]
-#[path = "firmware/lifecycle.rs"]
-mod lifecycle;
-#[cfg(all(target_os = "uefi", not(feature = "native-preflight")))]
-#[path = "firmware/mmio.rs"]
-mod mmio;
-#[cfg(all(target_os = "uefi", not(feature = "native-preflight")))]
-#[path = "firmware/pci_io.rs"]
-mod pci_io;
-
-#[cfg(all(
-    target_os = "uefi",
-    any(not(feature = "native-preflight"), feature = "native-resident")
-))]
+#[cfg(all(target_os = "uefi", feature = "native-resident"))]
 #[unsafe(no_mangle)]
 /// Firmware image entry, UEFI 2.10 §4.1.1.
 ///
@@ -99,13 +62,8 @@ mod pci_io;
 /// Firmware must supply a live image handle and system table with boot services
 /// available, and invoke this entry once, at TPL_APPLICATION.
 pub unsafe extern "efiapi" fn efi_main(image: Handle, table: *const SystemTable) -> Status {
-    #[cfg(feature = "native-resident")]
     unsafe {
         return resident_activation::install(image, table.cast_mut());
-    }
-    #[cfg(not(feature = "native-preflight"))]
-    unsafe {
-        driver::install(image, table)
     }
 }
 
@@ -130,10 +88,10 @@ pub unsafe extern "efiapi" fn svmvisor_native_efi_main_inner(
     unsafe { native_entry::run(image, table, capture) }
 }
 
-// The default ROM image has no runtime panic policy. A reachable Rust panic makes linking
+// A non-resident native image has no runtime panic policy. A reachable Rust panic makes linking
 // fail; size-optimized LTO must prove this handler unreachable. This avoids
 // pulling in the general UEFI crate's console/delay/shutdown panic machinery.
-#[cfg(all(target_os = "uefi", not(feature = "card-load-only"), not(feature = "native-resident")))]
+#[cfg(all(target_os = "uefi", not(feature = "native-resident")))]
 #[panic_handler]
 fn panic(_: &core::panic::PanicInfo) -> ! {
     unsafe extern "C" {
@@ -160,18 +118,7 @@ fn resident_panic(_: &core::panic::PanicInfo) -> ! {
     }
 }
 
-// Candidate-only last resort for an internal invariant failure. Expected bad
-// card data never takes this path. No firmware calls or transfer are possible;
-// recovery requires an external reset. Default record-only policy is unchanged.
-#[cfg(all(target_os = "uefi", feature = "card-load-only"))]
-#[panic_handler]
-fn panic(_: &core::panic::PanicInfo) -> ! {
-    loop {
-        core::hint::spin_loop();
-    }
-}
-
 #[cfg(not(target_os = "uefi"))]
 fn main() {
-    eprintln!("svmvisor-dxe is a UEFI-only driver; use cargo build-dxe");
+    eprintln!("svmvisor-dxe is a UEFI-only native child; use cargo xtask resident");
 }

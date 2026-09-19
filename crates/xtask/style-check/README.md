@@ -31,9 +31,9 @@ Expected results for a pure move, rename or reorder:
 Limits:
 
 - The disassembly comparison covers the **resident payload** (the hypervisor
-  core as linked by `cargo xtask resident`). `dxe` driver code is not in it.
-  For a change to `dxe`, build the affected UEFI feature sets with
-  `--emit=asm` before and after and compare per-function bodies.
+  core as linked by `cargo xtask resident`). `card-loader` and `dxe` driver
+  code is not in it. For a change to either, build the affected UEFI feature
+  sets with `--emit=asm` before and after and compare per-function bodies.
 - A constant whose value changes but is never used by the payload is caught by
   `tokenbag.py` and the tests, not by the disassembly.
 - None of this replaces booting the card.

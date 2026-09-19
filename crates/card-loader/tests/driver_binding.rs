@@ -23,7 +23,7 @@ mod real_mmio;
 // Only the physical bus is substituted. Descriptor validation, binding,
 // registration, notification functions and journal verification are real code.
 mod mmio {
-    use svmvisor_dxe::diagnostics::journal::JournalIo;
+    use svmvisor_card_loader::diagnostics::journal::JournalIo;
     use uefi_raw::Status;
     #[derive(Clone, Copy)]
     pub(crate) struct JournalMapping;

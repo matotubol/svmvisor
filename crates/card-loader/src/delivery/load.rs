@@ -3,7 +3,7 @@
 
 use core::ptr::{null_mut, slice_from_raw_parts_mut};
 
-use svmvisor_dxe::{
+use svmvisor_card_loader::{
     delivery::card::{self, Manifest},
     diagnostics::journal::{self, JournalIo},
 };

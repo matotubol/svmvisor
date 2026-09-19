@@ -6,7 +6,7 @@ use core::{
     sync::atomic::{AtomicBool, Ordering},
 };
 
-use svmvisor_dxe::diagnostics::trace::{EventKind, Trace};
+use svmvisor_card_loader::diagnostics::trace::{EventKind, Trace};
 use uefi_raw::{
     Event, Status, guid,
     table::boot::{BootServices, EventType, Tpl},

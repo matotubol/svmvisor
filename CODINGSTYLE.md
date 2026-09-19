@@ -717,10 +717,10 @@ cargo test -p svmvisor-dxe --features native-returning
 cargo test -p svmvisor-dxe --features native-resident-boot
 cargo test -p svmvisor-dxe --features native-transition-multi-exit
 cargo test -p svmvisor-dxe --features memory-attribute-probe
-cargo test -p svmvisor-dxe --features card-load-only
-cargo test -p svmvisor-dxe --features card-returning-loader
-cargo test -p svmvisor-dxe --features card-resident-dev-loader
-cargo test -p svmvisor-dxe --features card-resident-loader
+cargo test -p svmvisor-card-loader --features card-load-only
+cargo test -p svmvisor-card-loader --features card-returning-loader
+cargo test -p svmvisor-card-loader --features card-resident-dev-loader
+cargo test -p svmvisor-card-loader --features card-resident-loader
 cargo test --manifest-path crates/firmware-handoff/Cargo.toml
 cargo build-dxe --features card-resident-dev-loader
 cargo xtask resident --output target/native-resident/<fresh-dir> --low-runtime
@@ -741,12 +741,14 @@ Notes:
   symbol names reduced to their final identifier: mangled names embed the
   module path and a per-checkout crate hash, so a raw diff flags every moved
   function and every git worktree.
-- That comparison covers the resident payload only; `dxe` code is not in it.
-  For a change to `dxe`, build the affected UEFI feature sets with
-  `--emit=asm` before and after and compare per-function bodies the same way.
+- That comparison covers the resident payload only; `card-loader` and `dxe`
+  code is not in it. For a change to either, build the affected UEFI feature
+  sets with `--emit=asm` before and after and compare per-function bodies the
+  same way.
 
 A file move or rename must update, in the same commit, every place that
-names the path: `#[path]` mounts (`dxe/src/main.rs`,
+names the path: `#[path]` mounts (`card-loader/src/main.rs`,
+`card-loader/tests/*.rs`, `dxe/src/main.rs`,
 `dxe/src/native/resident/activation/mod.rs`,
 `dxe/src/native/resident/delivery.rs`, `dxe/tests/*.rs`,
 `firmware-handoff/tests/ownership.rs`), the `.S` table in `dxe/build.rs`, and

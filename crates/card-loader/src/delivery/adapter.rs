@@ -4,10 +4,10 @@ use core::ptr;
 
 use svmvisor_card_abi::boot_options::ResidentBootOptions;
 #[cfg(not(feature = "card-resident-dev-loader"))]
-use svmvisor_dxe::delivery::child_image::Pin;
+use svmvisor_card_loader::delivery::child_image::Pin;
 #[cfg(feature = "card-returning-loader")]
-use svmvisor_dxe::diagnostics::returning_detail::ReturningDiagnostics;
-use svmvisor_dxe::{
+use svmvisor_card_loader::diagnostics::returning_detail::ReturningDiagnostics;
+use svmvisor_card_loader::{
     delivery::child_image::{self as card_returning, State},
     diagnostics::journal::{self, JournalIo},
 };

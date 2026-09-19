@@ -1,6 +1,6 @@
 use std::vec::Vec;
 
-use svmvisor_dxe::diagnostics::journal::{JournalIo, commit};
+use svmvisor_card_loader::diagnostics::journal::{JournalIo, commit};
 use uefi_raw::Status;
 
 const RECORD: [u32; 8] =

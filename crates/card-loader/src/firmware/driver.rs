@@ -5,7 +5,7 @@
 
 use core::ptr::{null, null_mut};
 
-use svmvisor_dxe::diagnostics::journal::{self, JournalIo};
+use svmvisor_card_loader::diagnostics::journal::{self, JournalIo};
 use uefi_raw::{
     Handle, Status, guid,
     protocol::{

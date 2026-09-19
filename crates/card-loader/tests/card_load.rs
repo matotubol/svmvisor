@@ -8,7 +8,7 @@ mod card_load;
 
 mod pci_io {
     use super::*;
-    use svmvisor_dxe::diagnostics::journal::JournalIo;
+    use svmvisor_card_loader::diagnostics::journal::JournalIo;
     pub struct Bar0;
     pub fn status_result(s: Status) -> Result<(), Status> {
         if s.is_error() { Err(s) } else { Ok(()) }

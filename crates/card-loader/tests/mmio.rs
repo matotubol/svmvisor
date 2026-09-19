@@ -3,7 +3,7 @@
 #[allow(dead_code)]
 mod mmio;
 
-use svmvisor_dxe::diagnostics::journal::JournalIo;
+use svmvisor_card_loader::diagnostics::journal::JournalIo;
 use uefi_raw::Status;
 
 fn descriptor() -> [u8; 48] {

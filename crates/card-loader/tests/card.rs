@@ -1,7 +1,7 @@
 #![cfg(feature = "card-load-only")]
 
 use sha2::{Digest, Sha256};
-use svmvisor_dxe::delivery::card::*;
+use svmvisor_card_loader::delivery::card::*;
 use svmvisor_firmware_handoff::layout::{ARENA_BYTES, LayoutError};
 
 fn package() -> Vec<u8> {

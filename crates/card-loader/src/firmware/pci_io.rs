@@ -4,7 +4,7 @@ use core::ffi::c_void;
 
 #[cfg(feature = "card-resident")]
 use svmvisor_card_abi::endpoint::{PCI_CLASS_REVISION, PCI_VENDOR_DEVICE, TerminalEndpoint};
-use svmvisor_dxe::diagnostics::journal::JournalIo;
+use svmvisor_card_loader::diagnostics::journal::JournalIo;
 use uefi_raw::{Status, table::boot::BootServices};
 
 use crate::mmio::JournalMapping;

@@ -1,6 +1,6 @@
 //! Direct access only to the prepared 4 KiB journal, UEFI 2.10 §§2.3.4,14.4.18.
 
-use svmvisor_dxe::diagnostics::journal::JournalIo;
+use svmvisor_card_loader::diagnostics::journal::JournalIo;
 use uefi_raw::Status;
 
 #[derive(Clone, Copy)]

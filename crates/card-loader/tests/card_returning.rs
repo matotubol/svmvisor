@@ -16,7 +16,7 @@ use sha2::{Digest, Sha256};
 use svmvisor_card_abi::{
     boot_options::ResidentBootOptions, endpoint::TerminalEndpoint, native_result::NativeResult,
 };
-use svmvisor_dxe::delivery::child_image::{self as card_returning, Pin, State};
+use svmvisor_card_loader::delivery::child_image::{self as card_returning, Pin, State};
 use uefi_raw::{
     Boolean, Char16, Handle, Status,
     protocol::{device_path::DevicePathProtocol, loaded_image::LoadedImageProtocol},
