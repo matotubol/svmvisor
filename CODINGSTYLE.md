@@ -99,9 +99,10 @@ nothing about UEFI or SVM); `hypervisor` depends on it and knows nothing about
 UEFI; `card-loader` depends on `card-abi` only, plus `firmware-handoff` under
 `card-load-only`, and knows nothing about SVM; `dxe` depends on `card-abi` and
 `hypervisor`; `firmware-handoff` and `resident-payload` depend on
-`hypervisor`; `memory-attributes`, `rompack` and `xtask` stand alone. A
-crate never reaches into another crate's source tree with `#[path]` or
-`include!`. Shared code is shared through a Cargo dependency.
+`hypervisor`; `xtask` depends on `card-abi`; `memory-attributes` and
+`rompack` stand alone. A crate never reaches into another crate's source tree
+with `#[path]` or `include!`. Shared code is shared through a Cargo
+dependency.
 
 **C2.** `lib.rs` / `main.rs` contain, in this order and nothing else: the
 `//!` crate doc, crate attributes, `compile_error!` feature guards, `use`
@@ -567,7 +568,7 @@ instead of restating it.
 | exit codes | `hypervisor::svm::exit` |
 | resident bridge ABI | `hypervisor::host::resident` |
 | card loader<->child contract (boot options, native result, journal record, terminal endpoint) | `card-abi` |
-| card image format | needs a `card-loader` module compiled under every `card-*` feature (none exists yet); until then `card-loader/src/delivery/card.rs`, `card-loader/src/delivery/child_image.rs` and `xtask/src/card.rs` each keep a copy |
+| card image format (the 128-byte envelope: sizes, magics, flags, field offsets, PE policy limits) | `card-abi::envelope` |
 
 A crate that depends on `hypervisor` imports these; it never re-declares
 them. A deliberately standalone crate (`card-loader`, `memory-attributes`,

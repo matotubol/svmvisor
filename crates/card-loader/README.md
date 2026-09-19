@@ -75,7 +75,9 @@ specific to the hypervisor. A child must be:
   header and payload offset 128, the PE's byte length, the 1 MiB slot size,
   flags 4, the SHA-256 of every PE file byte, and the PE metadata (entry RVA,
   image, header and alignment sizes, section count) the loader compares with
-  what it parses. `firmware/card/package-payload.py --resident` writes it.
+  what it parses. `firmware/card/package-payload.py --resident` writes it;
+  `svmvisor_card_abi::envelope` documents the layout field by field and owns
+  its constants.
 - At most 1 MiB minus the header (`SLOT_BYTES - HEADER_BYTES`), at least 512
   bytes.
 
