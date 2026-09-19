@@ -1,6 +1,6 @@
 #[cfg(test)]
-mod clock_tests;
+mod clock;
 #[cfg(test)]
-mod reinjection_tests;
+mod reinjection;
 #[cfg(test)]
-mod tlb_lifecycle_tests;
+mod tlb_lifecycle;
