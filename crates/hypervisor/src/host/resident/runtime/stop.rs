@@ -34,7 +34,7 @@ impl RawVmexitCapture {
         // specific; other owned registers must not depend on that sample.
         let index = self.guest_rcx as u32;
         if self.code != 0x7c
-            || !crate::svm::native_cache::owned_msr(index)
+            || !crate::svm::cache::owned_msr(index)
             || index == SYS_CFG && self.physical_cache_valid != 1
         {
             return None;

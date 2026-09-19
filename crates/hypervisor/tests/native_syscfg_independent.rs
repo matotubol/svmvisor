@@ -34,9 +34,7 @@ fn syscfg_terminal_preserves_every_operand_bit_and_cpu_slot() {
 
 #[test]
 fn syscfg_context_and_malformed_transport_have_no_guest_side_effects() {
-    use svmvisor_hypervisor::svm::{
-        dispatch::NativeEferError, native_syscfg::SyscfgError, vmcb::Vmcb,
-    };
+    use svmvisor_hypervisor::svm::{dispatch::NativeEferError, syscfg::SyscfgError, vmcb::Vmcb};
     let vmcb = Vmcb::new();
     let before = *vmcb.bytes();
     let (tag, payload) = terminal::syscfg_failure(

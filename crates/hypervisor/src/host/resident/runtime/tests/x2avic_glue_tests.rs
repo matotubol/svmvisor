@@ -32,10 +32,10 @@ use crate::{
     },
     memory::address::{AddressPolicy, EncryptionState},
     svm::{
+        cache::{CacheCore, CacheCoreState, CacheObservation},
         dispatch::NativeEfer,
         events::ExternalInterruptError,
         exit::{ExitSnapshot, MsrInstruction},
-        native_cache::{CacheCore, CacheCoreState, CacheObservation},
         permission_maps::Msrpm,
         vmcb::Vmcb,
         x2avic::{

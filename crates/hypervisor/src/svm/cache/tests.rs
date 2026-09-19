@@ -1,6 +1,6 @@
 use crate::{
     arch::x86_64::msr::{HWCR_CPUID_FLT_EN, HWCR_IRPERF_EN},
-    svm::native_cache::*,
+    svm::cache::*,
 };
 
 #[test]

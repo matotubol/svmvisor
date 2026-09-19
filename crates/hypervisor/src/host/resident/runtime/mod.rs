@@ -226,7 +226,7 @@ struct State {
     prepared: bool,
     armed: bool,
     capabilities: Option<ValidatedCapabilities>,
-    cache_observation: Option<crate::svm::native_cache::CacheObservation>,
+    cache_observation: Option<crate::svm::cache::CacheObservation>,
     cache_core: usize,
     cache_visibility: bool,
     cache_active: bool,

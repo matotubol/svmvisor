@@ -286,7 +286,7 @@ pub(super) unsafe fn handle_io(state: &mut State, vmcb: &mut Vmcb) -> bool {
     let Some(guard) = (unsafe { terminal_control() }).diagnostic_lock() else {
         return retry_routing(state, vmcb);
     };
-    let prepared = match crate::svm::native_diagnostic_config::prepare_io(vmcb) {
+    let prepared = match crate::svm::diagnostic_config::prepare_io(vmcb) {
         Ok(p) => p,
         Err(_) => {
             drop(guard);

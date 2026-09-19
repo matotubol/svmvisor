@@ -575,9 +575,7 @@ unsafe fn handle_exit(context: &mut ExitContext<'_>) -> bool {
         }
         0x7b if diagnostics::available() => return unsafe { diagnostics::handle_io(state, vmcb) },
         0x7c => {
-            if state.cache_observation.is_some()
-                && crate::svm::native_cache::owned_msr(frame.rcx as u32)
-            {
+            if state.cache_observation.is_some() && crate::svm::cache::owned_msr(frame.rcx as u32) {
                 return unsafe { cache::handle(state, vmcb, frame) };
             }
             if frame.rcx as u32 == MMIO_CFG_BASE_ADDR && diagnostics::available() {

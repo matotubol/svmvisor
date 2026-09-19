@@ -188,11 +188,11 @@ pub fn vmcr_nrip_failure(
 /// SYSCFG stage85 carries both DWORD operands when possible, otherwise one
 /// explicitly typed full-width value. No diagnostic path reads guest memory.
 pub fn syscfg_failure(
-    error: crate::svm::native_syscfg::SyscfgError,
+    error: crate::svm::syscfg::SyscfgError,
     vmcb: &crate::svm::vmcb::Vmcb,
     instruction: Option<[u8; 2]>,
 ) -> (u64, u64) {
-    use crate::svm::native_syscfg::SyscfgError as E;
+    use crate::svm::syscfg::SyscfgError as E;
     let write = vmcb.exit_snapshot().info1 == 1;
     let (reason, requested, current) = match error {
         E::Boundary(error) => {

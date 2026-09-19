@@ -30,13 +30,13 @@ static mut BOOT: [Bootstrap; abi::MAX_RESIDENT_CPUS] =
     [const { Bootstrap([0; BOOT_BYTES]) }; abi::MAX_RESIDENT_CPUS];
 static STARTED: AtomicBool = AtomicBool::new(false);
 #[cfg(feature = "native-resident-boot")]
-static CACHE_SURVEY: svmvisor_hypervisor::svm::native_cache::CacheSurvey =
-    svmvisor_hypervisor::svm::native_cache::CacheSurvey::new();
+static CACHE_SURVEY: svmvisor_hypervisor::svm::cache::CacheSurvey =
+    svmvisor_hypervisor::svm::cache::CacheSurvey::new();
 #[cfg(feature = "native-resident-boot")]
 static CACHE_FAILURE_SLOT: AtomicU32 = AtomicU32::new(u32::MAX);
 #[cfg(feature = "native-resident-boot")]
-static mut CACHE_SAMPLE_FAILURES: [svmvisor_hypervisor::svm::native_cache::CacheAdmissionFailure;
-    32] = [svmvisor_hypervisor::svm::native_cache::CacheAdmissionFailure::new(0, 0, 0, 0); 32];
+static mut CACHE_SAMPLE_FAILURES: [svmvisor_hypervisor::svm::cache::CacheAdmissionFailure; 32] =
+    [svmvisor_hypervisor::svm::cache::CacheAdmissionFailure::new(0, 0, 0, 0); 32];
 static mut LOW: u64 = 0;
 static mut BOOT_CFG: Option<PagingConfig> = None;
 static mut AP_TABLES: BootstrapPaging = BootstrapPaging::empty();
@@ -1043,7 +1043,7 @@ unsafe fn validate_current_closure(
 /// callback closure. The publication mask orders the complete bank write.
 #[cfg(feature = "native-resident-boot")]
 unsafe fn sample_cache(processor: Cpu, slot: usize) -> Result<(), u64> {
-    use svmvisor_hypervisor::svm::native_cache::CacheAdmissionFailure;
+    use svmvisor_hypervisor::svm::cache::CacheAdmissionFailure;
     let sample = unsafe { cache_observation_detailed(processor) };
     let sample = sample.and_then(|value| {
         let capture = unsafe { &mut *cache_capture() };
@@ -1083,7 +1083,7 @@ unsafe fn report_cache_survey_failure() -> u64 {
     if slot < unsafe { CPU_COUNT } {
         let f = unsafe {
             ptr::addr_of!(CACHE_SAMPLE_FAILURES)
-                .cast::<svmvisor_hypervisor::svm::native_cache::CacheAdmissionFailure>()
+                .cast::<svmvisor_hypervisor::svm::cache::CacheAdmissionFailure>()
                 .add(slot)
                 .read()
         };
@@ -1108,7 +1108,7 @@ unsafe fn finish_cache_survey() -> Result<(), u64> {
     }
     let owner = unsafe {
         &mut *((DIRECTORIES[0].pool_base + abi::CACHE_OWNER_OFFSET)
-            as *mut svmvisor_hypervisor::svm::native_cache::CacheOwner)
+            as *mut svmvisor_hypervisor::svm::cache::CacheOwner)
     };
     owner
         .initialize_detailed(capture, ids)
@@ -1124,7 +1124,7 @@ unsafe fn finish_cache_survey() -> Result<(), u64> {
 unsafe fn cache_failure(
     operation: u32,
     slot: usize,
-    f: svmvisor_hypervisor::svm::native_cache::CacheAdmissionFailure,
+    f: svmvisor_hypervisor::svm::cache::CacheAdmissionFailure,
 ) -> u64 {
     CACHE_SURVEY.abort();
     let mut value =
@@ -1136,7 +1136,7 @@ unsafe fn cache_failure(
 }
 
 #[cfg(feature = "native-resident-boot")]
-unsafe fn cache_capture() -> *mut svmvisor_hypervisor::svm::native_cache::CacheCapture {
+unsafe fn cache_capture() -> *mut svmvisor_hypervisor::svm::cache::CacheCapture {
     unsafe { (DIRECTORIES[0].pool_base + abi::CACHE_CAPTURE_OFFSET) as *mut _ }
 }
 

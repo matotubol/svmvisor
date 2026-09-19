@@ -179,7 +179,7 @@ pub unsafe extern "win64" fn prepare(
     }
     for offset in (super::CACHE_CAPTURE_OFFSET
         ..super::CACHE_CAPTURE_OFFSET
-            + core::mem::size_of::<crate::svm::native_cache::CacheCapture>() as u64)
+            + core::mem::size_of::<crate::svm::cache::CacheCapture>() as u64)
         .step_by(4096)
     {
         tables[3][(((base + offset) >> 12) & 511) as usize] = (pool_base + offset) | 1 | (1 << 63);
@@ -349,7 +349,7 @@ unsafe extern "win64" fn arm(
     let ids = unsafe { core::slice::from_raw_parts(ids, id_count) };
     let assigned_id = unsafe { ASSIGNED_APIC_ID };
     {
-        use crate::svm::native_cache::{CacheCapture, CacheObservation};
+        use crate::svm::cache::{CacheCapture, CacheObservation};
         // Arm still runs under the admitted caller root, so use the physical
         // pool address. The private read-only alias is used only after entry.
         let capture = unsafe { &*((POOL.0 + super::CACHE_CAPTURE_OFFSET) as *const CacheCapture) };
@@ -366,7 +366,7 @@ unsafe extern "win64" fn arm(
             let current = CacheObservation::capture(
                 __cpuid_count(1, 0).eax,
                 caps.address_policy().physical_bits(),
-                crate::svm::native_cache::native_topology(),
+                crate::svm::cache::native_topology(),
                 |index| unsafe { read_msr(index) },
                 |index, value| unsafe { write_msr(index, value) },
             );
@@ -501,7 +501,7 @@ unsafe extern "win64" fn arm(
             return 12;
         }
         let maps = unsafe { &mut *ptr::addr_of_mut!(MSRPM) };
-        for index in crate::svm::native_cache::owned_msrs() {
+        for index in crate::svm::cache::owned_msrs() {
             for access in [MsrAccess::Read, MsrAccess::Write] {
                 if maps.set(index, access, Permission::Intercept).is_err() {
                     return 12;

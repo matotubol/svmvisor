@@ -134,7 +134,7 @@ pub(super) unsafe fn handle_avic_msr(
     true
 }
 
-/// Intercepted MCAX machine-check MSR (`native_mcax`): the MSRPM cannot cover
+/// Intercepted MCAX machine-check MSR (`mcax`): the MSRPM cannot cover
 /// C000_2000h-23FFh (APM2 rev3.44 Table 15-8 p518), so every guest access
 /// exits and is repeated here on its own CPU. `None`: not an MCAX MSR, or a
 /// boundary this path does not own (no NRIPS, outside 64-bit code, TF, a
@@ -148,17 +148,17 @@ pub(super) unsafe fn handle_mcax_msr(
 ) -> Option<bool> {
     use crate::svm::{
         exit::MsrInstruction,
-        native_mcax::{self, Access},
+        mcax::{self, Access},
     };
     let exit = vmcb.exit_snapshot();
     let index = frame.rcx as u32;
-    if !(native_mcax::FIRST..=native_mcax::LAST).contains(&index) {
+    if !(mcax::FIRST..=mcax::LAST).contains(&index) {
         return None;
     }
     let write = (exit.info1 == 1)
         .then(|| (vmcb.guest_rax() as u32 as u64) | ((frame.rdx as u32 as u64) << 32));
     let status_writable = unsafe { read_msr(HWCR) } & HWCR_MC_STATUS_WR_EN != 0;
-    let access = native_mcax::plan(index, write, status_writable)?;
+    let access = mcax::plan(index, write, status_writable)?;
     let profile = state.avic?;
     // RDMSR/WRMSR above CPL0 fault before the MSRPM check (15.11 p518).
     let caps = state.capabilities.filter(|caps| {
@@ -258,7 +258,7 @@ pub(super) unsafe fn handle_syscfg(
     vmcb: &mut Vmcb,
     frame: &GuestRegisters,
 ) -> bool {
-    use crate::svm::native_syscfg::{self, SyscfgInstruction, SyscfgPreparation};
+    use crate::svm::syscfg::{self, SyscfgInstruction, SyscfgPreparation};
     let exit = vmcb.exit_snapshot();
     let caps = state
         .capabilities
@@ -282,7 +282,7 @@ pub(super) unsafe fn handle_syscfg(
         Some(c) => SyscfgInstruction::Hardware(c),
         None => SyscfgInstruction::Bytes(bytes.as_ref().unwrap()),
     };
-    let result = native_syscfg::prepare(
+    let result = syscfg::prepare(
         vmcb,
         frame,
         evidence,
@@ -344,7 +344,7 @@ pub(super) unsafe fn read_msr(index: u32) -> u64 {
 
 /// Same owning CPU; an admitted non-APIC MSR value checked by its owner
 /// (VM_CR.R_INIT preserving every other bit, SYS_CFG, HWCR, cache replay, a
-/// guest MCAX write that `native_mcax::plan` admitted) or
+/// guest MCAX write that `mcax::plan` admitted) or
 /// the fixed private INIT notification ICR. Guest x2APIC state reaches the
 /// physical LAPIC only through `HostX2Apic`. APM2 rev3.44 15.30.1/16.13 and
 /// PPR57896 p215. No MSR may fault.

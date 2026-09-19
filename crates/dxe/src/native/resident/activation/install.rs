@@ -285,15 +285,15 @@ unsafe fn install_inner(image: Handle, bs: &BootServices) -> Result<(), Status> 
     // Native boot populates it after successful EBS return; firmware can still
     // synchronize MTRRs in EBS callbacks. Every owned CPU samples before entry.
     {
-        use svmvisor_hypervisor::svm::native_cache::CacheCapture;
+        use svmvisor_hypervisor::svm::cache::CacheCapture;
         let capture = (arena.base() + abi::CACHE_CAPTURE_OFFSET) as *mut CacheCapture;
         unsafe {
             capture.write(CacheCapture::empty());
         }
         unsafe {
             ((arena.base() + abi::CACHE_OWNER_OFFSET)
-                as *mut svmvisor_hypervisor::svm::native_cache::CacheOwner)
-                .write(svmvisor_hypervisor::svm::native_cache::CacheOwner::empty());
+                as *mut svmvisor_hypervisor::svm::cache::CacheOwner)
+                .write(svmvisor_hypervisor::svm::cache::CacheOwner::empty());
         }
         #[cfg(feature = "native-resident-boot")]
         if __cpuid_count(1, 0).eax == TARGET_SIGNATURE {

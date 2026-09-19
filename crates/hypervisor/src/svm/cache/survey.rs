@@ -1,6 +1,6 @@
 //! Post-EBS cache-sample collection gate.
 
-use crate::svm::native_cache::MAX_CACHE_CPUS;
+use crate::svm::cache::MAX_CACHE_CPUS;
 
 /// Post-EBS collection gate. Firmware may synchronize MTRRs in its final
 /// callbacks, so no guest may consume the bank until every owned CPU sampled

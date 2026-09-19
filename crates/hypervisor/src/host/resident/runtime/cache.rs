@@ -22,8 +22,8 @@ use crate::{
     },
     memory::mtrrs::{DEF_TYPE_E, valid_default},
     svm::{
+        cache::{self, CacheCore, CacheCoreState, CacheOwner, CacheWriteError},
         dispatch,
-        native_cache::{self, CacheCore, CacheCoreState, CacheOwner, CacheWriteError},
         vmcb::Vmcb,
     },
 };
@@ -103,7 +103,7 @@ pub(super) unsafe fn handle(
         let cpuid_fault_owned = state.capabilities.is_some_and(|c| c.optional_features().nrip_save)
             && __cpuid_count(0x8000_0000, 0).eax >= 0x8000_0021
             && __cpuid_count(0x8000_0021, 0).eax & (1 << 17) != 0;
-        let result = native_cache::access_hwcr(
+        let result = cache::access_hwcr(
             local.hwcr,
             write.then_some(requested),
             supported,
@@ -140,10 +140,10 @@ pub(super) unsafe fn handle(
                     state,
                     vmcb,
                     match error {
-                        native_cache::HwcrError::UnsupportedChange { .. } => 16,
-                        native_cache::HwcrError::PhysicalDrift { .. } => 17,
-                        native_cache::HwcrError::Readback { .. } => 18,
-                        native_cache::HwcrError::PmcVirtualization => 19,
+                        cache::HwcrError::UnsupportedChange { .. } => 16,
+                        cache::HwcrError::PhysicalDrift { .. } => 17,
+                        cache::HwcrError::Readback { .. } => 18,
+                        cache::HwcrError::PmcVirtualization => 19,
                     },
                 );
             }
@@ -331,7 +331,7 @@ pub(super) unsafe fn fixture_control(
         arch::x86_64::msr::{
             MTRR_CAP, MTRR_FIXED, MTRR_VAR_BASE0, PAT, SYS_CFG_MTRR_FIX_DRAM_EN, TARGET_SIGNATURE,
         },
-        svm::native_cache::CacheObservation,
+        svm::cache::CacheObservation,
     };
     if !matches!(state.count, 2 | 3)
         || state.slot > 1
@@ -407,7 +407,7 @@ pub(super) unsafe fn fixture_control(
             return None;
         }
         let maps = unsafe { &mut *ptr::addr_of_mut!(MSRPM) };
-        for index in native_cache::owned_msrs() {
+        for index in cache::owned_msrs() {
             for access in [MsrAccess::Read, MsrAccess::Write] {
                 maps.set(index, access, Permission::Intercept).ok()?;
             }

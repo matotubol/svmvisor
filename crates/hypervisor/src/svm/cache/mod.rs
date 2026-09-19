@@ -12,7 +12,7 @@ use crate::{
     sync::TryLock,
 };
 
-pub use crate::svm::native_cache::{
+pub use crate::svm::cache::{
     hwcr::{HwcrError, access_hwcr},
     survey::CacheSurvey,
 };

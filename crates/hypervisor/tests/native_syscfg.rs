@@ -10,7 +10,7 @@ use svmvisor_hypervisor::{
     memory::address::EncryptionState,
     svm::{
         dispatch::{NativeEferError, NativeMsrOutcome},
-        native_syscfg::{self, SyscfgError, SyscfgInstruction, SyscfgPreparation},
+        syscfg::{self, SyscfgError, SyscfgInstruction, SyscfgPreparation},
         vmcb::Vmcb,
     },
 };
@@ -62,7 +62,7 @@ fn run(
     writes: &mut Vec<u64>,
 ) -> Result<NativeMsrOutcome, SyscfgError> {
     let c = caps(true);
-    match native_syscfg::prepare(
+    match syscfg::prepare(
         v,
         f,
         if hardware {
@@ -168,7 +168,7 @@ fn binary_ninja_windows_fixed_mtrr_sequences_complete_all_syscfg_writes() {
 fn dropped_preparation_and_all_current_invariant_failures_preserve_guest() {
     let (mut v, f) = stopped(0x7c0000);
     let before = *v.bytes();
-    let _ = native_syscfg::prepare(
+    let _ = syscfg::prepare(
         &mut v,
         &f,
         SyscfgInstruction::Bytes(&[0x0f, 0x30]),
@@ -232,7 +232,7 @@ fn boundary_errors_and_unsupported_profiles_never_read_hardware() {
         let reads = Cell::new(0);
         let c = caps(nrip);
         assert!(
-            native_syscfg::prepare(
+            syscfg::prepare(
                 &mut v,
                 &f,
                 SyscfgInstruction::Hardware(&c),
@@ -261,7 +261,7 @@ fn byte_privilege_fault_preserves_operands_and_never_reads_physical_syscfg() {
         v.guest_rax(),
         u64::from_le_bytes(v.bytes()[0x570..0x578].try_into().unwrap()),
     );
-    let result = native_syscfg::prepare(
+    let result = syscfg::prepare(
         &mut v,
         &f,
         SyscfgInstruction::Bytes(&[0x0f, 0x30]),
@@ -308,7 +308,7 @@ fn hardware_lengths_and_legacy_byte_modes_share_completion_contract() {
     }
     let (mut v, f) = stopped(0x7c0000);
     let before = *v.bytes();
-    let error = native_syscfg::prepare(
+    let error = syscfg::prepare(
         &mut v,
         &f,
         SyscfgInstruction::Bytes(&[0x48, 0x0f, 0x30]),

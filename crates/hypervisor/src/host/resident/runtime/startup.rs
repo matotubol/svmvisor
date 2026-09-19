@@ -24,8 +24,8 @@ use crate::{
         terminal::{self, StartupStage},
     },
     svm::{
+        cache::CacheCore,
         events::ExternalInterruptError,
-        native_cache::CacheCore,
         permission_maps::Msrpm,
         vmcb::Vmcb,
         x2avic::{

@@ -77,7 +77,7 @@ fn raw_cache_operands_require_provenance_but_no_syscfg_physical_sample() {
     raw.nrip = raw.exit_rip + 2;
     raw.guest_rax = 0xfeedface76543210;
     raw.guest_rdx = 0xdeadc0defedcba98;
-    for index in crate::svm::native_cache::owned_msrs().filter(|&index| index != 0xc001_0010) {
+    for index in crate::svm::cache::owned_msrs().filter(|&index| index != 0xc001_0010) {
         raw.guest_rcx = 0x1234567800000000 | u64::from(index);
         assert_eq!(
             raw.stop_record(0x123000, 21, 0x12345678_f400, 0xfedcba98_00000010),

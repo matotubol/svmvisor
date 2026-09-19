@@ -200,7 +200,7 @@ pub(super) unsafe fn host_closure(
     }
     for offset in (abi::CACHE_OWNER_OFFSET
         ..abi::CACHE_CAPTURE_OFFSET
-            + core::mem::size_of::<svmvisor_hypervisor::svm::native_cache::CacheCapture>() as u64)
+            + core::mem::size_of::<svmvisor_hypervisor::svm::cache::CacheCapture>() as u64)
         .step_by(4096)
     {
         check_alias(

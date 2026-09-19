@@ -179,10 +179,10 @@ pub(super) unsafe fn mtrrs(physical_bits: u8) -> Result<Mtrrs, u64> {
 pub(super) unsafe fn cache_observation_detailed(
     processor: Cpu,
 ) -> Result<
-    svmvisor_hypervisor::svm::native_cache::CacheObservation,
-    svmvisor_hypervisor::svm::native_cache::CacheAdmissionFailure,
+    svmvisor_hypervisor::svm::cache::CacheObservation,
+    svmvisor_hypervisor::svm::cache::CacheAdmissionFailure,
 > {
-    use svmvisor_hypervisor::svm::native_cache::{CacheObservation, native_topology_detailed};
+    use svmvisor_hypervisor::svm::cache::{CacheObservation, native_topology_detailed};
     CacheObservation::capture_detailed(
         __cpuid_count(1, 0).eax,
         processor.physical_bits,

@@ -1,5 +1,5 @@
 use svmvisor_hypervisor::svm::{
-    native_diagnostic_config::{ConfigError, prepare_io},
+    diagnostic_config::{ConfigError, prepare_io},
     vmcb::Vmcb,
 };
 
