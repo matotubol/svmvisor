@@ -1,3 +1,5 @@
+use svmvisor_card_abi::envelope::{HEADER_BYTES, RESIDENT_BOOT_MAGIC, RETURNING_MAGIC};
+
 fn main() {
     let pinned_resident = std::env::var_os("CARGO_FEATURE_CARD_RESIDENT_LOADER").is_some();
     let dev_resident = std::env::var_os("CARGO_FEATURE_CARD_RESIDENT_DEV_LOADER").is_some();
@@ -20,8 +22,9 @@ fn main() {
             .expect("returning PE pin must exist");
             let bytes = std::fs::read(&pin).expect("read returning PE pin");
             assert!(
-                bytes.len() == 128
-                    && &bytes[..8] == if pinned_resident { b"SVMBPE01" } else { b"SVMPE001" },
+                bytes.len() == HEADER_BYTES
+                    && bytes[..8]
+                        == if pinned_resident { RESIDENT_BOOT_MAGIC } else { RETURNING_MAGIC },
                 "returning PE pin must be the 128-byte SVMPE001 envelope"
             );
             let out = std::path::PathBuf::from(std::env::var_os("OUT_DIR").unwrap());
