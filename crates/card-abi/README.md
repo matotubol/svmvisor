@@ -11,6 +11,7 @@ the hypervisor.
 | --- | --- |
 | `boot_options` | `ResidentBootOptions`: the 128-byte load-options record the loader hands to a resident child, and the preparation words the child reports back in it. |
 | `endpoint` | `TerminalEndpoint`: the admitted card PCI function (configuration page, BAR0 page, build IDs), its identity constants and the configuration DWORD read. |
+| `envelope` | The 128-byte header of the card's 1 MiB payload slot: the `SVMCRD01`, `SVMPE001` and `SVMBPE01` magics, field offsets, flags and the PE policy limits. Constants only. |
 | `journal` | `JournalIo`, `CommitError`, the eight-DWORD record commit, and the 19-DWORD diagnostic payload and its bank commit. |
 | `native_result` | `NativeResult`: the 128-byte result mailbox of the returning child, and the fixed multi-exit profile constants. |
 
