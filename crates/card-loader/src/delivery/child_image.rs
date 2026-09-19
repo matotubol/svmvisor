@@ -6,16 +6,7 @@ use core::{ptr, slice};
 use sha2::{Digest, Sha256};
 use svmvisor_card_abi::{
     boot_options::ResidentBootOptions,
-    envelope::{
-        DIGEST_BYTES, DIGEST_OFFSET, ENTRY_RVA_OFFSET, FILE_ALIGNMENT, FILE_ALIGNMENT_OFFSET,
-        FLAGS_OFFSET, FLAGS_RESIDENT_BOOT, FLAGS_RETURNING, HEADER_BYTES, HEADER_BYTES_OFFSET,
-        HEADERS_BYTES_OFFSET, IMAGE_BYTES_OFFSET, MACHINE_AMD64, MACHINE_OFFSET, MAX_IMAGE_BYTES,
-        MAX_SECTIONS, MIN_PE_BYTES, OPTIONAL_MAGIC_OFFSET, OPTIONAL_MAGIC_PE32_PLUS,
-        PAYLOAD_BYTES_OFFSET, PAYLOAD_OFFSET_OFFSET, RESERVED_OFFSET, RESERVED_WORD_OFFSET,
-        RESIDENT_BOOT_MAGIC, RETURNING_MAGIC, SECTION_ALIGNMENT, SECTION_ALIGNMENT_OFFSET,
-        SECTIONS_OFFSET, SLOT_BYTES, SLOT_BYTES_OFFSET, SUBSYSTEM_BOOT_SERVICE_DRIVER,
-        SUBSYSTEM_OFFSET, SUBSYSTEM_RUNTIME_DRIVER, VERSION, VERSION_OFFSET,
-    },
+    envelope::{Envelope, EnvelopeError, HEADER_BYTES, ImageKind, PeMetadata, parse_pe_kind},
     native_result::NativeResult,
 };
 use uefi_raw::{
@@ -50,112 +41,28 @@ impl Pin {
     }
 
     fn parse_kind(header: &[u8], kind: ImageKind) -> Result<Self, Status> {
-        if header.len() != HEADER_BYTES
-            || header.get(..8) != Some(kind.magic())
-            || read_u32(header, VERSION_OFFSET)? != VERSION
-            || read_u32(header, HEADER_BYTES_OFFSET)? != HEADER_BYTES as u32
-            || read_u64(header, SLOT_BYTES_OFFSET)? != SLOT_BYTES as u64
-            || read_u64(header, PAYLOAD_OFFSET_OFFSET)? != HEADER_BYTES as u64
-            || read_u64(header, FLAGS_OFFSET)? != kind.flags()
-            || read_u16(header, MACHINE_OFFSET)? != MACHINE_AMD64
-            || read_u16(header, SUBSYSTEM_OFFSET)? != kind.subsystem()
-            || read_u16(header, OPTIONAL_MAGIC_OFFSET)? != OPTIONAL_MAGIC_PE32_PLUS
-            || read_u16(header, RESERVED_WORD_OFFSET)? != 0
-            || header.get(RESERVED_OFFSET..).ok_or_else(bad)?.iter().any(|b| *b != 0)
-        {
-            return Err(bad());
-        }
-        let bytes = read_u64(header, PAYLOAD_BYTES_OFFSET)?;
-        if !(MIN_PE_BYTES as u64..=(SLOT_BYTES - HEADER_BYTES) as u64).contains(&bytes) {
-            return Err(bad());
-        }
+        let envelope = Envelope::parse(header, kind).map_err(envelope_status)?;
         let mut saved = [0; HEADER_BYTES];
         for (d, s) in saved.iter_mut().zip(header) {
             *d = *s;
         }
-        let mut digest = [0; DIGEST_BYTES];
-        for (d, s) in digest
-            .iter_mut()
-            .zip(header.get(DIGEST_OFFSET..DIGEST_OFFSET + DIGEST_BYTES).ok_or_else(bad)?)
-        {
-            *d = *s;
-        }
-        let metadata = PeMetadata {
-            entry_rva: read_u32(header, ENTRY_RVA_OFFSET)?,
-            image_bytes: read_u32(header, IMAGE_BYTES_OFFSET)?,
-            headers_bytes: read_u32(header, HEADERS_BYTES_OFFSET)?,
-            section_alignment: read_u32(header, SECTION_ALIGNMENT_OFFSET)?,
-            file_alignment: read_u32(header, FILE_ALIGNMENT_OFFSET)?,
-            sections: read_u32(header, SECTIONS_OFFSET)?,
-        };
-        metadata.validate(bytes as usize)?;
-        Ok(Self { header: saved, kind, payload_bytes: bytes as usize, metadata, digest })
+        Ok(Self {
+            header: saved,
+            kind,
+            payload_bytes: envelope.payload_bytes,
+            metadata: envelope.metadata,
+            digest: envelope.digest,
+        })
     }
 
     pub fn verify(&self, pe: &[u8]) -> Result<(), Status> {
         if pe.len() != self.payload_bytes || Sha256::digest(pe).as_slice() != self.digest {
             return Err(bad());
         }
-        if parse_pe_kind(pe, self.kind)? != self.metadata {
+        if parse_pe_kind(pe, self.kind).map_err(envelope_status)? != self.metadata {
             return Err(bad());
         }
         Ok(())
-    }
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct PeMetadata {
-    pub entry_rva: u32,
-    pub image_bytes: u32,
-    pub headers_bytes: u32,
-    pub section_alignment: u32,
-    pub file_alignment: u32,
-    pub sections: u32,
-}
-
-impl PeMetadata {
-    fn validate(&self, bytes: usize) -> Result<(), Status> {
-        if self.section_alignment != SECTION_ALIGNMENT
-            || self.file_alignment != FILE_ALIGNMENT
-            || self.image_bytes == 0
-            || self.image_bytes > MAX_IMAGE_BYTES
-            || self.image_bytes & (SECTION_ALIGNMENT - 1) != 0
-            || self.headers_bytes == 0
-            || self.headers_bytes as usize > bytes
-            || self.headers_bytes & (FILE_ALIGNMENT - 1) != 0
-            || self.headers_bytes > self.image_bytes
-            || self.entry_rva < self.headers_bytes
-            || self.entry_rva >= self.image_bytes
-            || self.sections == 0
-            || self.sections > MAX_SECTIONS
-        {
-            return Err(bad());
-        }
-        Ok(())
-    }
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum ImageKind {
-    Returning,
-    ResidentBoot,
-}
-
-impl ImageKind {
-    fn subsystem(self) -> u16 {
-        if self == Self::Returning {
-            SUBSYSTEM_BOOT_SERVICE_DRIVER
-        } else {
-            SUBSYSTEM_RUNTIME_DRIVER
-        }
-    }
-
-    fn magic(self) -> &'static [u8; 8] {
-        if self == Self::Returning { &RETURNING_MAGIC } else { &RESIDENT_BOOT_MAGIC }
-    }
-
-    fn flags(self) -> u64 {
-        if self == Self::Returning { FLAGS_RETURNING } else { FLAGS_RESIDENT_BOOT }
     }
 }
 
@@ -252,12 +159,6 @@ impl Delivery {
     }
 }
 
-/// Deliberately narrow AMD64 PE32+ policy. Firmware performs final PE/COFF and
-/// security validation; digest binding covers every file byte including overlays.
-pub fn parse_pe(pe: &[u8]) -> Result<PeMetadata, Status> {
-    parse_pe_kind(pe, ImageKind::Returning)
-}
-
 /// The parent must serialize invocation, own its controller and keep memory
 /// decoding enabled. Native child contract: normal inner completion/refusal and
 /// early assembly refusal return EFI_UNSUPPORTED. It installs no persistent
@@ -331,106 +232,6 @@ pub unsafe fn execute_resident_dev(
             cleanup_status: Status::SUCCESS,
         },
     }
-}
-
-fn parse_pe_kind(pe: &[u8], kind: ImageKind) -> Result<PeMetadata, Status> {
-    if pe.len() < MIN_PE_BYTES || pe.len() > SLOT_BYTES - HEADER_BYTES || read_u16(pe, 0)? != 0x5a4d
-    {
-        return Err(bad());
-    }
-    let base = read_u32(pe, 0x3c)? as usize;
-    if base < 64
-        || base > pe.len().saturating_sub(24)
-        || pe.get(base..base + 4) != Some(b"PE\0\0")
-        || read_u16(pe, base + 4)? != MACHINE_AMD64
-        || read_u16(pe, base + 20)? != 240
-        || read_u16(pe, base + 22)? & 3 != 2
-    {
-        return Err(bad());
-    }
-    let opt = base + 24;
-    if read_u16(pe, opt)? != OPTIONAL_MAGIC_PE32_PLUS
-        || read_u16(pe, opt + 68)? != kind.subsystem()
-        || read_u32(pe, opt + 108)? != 16
-    {
-        return Err(bad());
-    }
-    let meta = PeMetadata {
-        entry_rva: read_u32(pe, opt + 16)?,
-        image_bytes: read_u32(pe, opt + 56)?,
-        headers_bytes: read_u32(pe, opt + 60)?,
-        section_alignment: read_u32(pe, opt + 32)?,
-        file_alignment: read_u32(pe, opt + 36)?,
-        sections: u32::from(read_u16(pe, base + 6)?),
-    };
-    meta.validate(pe.len())?;
-    let table = opt + 240;
-    if table + meta.sections as usize * 40 > meta.headers_bytes as usize {
-        return Err(bad());
-    }
-    // No imports, TLS callbacks, delay imports or CLR initialization in this
-    // one-shot child. A position-independent image may have no base fixups;
-    // if a directory is present it must be wholly backed by initialized data.
-    for directory in [1, 9, 13, 14] {
-        if read_u64(pe, opt + 112 + directory * 8)? != 0 {
-            return Err(bad());
-        }
-    }
-    let reloc = read_u32(pe, opt + 112 + 5 * 8)?;
-    let reloc_size = read_u32(pe, opt + 116 + 5 * 8)?;
-    if (reloc == 0) != (reloc_size == 0)
-        || (reloc != 0 && reloc_size < 8)
-        || reloc.checked_add(reloc_size).is_none_or(|e| e > meta.image_bytes)
-    {
-        return Err(bad());
-    }
-    let mut previous_virtual = meta.headers_bytes;
-    let mut previous_raw = meta.headers_bytes;
-    let mut entry = false;
-    let mut relocation = reloc == 0 && reloc_size == 0;
-    for i in 0..meta.sections as usize {
-        let s = table + i * 40;
-        let virtual_size = read_u32(pe, s + 8)?;
-        let va = read_u32(pe, s + 12)?;
-        let raw_size = read_u32(pe, s + 16)?;
-        let raw = read_u32(pe, s + 20)?;
-        let flags = read_u32(pe, s + 36)?;
-        let extent = virtual_size.max(raw_size);
-        let end = va.checked_add(extent).ok_or_else(bad)?;
-        if extent == 0
-            || va & (SECTION_ALIGNMENT - 1) != 0
-            || va < previous_virtual
-            || end > meta.image_bytes
-            || raw_size & (FILE_ALIGNMENT - 1) != 0
-            || (raw_size != 0
-                && (raw & (FILE_ALIGNMENT - 1) != 0
-                    || raw < previous_raw
-                    || raw.checked_add(raw_size).is_none_or(|e| e as usize > pe.len())))
-            || flags & 0xa0000000 == 0xa0000000
-        {
-            return Err(bad());
-        }
-        previous_virtual = end;
-        if raw_size != 0 {
-            previous_raw = raw + raw_size;
-        }
-        if meta.entry_rva >= va && meta.entry_rva < end {
-            if flags & 0xe0000020 != 0x60000020
-                || meta.entry_rva - va >= raw_size
-                || meta.entry_rva - va >= virtual_size
-            {
-                return Err(bad());
-            }
-            entry = true;
-        }
-        if reloc >= va && reloc.checked_add(reloc_size).is_some_and(|e| e <= va + raw_size) {
-            relocation = true;
-        }
-    }
-    if !entry || !relocation {
-        return Err(bad());
-    }
-    Ok(meta)
 }
 
 unsafe fn execute_inner(
@@ -756,18 +557,9 @@ fn read_u16(b: &[u8], o: usize) -> Result<u16, Status> {
     Ok(u16::from_le_bytes([a, b]))
 }
 
-fn read_u32(b: &[u8], o: usize) -> Result<u32, Status> {
-    let Some(&[a, b, c, d]) = b.get(o..o.checked_add(4).ok_or_else(bad)?) else {
-        return Err(bad());
-    };
-    Ok(u32::from_le_bytes([a, b, c, d]))
-}
-
-fn read_u64(b: &[u8], o: usize) -> Result<u64, Status> {
-    let Some(&[a, b, c, d, e, f, g, h]) = b.get(o..o.checked_add(8).ok_or_else(bad)?) else {
-        return Err(bad());
-    };
-    Ok(u64::from_le_bytes([a, b, c, d, e, f, g, h]))
+/// Whatever is wrong with an envelope or its PE, firmware sees the one status.
+fn envelope_status(_: EnvelopeError) -> Status {
+    bad()
 }
 
 fn bad() -> Status {
