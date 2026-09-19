@@ -20,7 +20,7 @@ use crate::{
         },
         terminal,
     },
-    memory::mtrrs::{DEF_TYPE_E, valid_default},
+    memory::mtrrs::{DEF_TYPE_E, is_valid_default},
     svm::{
         cache::{self, CacheCore, CacheCoreState, CacheOwner, CacheWriteError},
         dispatch,
@@ -177,7 +177,7 @@ pub(super) unsafe fn handle(
         state.msr = state.msr.saturating_add(1);
         return true;
     }
-    if index == MTRR_DEF_TYPE && !valid_default(requested) {
+    if index == MTRR_DEF_TYPE && !is_valid_default(requested) {
         if vmcb.queue_validated_msr_general_protection(instruction).is_err() {
             return refuse(state, vmcb, 10);
         }

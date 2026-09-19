@@ -386,7 +386,7 @@ pub fn stop_words(slot: usize, code: u64, rip: u64, info1: u64, info2: u64) -> O
         let reason = d & 255;
         let mode = (d >> 8) & 3;
         if d > 0x7ff
-            || !valid_syscfg_reason(reason)
+            || !is_valid_syscfg_reason(reason)
             || (mode == 3 && reason > 0x80)
             || (mode != 3 && (!(0x81..=0x85).contains(&reason) || d & 0x400 == 0))
         {
@@ -577,7 +577,7 @@ fn syscfg_context(reason: u64, mode: u64, write: bool, value: u64) -> (u64, u64)
     (0xf10d | ((reason | (mode << 8) | (u64::from(write) << 10)) << 16), value)
 }
 
-fn valid_syscfg_reason(reason: u64) -> bool {
+fn is_valid_syscfg_reason(reason: u64) -> bool {
     (1..=6).contains(&reason)
         || (0x10..=0x15).contains(&reason)
         || (0x20..=0x2d).contains(&reason)

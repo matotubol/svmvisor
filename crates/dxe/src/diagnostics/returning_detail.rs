@@ -50,7 +50,7 @@ impl ReturningDiagnostics {
         if overflow {
             metadata |= ENCODING_OVERFLOW;
         }
-        if !inner.valid_header() {
+        if !inner.is_valid_header() {
             metadata |= INVALID_INNER_HEADER;
         }
         Self {

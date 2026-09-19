@@ -218,7 +218,7 @@ pub type ArmRuntime = unsafe extern "win64" fn(
 /// p573 reserves xAVIC physical APIC ID FFh because destination FFh means
 /// broadcast, and states no x2AVIC rule.
 /// Numeric layout checks are not allocation, caching or CPU ownership proof.
-pub fn valid_pool_slot(
+pub fn is_valid_pool_slot(
     base: u64,
     pool_base: u64,
     pool_bytes: u64,

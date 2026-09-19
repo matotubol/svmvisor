@@ -69,7 +69,7 @@ pub unsafe extern "win64" fn prepare(
     let end = ptr::addr_of!(image_bss_end) as u64;
     let backing = ptr::addr_of!(AVIC_BACKING) as u64;
     if output.is_null()
-        || !super::valid_pool_slot(base, pool_base, pool_bytes, cpu_slot, apic_id)
+        || !super::is_valid_pool_slot(base, pool_base, pool_bytes, cpu_slot, apic_id)
         || base != start
         || base < 0x100000
         || base & 4095 != 0

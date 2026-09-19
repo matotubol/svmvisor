@@ -5,7 +5,7 @@
 //! is never registered as a loaded runtime PE: UEFI 2.11 8.4.1 automatic loaded
 //! image relocation must not rewrite the monitor's physical host pointers.
 
-pub use layout::{ARENA_BYTES, HANDOFF_OFFSET, LayoutError, Payload, valid_arena};
+pub use layout::{ARENA_BYTES, HANDOFF_OFFSET, LayoutError, Payload, is_valid_arena};
 
 #[path = "../../../../firmware-handoff/src/layout.rs"]
 mod layout;

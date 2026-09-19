@@ -612,8 +612,8 @@ pub fn prepare_init(
     irq: &PhysicalIrqLedger,
     physical: &mut impl PhysicalX2Apic,
 ) -> Result<(), InitError> {
-    backing.check_init_identity().map_err(InitError::Backing)?;
-    irq.check_retirement(&apic::in_service_banks(physical)).map_err(InitError::Irq)
+    backing.validate_init_identity().map_err(InitError::Backing)?;
+    irq.validate_retirement(&apic::in_service_banks(physical)).map_err(InitError::Irq)
 }
 
 /// Guest INIT LAPIC commit (D9 steps 1-4), after `prepare_init` succeeded and

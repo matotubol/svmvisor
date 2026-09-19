@@ -251,11 +251,11 @@ impl<'a> Transaction<'a> {
         if self.stage != Stage::RestoringHost {
             return Err(Error::Order);
         }
-        self.check_restoration(actual, restored_image)?;
+        self.validate_restoration(actual, restored_image)?;
         self.stage = Stage::HostRestored;
         Ok(())
     }
-    fn check_restoration(
+    fn validate_restoration(
         &self,
         actual: HostObservation,
         restored_image: &[u8],
@@ -285,7 +285,7 @@ impl<'a> Transaction<'a> {
         ) {
             return Err(Error::Order);
         }
-        self.check_restoration(actual, restored_image)?;
+        self.validate_restoration(actual, restored_image)?;
         self.stage = Stage::HostRestored;
         Ok(())
     }

@@ -58,7 +58,7 @@ impl ResidentBootOptions {
         mut self,
         endpoint: svmvisor_hypervisor::host::resident::terminal::TerminalEndpoint,
     ) -> Option<Self> {
-        if !self.valid_header()
+        if !self.is_valid_header()
             || !endpoint.valid()
             || endpoint.bar0_host_page != self.journal_base
             || endpoint.boot_id != self.boot_id
@@ -107,7 +107,7 @@ impl ResidentBootOptions {
             .then_some(endpoint)
     }
 
-    pub fn valid_header(&self) -> bool {
+    pub fn is_valid_header(&self) -> bool {
         self.magic == *b"SVMBOT01"
             && matches!(self.version, 1 | 2 | 3)
             && self.size == 128
@@ -129,7 +129,7 @@ impl ResidentBootOptions {
     }
 
     pub fn is_armed(&self) -> bool {
-        self.valid_header()
+        self.is_valid_header()
             && self.rust_entered == 1
             && self.armed == 1
             && self.failure == 0
@@ -147,7 +147,7 @@ impl ResidentBootOptions {
     /// status losslessly and retain a complete 48-bit address, otherwise leave
     /// the caller's legacy full-width status record intact.
     pub fn preparation_words(&self) -> Option<[u32; 3]> {
-        if !self.valid_header()
+        if !self.is_valid_header()
             || self.version < 2
             || self.rust_entered != 1
             || self.armed != 0
@@ -416,23 +416,23 @@ mod tests {
         let options = legacy.with_terminal(endpoint).unwrap();
         assert_eq!(options.version, 3);
         assert_eq!(options.terminal_endpoint(), Some(endpoint));
-        assert!(options.valid_header());
+        assert!(options.is_valid_header());
         assert_eq!(options.reserved[5], 0x0000_012a_d000_0000);
         assert_eq!(options.reserved[6], 0x0001_0002_0000_002a);
         for (index, bit) in [(0, 4096), (1, 4096), (4, 1), (5, 1), (6, 1u64 << 56)] {
             let mut bad = options;
             bad.reserved[index] ^= bit;
-            assert!(!bad.valid_header());
+            assert!(!bad.is_valid_header());
         }
         let mut bad = options;
         bad.version = 2;
-        assert!(!bad.valid_header());
+        assert!(!bad.is_valid_header());
         bad = options;
         bad.boot_id += 1;
-        assert!(!bad.valid_header());
+        assert!(!bad.is_valid_header());
         bad = options;
         bad.journal_base += 4096;
-        assert!(!bad.valid_header());
+        assert!(!bad.is_valid_header());
         assert!(legacy.with_terminal(TerminalEndpoint { command: 0, ..endpoint }).is_none());
         assert!(
             legacy.with_terminal(TerminalEndpoint { segment_bdf: 0x10000, ..endpoint }).is_none()
@@ -448,9 +448,9 @@ mod tests {
     fn preparation_record_is_versioned_and_lossless_or_refused() {
         let mut options = ResidentBootOptions::new(0xd0000000, 42);
         options.version = 1;
-        assert!(options.valid_header());
+        assert!(options.is_valid_header());
         options.preparation_stage = 6;
-        assert!(!options.valid_header());
+        assert!(!options.is_valid_header());
         options.version = 2;
         options.rust_entered = 1;
         options.failure = 0x8000000000000009;

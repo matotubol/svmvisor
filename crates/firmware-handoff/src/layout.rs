@@ -72,7 +72,7 @@ impl<'a> Payload<'a> {
     /// Initialize only the caller's exact owned arena. Validation precedes all
     /// writes; no firmware pointers or allocation side effects are needed here.
     pub fn load(&self, arena: &mut [u8], base: u64) -> Result<(), LayoutError> {
-        if !valid_arena(base) || arena.len() != ARENA_BYTES {
+        if !is_valid_arena(base) || arena.len() != ARENA_BYTES {
             return Err(LayoutError::Arena);
         }
         arena.fill(0);
@@ -134,7 +134,7 @@ pub enum LayoutError {
 
 /// An arena is wholly owned, below the bootstrap's 1 GiB map limit, and cannot
 /// cross a 2 MiB page-directory window. The header owns its final 4 KiB page.
-pub fn valid_arena(base: u64) -> bool {
+pub fn is_valid_arena(base: u64) -> bool {
     base >= 0x100000
         && base & 0xfff == 0
         && base

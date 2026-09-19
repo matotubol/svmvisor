@@ -69,17 +69,19 @@ impl<'a> OwnershipRecord<'a> {
         if record[..8] != OWNERSHIP_MAGIC {
             return Err(OwnershipError::Magic);
         }
-        let (header_bytes, entry_bytes) = match get16(record, 8) {
+        let (header_bytes, entry_bytes) = match read_u16(record, 8) {
             OWNERSHIP_VERSION => (OWNERSHIP_HEADER_BYTES, OWNERSHIP_ENTRY_BYTES),
             OWNERSHIP_SMP_VERSION => (OWNERSHIP_SMP_HEADER_BYTES, OWNERSHIP_SMP_ENTRY_BYTES),
             _ => return Err(OwnershipError::Version),
         };
-        if get16(record, 10) as usize != header_bytes || get16(record, 12) as usize != entry_bytes {
+        if read_u16(record, 10) as usize != header_bytes
+            || read_u16(record, 12) as usize != entry_bytes
+        {
             return Err(OwnershipError::Size);
         }
-        let count = get16(record, 14) as usize;
-        check_count(count, header_bytes, entry_bytes)?;
-        if get32(record, 16) != 1 {
+        let count = read_u16(record, 14) as usize;
+        validate_count(count, header_bytes, entry_bytes)?;
+        if read_u32(record, 16) != 1 {
             return Err(OwnershipError::DescriptorVersion);
         }
         let used = header_bytes + count * entry_bytes;
@@ -91,11 +93,11 @@ impl<'a> OwnershipRecord<'a> {
         {
             return Err(OwnershipError::Reserved);
         }
-        if get64(record, 32) != RESIDENT_ARENA_BYTES || get64(record, 24) == 0 {
+        if read_u64(record, 32) != RESIDENT_ARENA_BYTES || read_u64(record, 24) == 0 {
             return Err(OwnershipError::ArenaSize);
         }
         let arena = policy
-            .validate(get64(record, 24), get64(record, 32), 4096)
+            .validate(read_u64(record, 24), read_u64(record, 32), 4096)
             .map_err(OwnershipError::Address)?;
         let smp = if header_bytes == OWNERSHIP_SMP_HEADER_BYTES {
             if record[88..96]
@@ -106,16 +108,16 @@ impl<'a> OwnershipRecord<'a> {
             {
                 return Err(OwnershipError::Reserved);
             }
-            if get32(record, 84) != 2 {
+            if read_u32(record, 84) != 2 {
                 return Err(OwnershipError::SmpIdentity);
             }
             let low_page = policy
-                .validate(get64(record, 64), get64(record, 72), 4096)
+                .validate(read_u64(record, 64), read_u64(record, 72), 4096)
                 .map_err(OwnershipError::Address)?;
             Some(SmpResources::new(
                 low_page,
                 [decode_cpu(&record[96..128]), decode_cpu(&record[128..160])],
-                get32(record, 80),
+                read_u32(record, 80),
             )?)
         } else {
             None
@@ -123,7 +125,7 @@ impl<'a> OwnershipRecord<'a> {
         let result = Self { entries: &record[header_bytes..used], entry_bytes, arena, smp };
         let mut previous_end = 0;
         for slot in result.entries.chunks_exact(entry_bytes) {
-            if entry_bytes == OWNERSHIP_ENTRY_BYTES && get32(slot, 4) != 0 {
+            if entry_bytes == OWNERSHIP_ENTRY_BYTES && read_u32(slot, 4) != 0 {
                 return Err(OwnershipError::Reserved);
             }
             let descriptor = decode_entry(slot);
@@ -205,7 +207,7 @@ impl<'a> OwnershipRecord<'a> {
             if smp.is_some() { OWNERSHIP_SMP_HEADER_BYTES } else { OWNERSHIP_HEADER_BYTES };
         let entry_bytes =
             if smp.is_some() { OWNERSHIP_SMP_ENTRY_BYTES } else { OWNERSHIP_ENTRY_BYTES };
-        check_count(descriptors.len(), header_bytes, entry_bytes)?;
+        validate_count(descriptors.len(), header_bytes, entry_bytes)?;
         if descriptor_version != 1 {
             return Err(OwnershipError::DescriptorVersion);
         }
@@ -336,7 +338,7 @@ pub enum OwnershipError {
     Map(MemoryError),
 }
 
-fn check_count(
+fn validate_count(
     count: usize,
     header_bytes: usize,
     entry_bytes: usize,
@@ -420,9 +422,9 @@ fn decode_cpu(bytes: &[u8]) -> SmpCpuIdentity {
     let mut vendor = [0; 12];
     vendor.copy_from_slice(&bytes[16..28]);
     SmpCpuIdentity {
-        processor_id: get64(bytes, 0),
-        apic_id: get32(bytes, 8),
-        signature: get32(bytes, 12),
+        processor_id: read_u64(bytes, 0),
+        apic_id: read_u32(bytes, 8),
+        signature: read_u32(bytes, 12),
         vendor,
     }
 }
@@ -455,22 +457,22 @@ fn coverage(
 fn decode_entry(bytes: &[u8]) -> MemoryDescriptor {
     let base_offset = bytes.len() - 24;
     MemoryDescriptor {
-        memory_type: get32(bytes, 0),
-        physical_start: get64(bytes, base_offset),
-        page_count: get64(bytes, base_offset + 8),
-        attributes: get64(bytes, base_offset + 16),
+        memory_type: read_u32(bytes, 0),
+        physical_start: read_u64(bytes, base_offset),
+        page_count: read_u64(bytes, base_offset + 8),
+        attributes: read_u64(bytes, base_offset + 16),
     }
 }
 
-fn get16(bytes: &[u8], offset: usize) -> u16 {
+fn read_u16(bytes: &[u8], offset: usize) -> u16 {
     u16::from_le_bytes(bytes[offset..offset + 2].try_into().unwrap())
 }
 
-fn get32(bytes: &[u8], offset: usize) -> u32 {
+fn read_u32(bytes: &[u8], offset: usize) -> u32 {
     u32::from_le_bytes(bytes[offset..offset + 4].try_into().unwrap())
 }
 
-fn get64(bytes: &[u8], offset: usize) -> u64 {
+fn read_u64(bytes: &[u8], offset: usize) -> u64 {
     u64::from_le_bytes(bytes[offset..offset + 8].try_into().unwrap())
 }
 

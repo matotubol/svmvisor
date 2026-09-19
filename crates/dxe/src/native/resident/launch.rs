@@ -13,7 +13,7 @@ use svmvisor_hypervisor::{
 
 use crate::native::{
     admission::boundary::NativeBoundary,
-    resident::delivery::{ARENA_BYTES, valid_arena},
+    resident::delivery::{ARENA_BYTES, is_valid_arena},
 };
 
 pub use svmvisor_hypervisor::memory::mtrrs::Mtrrs;
@@ -93,8 +93,8 @@ pub fn directory_valid(d: &ResidentDirectory, base: u64) -> bool {
     let Some(end) = base.checked_add(ARENA_BYTES as u64) else {
         return false;
     };
-    if !valid_arena(base)
-        || !svmvisor_hypervisor::host::resident::valid_pool_slot(
+    if !is_valid_arena(base)
+        || !svmvisor_hypervisor::host::resident::is_valid_pool_slot(
             base,
             d.pool_base,
             d.pool_bytes,

@@ -22,7 +22,7 @@ use uefi_raw::{
 };
 
 use crate::native::resident::{
-    delivery::{ARENA_BYTES, LayoutError, Payload, valid_arena},
+    delivery::{ARENA_BYTES, LayoutError, Payload, is_valid_arena},
     memory::{ResidentMemoryError, validate_runtime_coverage},
 };
 
@@ -357,7 +357,7 @@ fn select_arena(base: u64) -> Option<u64> {
     if selected & 0x1fffff > 0x100000 {
         selected = selected.checked_add(0x1fffff)? & !0x1fffff;
     }
-    (valid_arena(selected) && selected.checked_add(ARENA_BYTES as u64)? <= allocation_end)
+    (is_valid_arena(selected) && selected.checked_add(ARENA_BYTES as u64)? <= allocation_end)
         .then_some(selected)
 }
 
@@ -436,7 +436,7 @@ mod tests {
                 assert_eq!(owner.base & 0x1fffff, 0);
                 assert_eq!(owner.pages, count * ARENA_PAGES);
                 for slot in 0..count {
-                    assert!(svmvisor_hypervisor::host::resident::valid_pool_slot(
+                    assert!(svmvisor_hypervisor::host::resident::is_valid_pool_slot(
                         owner.base + slot as u64 * ARENA_BYTES as u64,
                         owner.base,
                         count as u64 * ARENA_BYTES as u64,
@@ -525,7 +525,7 @@ mod tests {
     fn every_page_offset_selects_one_contiguous_megabyte_in_one_window() {
         for base in (0..0x600000).step_by(4096) {
             let selected = select_arena(base).unwrap();
-            assert!(valid_arena(selected));
+            assert!(is_valid_arena(selected));
             assert!(selected >= base);
             assert!(selected + ARENA_BYTES as u64 <= base + 0x200000);
         }

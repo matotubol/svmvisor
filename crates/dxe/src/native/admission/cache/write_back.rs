@@ -231,7 +231,7 @@ pub fn classify_write_back(
             return Err(PatNotWriteBack);
         }
         segments = segments
-            .checked_add(check_uniform_wb(
+            .checked_add(validate_uniform_wb(
                 mapping.leaf_physical_base,
                 leaf_end,
                 &ranges,
@@ -351,7 +351,7 @@ fn decode_range(base: u64, mask: u64, memory_type: u8) -> Option<Range> {
     Some(Range { base, end, memory_type })
 }
 
-fn check_uniform_wb(
+fn validate_uniform_wb(
     base: u64,
     end: u64,
     ranges: &[Option<Range>; MAX_VARIABLE_MTRRS],

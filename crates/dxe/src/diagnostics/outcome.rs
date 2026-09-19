@@ -19,7 +19,7 @@ pub fn classify(report: &Delivery) -> ReturningOutcome {
     use ReturningOutcome::*;
     let inner = report.inner;
     if report.status() != Status::SUCCESS
-        || !inner.valid_header()
+        || !inner.is_valid_header()
         || report.stage != 4
         || report.load_status != Some(Status::SUCCESS)
         || report.start_status != Some(Status::UNSUPPORTED)

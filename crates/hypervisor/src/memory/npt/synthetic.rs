@@ -80,7 +80,7 @@ impl<'a> Npt<'a> {
         hpa: u64,
         permissions: PagePermissions,
     ) -> Result<(), NptError> {
-        self.check_guest(gpa)?;
+        self.validate_guest(gpa)?;
         if gpa & 4095 != 0 {
             return Err(NptError::GuestAddressMisaligned);
         }
@@ -188,7 +188,7 @@ impl<'a> Npt<'a> {
     /// Inspect this builder's intended mappings, without CPU access or a TLB.
     /// Does not evaluate guest page tables or guest-side access restrictions.
     pub fn translate(&self, gpa: u64) -> Result<Option<Translation>, NptError> {
-        self.check_guest(gpa)?;
+        self.validate_guest(gpa)?;
         let [pml4, pdpt, pd, leaf_index] = indices(gpa);
         let mut table = 0;
         for (depth, index) in [pml4, pdpt, pd].into_iter().enumerate() {
@@ -212,7 +212,7 @@ impl<'a> Npt<'a> {
         Ok(Some(Translation { host_address: (entry & ADDRESS_MASK) | (gpa & 4095), permissions }))
     }
 
-    fn check_guest(&self, gpa: u64) -> Result<(), NptError> {
+    fn validate_guest(&self, gpa: u64) -> Result<(), NptError> {
         if gpa >> self.guest_bits != 0 { Err(NptError::GuestAddressOutsideWidth) } else { Ok(()) }
     }
 

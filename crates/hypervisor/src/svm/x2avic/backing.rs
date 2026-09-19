@@ -122,7 +122,7 @@ impl BackingPage {
     }
     /// Read-only precondition of `reset_after_init_stopped`: the identity the
     /// reset preserves is an admitted one. No register changes.
-    pub(crate) fn check_init_identity(&self) -> Result<(), Error> {
+    pub(crate) fn validate_init_identity(&self) -> Result<(), Error> {
         let id = self.words[word(apic::ID)].load(Ordering::Acquire);
         let version = self.words[word(apic::VERSION)].load(Ordering::Acquire);
         if id > MAX_ID as u32 {
@@ -157,7 +157,7 @@ impl BackingPage {
     /// or local dispatch/EOI may run during this operation. Validation is
     /// read-only; after it succeeds all stores are infallible and bounded.
     pub fn reset_after_init_stopped(&self) -> Result<(), Error> {
-        self.check_init_identity()?;
+        self.validate_init_identity()?;
         let id = self.words[word(apic::ID)].load(Ordering::Acquire);
         self.words[word(apic::SVR)].store(0xff, Ordering::Release);
         for offset in apic::LVTS {

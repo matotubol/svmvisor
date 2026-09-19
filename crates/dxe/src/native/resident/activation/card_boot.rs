@@ -66,7 +66,7 @@ impl Prepared {
             }
             .map_err(unsupported)?;
             let value = unsafe { options.read() };
-            if !value.valid_header()
+            if !value.is_valid_header()
                 || value.rust_entered != 0
                 || value.armed != 0
                 || value.failure != 0
@@ -92,7 +92,7 @@ impl Prepared {
             }
             if let Some(endpoint) = value.terminal_endpoint() {
                 // Failure disables only this optional observer. A malformed
-                // descriptor was already rejected by valid_header above.
+                // descriptor was already rejected by is_valid_header above.
                 if unsafe {
                     validate_uc_mmio(map.descriptors(), cfg, &mt, pat, endpoint.config_page)
                 }

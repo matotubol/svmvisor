@@ -1,4 +1,4 @@
-use svmvisor_firmware_handoff::{AUTHORIZATION, authorized, valid_payload};
+use svmvisor_firmware_handoff::{AUTHORIZATION, authorized, is_valid_payload};
 
 #[test]
 fn authorization_requires_exact_binary_token() {
@@ -14,11 +14,11 @@ fn authorization_requires_exact_binary_token() {
 
 #[test]
 fn payload_and_entry_stay_below_the_handoff_page() {
-    assert!(valid_payload(1, 0));
-    assert!(valid_payload(0xff000, 0xfefff));
-    assert!(!valid_payload(0, 0));
-    assert!(!valid_payload(0xff001, 0));
-    assert!(!valid_payload(0xff000, 0xff000));
-    assert!(!valid_payload(1, usize::MAX));
-    assert!(!valid_payload(usize::MAX, 0));
+    assert!(is_valid_payload(1, 0));
+    assert!(is_valid_payload(0xff000, 0xfefff));
+    assert!(!is_valid_payload(0, 0));
+    assert!(!is_valid_payload(0xff001, 0));
+    assert!(!is_valid_payload(0xff000, 0xff000));
+    assert!(!is_valid_payload(1, usize::MAX));
+    assert!(!is_valid_payload(usize::MAX, 0));
 }

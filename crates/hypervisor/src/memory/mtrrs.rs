@@ -90,7 +90,7 @@ impl Mtrrs {
                 && (32..=52).contains(&self.physical_bits)
                 && page < (1u64 << self.physical_bits)
                 && self.count <= self.variable.len()
-                && valid_default(self.default)
+                && is_valid_default(self.default)
                 && self.default & DEF_TYPE_E == 0
                 && matches!(pat_type, 0 | 4 | 5 | 6 | 7))
     }
@@ -134,7 +134,7 @@ impl Mtrrs {
             || !(32..=52).contains(&self.physical_bits)
             || self.tom2_default.is_some() && self.physical_bits != TARGET_PHYSICAL_BITS
             || self.count > self.variable.len()
-            || !valid_default(self.default)
+            || !is_valid_default(self.default)
             || self.default & DEF_TYPE_E == 0
         {
             return None;
@@ -155,7 +155,7 @@ impl Mtrrs {
             let bytes = ((!address_mask & physical) | 4095) + 1;
             if !bytes.is_power_of_two()
                 || base & physical & (bytes - 1) != 0
-                || !valid_type(base as u8)
+                || !is_valid_type(base as u8)
             {
                 return None;
             }
@@ -253,11 +253,11 @@ pub enum Tom2Error {
 }
 
 /// MTRRdefType with only defined bits and a valid default type.
-pub(crate) const fn valid_default(value: u64) -> bool {
-    value & !DEF_TYPE_DEFINED == 0 && valid_type(value as u8)
+pub(crate) const fn is_valid_default(value: u64) -> bool {
+    value & !DEF_TYPE_DEFINED == 0 && is_valid_type(value as u8)
 }
 
 /// APM2 rev3.44 7.7.1: UC, WC, WT, WP and WB; every other type is reserved.
-pub(crate) const fn valid_type(value: u8) -> bool {
+pub(crate) const fn is_valid_type(value: u8) -> bool {
     matches!(value, 0 | 1 | 4 | 5 | 6)
 }

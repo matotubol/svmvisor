@@ -301,12 +301,12 @@ mod native {
 
         pub fn get_detailed(&mut self, base: u64, length: u64) -> Result<u64, F7Failure> {
             self.last_failure = None;
-            self.check_context()?;
+            self.validate_context()?;
             let _interrupts = unsafe { InterruptScope::enter() };
-            self.check_context()?;
+            self.validate_context()?;
             let result = x86::get(self, self.config, base, length);
             // Do not let an apparently successful read conceal context drift.
-            self.check_context()?;
+            self.validate_context()?;
             result
                 .map_err(|error| self.last_failure.unwrap_or_else(|| F7Failure::from_error(error)))
         }
@@ -319,10 +319,10 @@ mod native {
         }
 
         pub fn finish_handoff_detailed(&mut self) -> Result<(), F7Failure> {
-            self.check_context()
+            self.validate_context()
         }
 
-        fn check_context(&self) -> Result<(), F7Failure> {
+        fn validate_context(&self) -> Result<(), F7Failure> {
             let now = unsafe { observe() }?;
             validate_observation_detailed(self.config, now)?;
             if now != self.original {
@@ -353,7 +353,7 @@ mod native {
                 return Err(Error::Unsupported);
             }
             // Each dereference rechecks owner/root/mode before the source load.
-            if let Err(failure) = self.check_context() {
+            if let Err(failure) = self.validate_context() {
                 self.last_failure = Some(failure);
                 return Err(failure.error());
             }

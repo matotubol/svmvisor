@@ -1,5 +1,5 @@
 use svmvisor_firmware_handoff::layout::{
-    ARENA_BYTES, HANDOFF_OFFSET, LayoutError, Payload, valid_arena,
+    ARENA_BYTES, HANDOFF_OFFSET, LayoutError, Payload, is_valid_arena,
 };
 
 fn set_word(bytes: &mut [u8], offset: usize, value: u64) {
@@ -93,7 +93,7 @@ fn invalid_arena_rejection_preserves_destination() {
     let payload = Payload::parse(&bytes, 16).unwrap();
     let mut arena = vec![0xa5; ARENA_BYTES];
     for base in [0, 0x80000, 0x200001, 0x180000, 0x40000000, u64::MAX - 4095] {
-        assert!(!valid_arena(base));
+        assert!(!is_valid_arena(base));
         assert_eq!(payload.load(&mut arena, base), Err(LayoutError::Arena));
         assert!(arena.iter().all(|&b| b == 0xa5));
     }

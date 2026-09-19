@@ -264,7 +264,7 @@ fn translation(
     // encodings are invalid in every PAT slot, even one not used by this walk.
     // 15.25.8/Tables15-19..20 (pp553-554): WB guest PAT + WB nested PAT +
     // WB MTRRs yields WB, while guest CR0.CD can still disable caching.
-    if (cr0 & (1 << 30) != 0 && !owned_cd) || !valid_pat(pat) {
+    if (cr0 & (1 << 30) != 0 && !owned_cd) || !is_valid_pat(pat) {
         return Err(FetchError::UnsupportedCacheControl);
     }
     let config = PagingConfig {
@@ -310,7 +310,7 @@ fn translation(
     translated.map_err(FetchError::Walk)
 }
 
-fn valid_pat(pat: u64) -> bool {
+fn is_valid_pat(pat: u64) -> bool {
     // Family1Ah Model44h B0 PPR57896 rev3.00 PAT tables (pp171-172)
     // reserve UC- in slots other than PA2/PA6. Keep this native profile
     // conservative where that target is narrower than APM2 Table7-9.

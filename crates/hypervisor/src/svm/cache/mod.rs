@@ -8,7 +8,7 @@ use crate::{
         PAT, SYS_CFG, SYS_CFG_DEFINED, SYS_CFG_ENCRYPTION, SYS_CFG_MTRR_FIX_DRAM_EN,
         SYS_CFG_MTRR_FIX_DRAM_MOD_EN, TARGET_PHYSICAL_BITS, TARGET_SIGNATURE, TOM2, TOP_MEM,
     },
-    memory::mtrrs::{DEF_TYPE_E, DEF_TYPE_FE, VARIABLE_VALID, valid_type},
+    memory::mtrrs::{DEF_TYPE_E, DEF_TYPE_FE, VARIABLE_VALID, is_valid_type},
     sync::TryLock,
 };
 
@@ -627,7 +627,8 @@ impl CacheCoreState {
         }
         if let Some(slot) = MTRR_FIXED.iter().position(|&v| v == index) {
             for byte in value.to_le_bytes() {
-                if byte & !0x1f != 0 || !valid_type(byte & 7) || !*visibility && byte & 0x18 != 0 {
+                if byte & !0x1f != 0 || !is_valid_type(byte & 7) || !*visibility && byte & 0x18 != 0
+                {
                     return Err(Fault);
                 }
             }
@@ -644,7 +645,7 @@ impl CacheCoreState {
         }
         if (MTRR_VAR_BASE0..=VAR_LAST).contains(&index) {
             let mask = if index & 1 == 0 { 0x0000_ffff_ffff_f007 } else { 0x0000_ffff_ffff_f800 };
-            if value & !mask != 0 || index & 1 == 0 && !valid_type(value as u8) {
+            if value & !mask != 0 || index & 1 == 0 && !is_valid_type(value as u8) {
                 return Err(Fault);
             }
             if !matches!(self.phase, 2 | 3) && value != current {

@@ -232,14 +232,14 @@ fn ledger_init_retirement_completes_every_source_and_drains_in_physical_isr_orde
     ledger.complete_level(0x61).unwrap();
     assert_eq!(ledger.next_eoi(highest_vector(&physical)), Ok(None));
     // Preparation is read-only and exact.
-    assert_eq!(ledger.check_retirement(&physical), Ok(()));
+    assert_eq!(ledger.validate_retirement(&physical), Ok(()));
     let mut foreign = physical;
     foreign[1] |= 1 << 2; // vector 0x22, not held
-    assert_eq!(ledger.check_retirement(&foreign), Err(E::UnexpectedPhysicalIsr(0x22)));
+    assert_eq!(ledger.validate_retirement(&foreign), Err(E::UnexpectedPhysicalIsr(0x22)));
     let mut missing = physical;
     missing[2] &= !(1 << 0); // held 0x40 without a physical ISR bit
     assert_eq!(
-        ledger.check_retirement(&missing),
+        ledger.validate_retirement(&missing),
         Err(E::PhysicalIsrMismatch { vector: 0x40, highest: Some(0xc1) })
     );
     let before = ledger;
@@ -255,7 +255,7 @@ fn ledger_init_retirement_completes_every_source_and_drains_in_physical_isr_orde
     }
     assert_eq!(order, [0xc1, 0x80, 0x61, 0x40]);
     assert!(ledger.is_empty() && physical == [0; 8]);
-    assert_eq!(ledger.check_retirement(&[0; 8]), Ok(()));
+    assert_eq!(ledger.validate_retirement(&[0; 8]), Ok(()));
     // Retiring an empty ledger is a no-op.
     ledger.retire_all();
     assert_eq!(ledger, PhysicalIrqLedger::new());

@@ -61,7 +61,7 @@ struct ApCapture {
 pub(crate) unsafe fn prepare() -> Result<PreparedSmp, Status> {
     let requested = env!("SVMVISOR_SELECTED_SIPI_PAGE").parse::<u64>().unwrap();
     let explicit = env!("SVMVISOR_SELECTED_SIPI_PAGE_REQUESTED") == "1";
-    if explicit && !valid_requested_page(requested) {
+    if explicit && !is_valid_requested_page(requested) {
         crate::debug("FAIL uefi-smp-low-page-request\n");
         return Err(Status::INVALID_PARAMETER);
     }
@@ -119,7 +119,7 @@ pub(crate) unsafe fn prepare() -> Result<PreparedSmp, Status> {
     // The physical page itself is admitted here; final-map LoaderCode coverage
     // is checked in the shared ownership encoder, before and after EBS.
     let admitted = (|| {
-        if !valid_requested_page(base)
+        if !is_valid_requested_page(base)
             || (explicit && base != requested)
             || __cpuid(0x80000000).eax < 0x80000008
         {
@@ -160,7 +160,7 @@ pub(crate) unsafe fn prepare() -> Result<PreparedSmp, Status> {
     Ok(PreparedSmp { page, resources })
 }
 
-pub(crate) const fn valid_requested_page(page: u64) -> bool {
+pub(crate) const fn is_valid_requested_page(page: u64) -> bool {
     page != 0 && page < 0x100000 && page & 4095 == 0
 }
 
@@ -196,10 +196,10 @@ mod tests {
     #[test]
     fn requested_sipi_pages_cover_the_architectural_vector_range() {
         for page in [0x1000, 0x8000, 0x9f000, 0xff000] {
-            assert!(valid_requested_page(page));
+            assert!(is_valid_requested_page(page));
         }
         for page in [0, 1, 0x8001, 0xfffff, 0x100000, u64::MAX] {
-            assert!(!valid_requested_page(page));
+            assert!(!is_valid_requested_page(page));
         }
     }
 

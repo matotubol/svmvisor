@@ -284,13 +284,13 @@ pub fn validate_source(
     extents: &[RamExtent],
     source: u64,
 ) -> Result<(), ProbeError> {
-    if !valid_profile(profile) {
+    if !is_valid_profile(profile) {
         return Err(ProbeError::InvalidProfile);
     }
     if extents.is_empty() || extents.len() > MAX_RAM_EXTENTS {
         return Err(ProbeError::Capacity);
     }
-    if !valid_source_address(source, u64::from(profile.physical_bits)) {
+    if !is_valid_source_address(source, u64::from(profile.physical_bits)) {
         return Err(ProbeError::InvalidSource);
     }
     let limit = LOW_CANONICAL_END.min(1u64 << profile.physical_bits);
@@ -349,7 +349,7 @@ pub fn matches_fault(
     armed
         && vector == PAGE_FAULT_VECTOR
         && context.exception_data == 0
-        && valid_source_address(frame.source, frame.physical_bits)
+        && is_valid_source_address(frame.source, frame.physical_bits)
         && frame.root & (PAGE_SIZE - 1) == 0
         && frame.root < LOW_CANONICAL_END
         && frame.root < 1u64.wrapping_shl(frame.physical_bits as u32)
@@ -386,7 +386,7 @@ pub fn matches_fault(
         && context.rflags & !RF == frame.pre_rflags & !RF
 }
 
-fn valid_profile(profile: ProbeProfile) -> bool {
+fn is_valid_profile(profile: ProbeProfile) -> bool {
     (32..=52).contains(&profile.physical_bits)
         && profile.root & (PAGE_SIZE - 1) == 0
         && profile.root < LOW_CANONICAL_END
@@ -394,7 +394,7 @@ fn valid_profile(profile: ProbeProfile) -> bool {
 }
 
 #[inline(always)]
-fn valid_source_address(source: u64, bits: u64) -> bool {
+fn is_valid_source_address(source: u64, bits: u64) -> bool {
     if !(32..=52).contains(&bits) || source & 7 != 0 {
         return false;
     }
@@ -583,7 +583,7 @@ mod native {
             profile: ProbeProfile,
             extents: &'a [RamExtent],
         ) -> Result<Self, ProbeError> {
-            if cpu.is_null() || cpu as usize & 7 != 0 || !valid_profile(profile) {
+            if cpu.is_null() || cpu as usize & 7 != 0 || !is_valid_profile(profile) {
                 return Err(ProbeError::InvalidProfile);
             }
             // This also validates all metadata before any registration/source load.

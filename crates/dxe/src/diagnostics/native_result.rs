@@ -53,7 +53,7 @@ impl NativeResult {
         }
     }
 
-    pub fn valid_header(&self) -> bool {
+    pub fn is_valid_header(&self) -> bool {
         self.magic == Self::new().magic
             && self.version == 1
             && self.bytes == 128

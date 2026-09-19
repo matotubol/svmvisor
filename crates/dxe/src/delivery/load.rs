@@ -121,7 +121,7 @@ fn stage(io: &Bar0, services: &BootServices, pinned: &str) -> Result<(), Status>
                 ARENA = Some(address);
             }
             if address != index * 0x200000
-                || !svmvisor_firmware_handoff::layout::valid_arena(address)
+                || !svmvisor_firmware_handoff::layout::is_valid_arena(address)
             {
                 return Err(Status::DEVICE_ERROR);
             }

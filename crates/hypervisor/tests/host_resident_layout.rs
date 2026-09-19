@@ -2,7 +2,7 @@
 
 use svmvisor_hypervisor::host::resident::{
     CACHE_CAPTURE_OFFSET, CACHE_OWNER_OFFSET, MAX_RESIDENT_CPUS, STARTUP_PAGE_OFFSET,
-    X2AVIC_BACKING_ALIASES_OFFSET, X2AVIC_TABLE_OFFSET, valid_pool_slot,
+    X2AVIC_BACKING_ALIASES_OFFSET, X2AVIC_TABLE_OFFSET, is_valid_pool_slot,
 };
 
 #[test]
@@ -29,10 +29,10 @@ fn host_apic_ids_satisfy_both_doorbell_formats_and_avoid_entry_255() {
     // This machine's 24 IDs, one per dense slot.
     for (slot, id) in (0..=11).chain(16..=27).enumerate() {
         let slot = slot as u64;
-        assert!(valid_pool_slot(pool + slot * 0x100000, pool, bytes, slot, id), "id {id}");
+        assert!(is_valid_pool_slot(pool + slot * 0x100000, pool, bytes, slot, id), "id {id}");
     }
-    assert!(valid_pool_slot(pool, pool, bytes, 0, 254));
+    assert!(is_valid_pool_slot(pool, pool, bytes, 0, 254));
     for id in [255, 256, 511, 4095, u64::MAX] {
-        assert!(!valid_pool_slot(pool, pool, bytes, 0, id), "id {id}");
+        assert!(!is_valid_pool_slot(pool, pool, bytes, 0, id), "id {id}");
     }
 }

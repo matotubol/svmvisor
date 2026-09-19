@@ -132,7 +132,7 @@ impl PhysicalIrqLedger {
     /// Read-only INIT precondition: the physical ISR (banks of MSRs
     /// 810h-817h) holds exactly the held sources, so the retirement drain
     /// cannot fail on a foreign or missing physical in-service bit.
-    pub fn check_retirement(&self, physical_isr: &[u32; 8]) -> Result<(), IrqError> {
+    pub fn validate_retirement(&self, physical_isr: &[u32; 8]) -> Result<(), IrqError> {
         let mut foreign = [0; 8];
         let mut missing = [0; 8];
         for index in 0..8 {
@@ -335,7 +335,7 @@ pub(crate) fn software_eoi(
 }
 
 /// Guest INIT (D9 commit step 2): complete every held source and drain.
-/// Precondition: `check_retirement` succeeded for the current physical ISR.
+/// Precondition: `validate_retirement` succeeded for the current physical ISR.
 pub(crate) fn retire(
     ledger: &mut PhysicalIrqLedger,
     physical: &mut impl PhysicalX2Apic,

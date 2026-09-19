@@ -77,7 +77,7 @@ pub unsafe fn run_initialized(payload: &[u8], entry_offset: usize, reject: bool)
         }
     };
     let requested: u64 = env!("SVMVISOR_SELECTED_ARENA_BASE").parse().unwrap();
-    if requested != 0 && !layout::valid_arena(requested) {
+    if requested != 0 && !layout::is_valid_arena(requested) {
         debug("FAIL uefi-arena-layout\n");
         return Status::INVALID_PARAMETER;
     }
@@ -231,7 +231,7 @@ pub fn authorized(options: Option<&[u8]>) -> bool {
 }
 
 /// The image ends before the reserved handoff page and entry lies in its bytes.
-pub const fn valid_payload(payload_bytes: usize, entry_offset: usize) -> bool {
+pub const fn is_valid_payload(payload_bytes: usize, entry_offset: usize) -> bool {
     payload_bytes != 0 && payload_bytes <= HANDOFF_OFFSET && entry_offset < payload_bytes
 }
 

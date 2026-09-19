@@ -65,17 +65,17 @@ impl HostDescriptorRequest {
                 }
             }
         }
-        if !valid_pointer(self.rsp0) {
+        if !is_valid_pointer(self.rsp0) {
             return Err(HostDescriptorError::InvalidRsp0);
         }
-        if !valid_pointer(self.ist1) {
+        if !is_valid_pointer(self.ist1) {
             return Err(HostDescriptorError::InvalidIst1);
         }
-        if !valid_pointer(self.ist2) {
+        if !is_valid_pointer(self.ist2) {
             return Err(HostDescriptorError::InvalidIst2);
         }
         for (vector, handler) in self.handlers.iter().enumerate() {
-            if !valid_pointer(*handler) {
+            if !is_valid_pointer(*handler) {
                 return Err(HostDescriptorError::InvalidHandler { vector: vector as u8 });
             }
         }
@@ -177,6 +177,6 @@ fn canonical_last(base: u64, len: usize) -> Option<u64> {
     (is_canonical_48(base) && is_canonical_48(last)).then_some(last)
 }
 
-fn valid_pointer(pointer: u64) -> bool {
+fn is_valid_pointer(pointer: u64) -> bool {
     pointer != 0 && is_canonical_48(pointer)
 }

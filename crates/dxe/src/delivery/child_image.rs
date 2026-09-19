@@ -42,20 +42,20 @@ impl Pin {
     fn parse_kind(header: &[u8], kind: ImageKind) -> Result<Self, Status> {
         if header.len() != HEADER_BYTES
             || header.get(..8) != Some(kind.magic())
-            || r32(header, 8)? != 1
-            || r32(header, 12)? != 128
-            || r64(header, 24)? != SLOT_BYTES as u64
-            || r64(header, 32)? != 128
-            || r64(header, 40)? != kind.flags()
-            || r16(header, 80)? != 0x8664
-            || r16(header, 82)? != kind.subsystem()
-            || r16(header, 84)? != 0x20b
-            || r16(header, 86)? != 0
+            || read_u32(header, 8)? != 1
+            || read_u32(header, 12)? != 128
+            || read_u64(header, 24)? != SLOT_BYTES as u64
+            || read_u64(header, 32)? != 128
+            || read_u64(header, 40)? != kind.flags()
+            || read_u16(header, 80)? != 0x8664
+            || read_u16(header, 82)? != kind.subsystem()
+            || read_u16(header, 84)? != 0x20b
+            || read_u16(header, 86)? != 0
             || header.get(112..).ok_or_else(bad)?.iter().any(|b| *b != 0)
         {
             return Err(bad());
         }
-        let bytes = r64(header, 16)?;
+        let bytes = read_u64(header, 16)?;
         if !(512..=(SLOT_BYTES - HEADER_BYTES) as u64).contains(&bytes) {
             return Err(bad());
         }
@@ -68,12 +68,12 @@ impl Pin {
             *d = *s;
         }
         let metadata = PeMetadata {
-            entry_rva: r32(header, 88)?,
-            image_bytes: r32(header, 92)?,
-            headers_bytes: r32(header, 96)?,
-            section_alignment: r32(header, 100)?,
-            file_alignment: r32(header, 104)?,
-            sections: r32(header, 108)?,
+            entry_rva: read_u32(header, 88)?,
+            image_bytes: read_u32(header, 92)?,
+            headers_bytes: read_u32(header, 96)?,
+            section_alignment: read_u32(header, 100)?,
+            file_alignment: read_u32(header, 104)?,
+            sections: read_u32(header, 108)?,
         };
         metadata.validate(bytes as usize)?;
         Ok(Self { header: saved, kind, payload_bytes: bytes as usize, metadata, digest })
@@ -317,31 +317,33 @@ pub unsafe fn execute_resident_dev(
 }
 
 fn parse_pe_kind(pe: &[u8], kind: ImageKind) -> Result<PeMetadata, Status> {
-    if pe.len() < 512 || pe.len() > SLOT_BYTES - HEADER_BYTES || r16(pe, 0)? != 0x5a4d {
+    if pe.len() < 512 || pe.len() > SLOT_BYTES - HEADER_BYTES || read_u16(pe, 0)? != 0x5a4d {
         return Err(bad());
     }
-    let base = r32(pe, 0x3c)? as usize;
+    let base = read_u32(pe, 0x3c)? as usize;
     if base < 64
         || base > pe.len().saturating_sub(24)
         || pe.get(base..base + 4) != Some(b"PE\0\0")
-        || r16(pe, base + 4)? != 0x8664
-        || r16(pe, base + 20)? != 240
-        || r16(pe, base + 22)? & 3 != 2
+        || read_u16(pe, base + 4)? != 0x8664
+        || read_u16(pe, base + 20)? != 240
+        || read_u16(pe, base + 22)? & 3 != 2
     {
         return Err(bad());
     }
     let opt = base + 24;
-    if r16(pe, opt)? != 0x20b || r16(pe, opt + 68)? != kind.subsystem() || r32(pe, opt + 108)? != 16
+    if read_u16(pe, opt)? != 0x20b
+        || read_u16(pe, opt + 68)? != kind.subsystem()
+        || read_u32(pe, opt + 108)? != 16
     {
         return Err(bad());
     }
     let meta = PeMetadata {
-        entry_rva: r32(pe, opt + 16)?,
-        image_bytes: r32(pe, opt + 56)?,
-        headers_bytes: r32(pe, opt + 60)?,
-        section_alignment: r32(pe, opt + 32)?,
-        file_alignment: r32(pe, opt + 36)?,
-        sections: u32::from(r16(pe, base + 6)?),
+        entry_rva: read_u32(pe, opt + 16)?,
+        image_bytes: read_u32(pe, opt + 56)?,
+        headers_bytes: read_u32(pe, opt + 60)?,
+        section_alignment: read_u32(pe, opt + 32)?,
+        file_alignment: read_u32(pe, opt + 36)?,
+        sections: u32::from(read_u16(pe, base + 6)?),
     };
     meta.validate(pe.len())?;
     let table = opt + 240;
@@ -352,12 +354,12 @@ fn parse_pe_kind(pe: &[u8], kind: ImageKind) -> Result<PeMetadata, Status> {
     // one-shot child. A position-independent image may have no base fixups;
     // if a directory is present it must be wholly backed by initialized data.
     for directory in [1, 9, 13, 14] {
-        if r64(pe, opt + 112 + directory * 8)? != 0 {
+        if read_u64(pe, opt + 112 + directory * 8)? != 0 {
             return Err(bad());
         }
     }
-    let reloc = r32(pe, opt + 112 + 5 * 8)?;
-    let reloc_size = r32(pe, opt + 116 + 5 * 8)?;
+    let reloc = read_u32(pe, opt + 112 + 5 * 8)?;
+    let reloc_size = read_u32(pe, opt + 116 + 5 * 8)?;
     if (reloc == 0) != (reloc_size == 0)
         || (reloc != 0 && reloc_size < 8)
         || reloc.checked_add(reloc_size).is_none_or(|e| e > meta.image_bytes)
@@ -370,11 +372,11 @@ fn parse_pe_kind(pe: &[u8], kind: ImageKind) -> Result<PeMetadata, Status> {
     let mut relocation = reloc == 0 && reloc_size == 0;
     for i in 0..meta.sections as usize {
         let s = table + i * 40;
-        let virtual_size = r32(pe, s + 8)?;
-        let va = r32(pe, s + 12)?;
-        let raw_size = r32(pe, s + 16)?;
-        let raw = r32(pe, s + 20)?;
-        let flags = r32(pe, s + 36)?;
+        let virtual_size = read_u32(pe, s + 8)?;
+        let va = read_u32(pe, s + 12)?;
+        let raw_size = read_u32(pe, s + 16)?;
+        let raw = read_u32(pe, s + 20)?;
+        let flags = read_u32(pe, s + 36)?;
         let extent = virtual_size.max(raw_size);
         let end = va.checked_add(extent).ok_or_else(bad)?;
         if extent == 0
@@ -437,7 +439,7 @@ unsafe fn execute_inner(
     let operation = (|| -> Result<(), Status> {
         if (pin.kind == ImageKind::ResidentBoot) != options.is_some()
             || options.is_some_and(|o| {
-                !o.valid_header() || o.rust_entered != 0 || o.armed != 0 || o.failure != 0
+                !o.is_valid_header() || o.rust_entered != 0 || o.armed != 0 || o.failure != 0
             })
         {
             return Err(Status::INVALID_PARAMETER);
@@ -553,7 +555,7 @@ unsafe fn execute_inner(
         {
             state.child = ptr::null_mut();
         }
-        if !report.inner.valid_header() {
+        if !report.inner.is_valid_header() {
             return Err(bad());
         }
         if started != Status::UNSUPPORTED {
@@ -668,7 +670,7 @@ unsafe fn copy_path(
                 return Err(bad());
             }
             let node = unsafe { slice::from_raw_parts(source.add(offset), 4) };
-            let length = usize::from(r16(node, 2)?);
+            let length = usize::from(read_u16(node, 2)?);
             if length < 4 || length > MAX_PATH - offset {
                 return Err(bad());
             }
@@ -709,21 +711,21 @@ fn status(s: Status) -> Result<(), Status> {
     if s == Status::SUCCESS { Ok(()) } else { Err(s) }
 }
 
-fn r16(b: &[u8], o: usize) -> Result<u16, Status> {
+fn read_u16(b: &[u8], o: usize) -> Result<u16, Status> {
     let Some(&[a, b]) = b.get(o..o.checked_add(2).ok_or_else(bad)?) else {
         return Err(bad());
     };
     Ok(u16::from_le_bytes([a, b]))
 }
 
-fn r32(b: &[u8], o: usize) -> Result<u32, Status> {
+fn read_u32(b: &[u8], o: usize) -> Result<u32, Status> {
     let Some(&[a, b, c, d]) = b.get(o..o.checked_add(4).ok_or_else(bad)?) else {
         return Err(bad());
     };
     Ok(u32::from_le_bytes([a, b, c, d]))
 }
 
-fn r64(b: &[u8], o: usize) -> Result<u64, Status> {
+fn read_u64(b: &[u8], o: usize) -> Result<u64, Status> {
     let Some(&[a, b, c, d, e, f, g, h]) = b.get(o..o.checked_add(8).ok_or_else(bad)?) else {
         return Err(bad());
     };

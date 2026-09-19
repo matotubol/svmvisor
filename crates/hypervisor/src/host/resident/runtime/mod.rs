@@ -6,7 +6,7 @@ use core::sync::atomic::{AtomicU32, AtomicU64};
 
 #[cfg(test)]
 use crate::host::resident::runtime::linked_symbols::*;
-// The child files name `fetch`, `terminal`, the pool offsets, `valid_pool_slot` and
+// The child files name `fetch`, `terminal`, the pool offsets, `is_valid_pool_slot` and
 // `captured_register_refusal` as `super::..` inside function bodies that moved here unchanged.
 use crate::{
     arch::x86_64::{capabilities::ValidatedCapabilities, registers::GuestRegisters},
@@ -15,9 +15,9 @@ use crate::{
     host::resident::{
         BridgeContext, CACHE_CAPTURE_OFFSET, CACHE_OWNER_OFFSET, STARTUP_PAGE_OFFSET,
         X2AVIC_BACKING_ALIASES_OFFSET, X2AVIC_TABLE_OFFSET, captured_register_refusal, fetch,
+        is_valid_pool_slot,
         runtime::exit::dispatch,
         terminal::{self, TerminalEndpoint},
-        valid_pool_slot,
     },
     memory::{
         address::PAGE_BYTES,

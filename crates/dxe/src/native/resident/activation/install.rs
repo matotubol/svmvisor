@@ -139,7 +139,7 @@ unsafe fn install_inner(image: Handle, bs: &BootServices) -> Result<(), Status> 
         let mut identity = p.identity;
         // Identity fields are CPU-local; all common requirements must agree.
         // Host APIC IDs above 254 are refused: the AVIC doorbell ID field and
-        // x2AVIC table entry 255 (see abi::valid_pool_slot).
+        // x2AVIC table entry 255 (see abi::is_valid_pool_slot).
         identity.apic_id = common.apic_id;
         if identity != common || p.identity.apic_id > 254 {
             return Err(Status::UNSUPPORTED);
