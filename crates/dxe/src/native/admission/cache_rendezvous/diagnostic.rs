@@ -2,10 +2,13 @@
 
 use core::sync::atomic::Ordering;
 
-use super::super::{cache::CaptureError, cpu::MAX_PROCESSORS};
+use super::super::{
+    cache::CaptureError,
+    cpu::{ENABLED, MAX_PROCESSORS},
+};
 use super::{
-    AP_CR4_DIFFERENCE, COMPLETE, ConfigurationField, ENABLED, PagingRootError,
-    PreparedCacheRendezvous, RendezvousError, UNSUPPORTED_FLAGS, compare_ap_configuration,
+    AP_CR4_DIFFERENCE, COMPLETE, ConfigurationField, PagingRootError, PreparedCacheRendezvous,
+    RendezvousError, UNSUPPORTED_FLAGS, compare_ap_configuration,
 };
 
 impl PreparedCacheRendezvous<'_> {

@@ -4,12 +4,12 @@
 use core::sync::atomic::Ordering;
 
 #[cfg(any(target_os = "uefi", test))]
-use super::super::cache::CacheSnapshot;
+use super::super::{cache::CacheSnapshot, cpu::ENABLED};
 use super::PreparedCacheRendezvous;
 #[cfg(any(target_os = "uefi", test))]
 use super::{
-    ARITHMETIC_FLAGS, COMPLETE, CacheConsistencyReport, ConfigurationField, EMPTY, ENABLED,
-    PagingRootError, RendezvousError, Slot, UNSUPPORTED_FLAGS, WRITING, compare_ap_configuration,
+    ARITHMETIC_FLAGS, COMPLETE, CacheConsistencyReport, ConfigurationField, EMPTY, PagingRootError,
+    RendezvousError, Slot, UNSUPPORTED_FLAGS, WRITING, compare_ap_configuration,
     svmvisor_native_cache_read, svmvisor_native_snapshot,
 };
 // The live capture adapters exist only for firmware and host-test builds.

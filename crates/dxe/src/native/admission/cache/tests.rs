@@ -1,5 +1,7 @@
 use super::*;
 
+use svmvisor_hypervisor::arch::x86_64::msr::TARGET_SIGNATURE;
+
 fn snapshot() -> CacheSnapshot {
     CacheSnapshot {
         abi_version: 1,

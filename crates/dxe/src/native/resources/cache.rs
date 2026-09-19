@@ -162,12 +162,15 @@ fn qualify_leaf(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    use svmvisor_hypervisor::arch::x86_64::msr::TARGET_SIGNATURE;
+
     fn snapshot() -> CacheSnapshot {
         CacheSnapshot {
             abi_version: 1,
             captured_fields: native_cache::captured::REQUIRED,
             msr_reads: 30,
-            signature: native_cache::TARGET_SIGNATURE,
+            signature: TARGET_SIGNATURE,
             max_basic: 0x10,
             max_extended: 0x80000026,
             leaf1_edx: 0x11020,

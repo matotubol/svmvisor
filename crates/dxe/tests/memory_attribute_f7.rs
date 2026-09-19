@@ -1,11 +1,14 @@
 #![cfg(feature = "memory-attribute-f7")]
 
 use svmvisor_dxe::memory_attributes::f7::{
-    CpuCapabilities, CpuObservation, F7Failure, TARGET_SIGNATURE, validate_capabilities,
+    CpuCapabilities, CpuObservation, F7Failure, validate_capabilities,
     validate_capabilities_detailed, validate_observation, validate_observation_detailed,
     validate_table_source,
 };
-use svmvisor_hypervisor::boot::memory::{MemoryDescriptor, ValidatedMemoryMap};
+use svmvisor_hypervisor::{
+    arch::x86_64::msr::TARGET_SIGNATURE,
+    boot::memory::{MemoryDescriptor, ValidatedMemoryMap},
+};
 use svmvisor_memory_attributes::{Config, Error};
 
 fn config() -> Config {

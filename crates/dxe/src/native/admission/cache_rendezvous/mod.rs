@@ -29,7 +29,6 @@ mod capture;
 mod comparison;
 mod diagnostic;
 
-const ENABLED: u32 = 2;
 const EMPTY: usize = 0;
 #[cfg(any(target_os = "uefi", test))]
 const WRITING: usize = 1;

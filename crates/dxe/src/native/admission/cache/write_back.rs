@@ -1,8 +1,10 @@
 //! Write-back classification of supplied cache observations for one allocated extent.
 
+use svmvisor_hypervisor::arch::x86_64::msr::TARGET_SIGNATURE;
+
 use super::{
     ABI_VERSION, CacheSnapshot, HIGH_BOUND, LOW_BOUND, MAX_PAGES, MAX_VARIABLE_MTRRS, PAGE_MASK,
-    PHYSICAL_MASK, TARGET_SIGNATURE, captured,
+    PHYSICAL_MASK, captured,
 };
 
 /// A classifier result for supplied observations; not an ownership or native

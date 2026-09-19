@@ -444,7 +444,8 @@ impl Drop for ScopedPool<'_> {
 }
 
 fn cache_snapshot(number: usize) -> cache::CacheSnapshot {
-    use cache::{CacheSnapshot, TARGET_SIGNATURE, captured};
+    use cache::{CacheSnapshot, captured};
+    use svmvisor_hypervisor::arch::x86_64::msr::TARGET_SIGNATURE;
     CacheSnapshot {
         abi_version: 1,
         captured_fields: captured::REQUIRED,

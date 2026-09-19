@@ -2,8 +2,6 @@
 //! No allocation, hardware writes, firmware calls, mapping dereferences or
 //! native admission token. See docs/native-cache-contract.md for the limits.
 
-pub use svmvisor_hypervisor::arch::x86_64::msr::TARGET_SIGNATURE;
-
 pub use self::write_back::{
     CacheError, PageMapping, WriteBackReport, classify_write_back, leaf_pat_index,
 };

@@ -20,7 +20,7 @@ pub const MAX_PROCESSORS: usize = 256;
 pub const AP_TIMEOUT_MICROSECONDS: usize = 1_000_000;
 pub const MP_SERVICES_GUID: Guid = guid!("3fdda605-a76e-4f46-ad29-12f4531b3d08");
 const BSP: u32 = 1;
-const ENABLED: u32 = 2;
+pub(super) const ENABLED: u32 = 2;
 const HEALTHY: u32 = 4;
 
 static NEXT_RENDEZVOUS: AtomicUsize = AtomicUsize::new(1);
