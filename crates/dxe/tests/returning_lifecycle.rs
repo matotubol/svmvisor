@@ -37,11 +37,11 @@ use core::{
 use std::sync::Mutex;
 
 use svmvisor_dxe::{
-    delivery::returning::Delivery,
+    delivery::child_image::Delivery,
     diagnostics::{
         journal::{self, JournalIo},
         native_result::NativeResult,
-        returning::ReturningDiagnostics,
+        returning_detail::ReturningDiagnostics,
     },
 };
 use uefi_raw::{

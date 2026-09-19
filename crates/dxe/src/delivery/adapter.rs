@@ -3,11 +3,11 @@
 use core::ptr;
 
 #[cfg(not(feature = "card-resident-dev-loader"))]
-use svmvisor_dxe::delivery::returning::Pin;
+use svmvisor_dxe::delivery::child_image::Pin;
 #[cfg(feature = "card-returning-loader")]
-use svmvisor_dxe::diagnostics::returning::ReturningDiagnostics;
+use svmvisor_dxe::diagnostics::returning_detail::ReturningDiagnostics;
 use svmvisor_dxe::{
-    delivery::returning::{self as card_returning, State},
+    delivery::child_image::{self as card_returning, State},
     diagnostics::journal::{self, JournalIo},
 };
 use uefi_raw::{Handle, Status, table::boot::BootServices};

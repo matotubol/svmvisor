@@ -3,7 +3,7 @@
 use uefi_raw::Status;
 
 use crate::{
-    delivery::returning::Delivery,
+    delivery::child_image::Delivery,
     diagnostics::native_result::{MULTI_EXIT_ENTRIES, MULTI_EXIT_OUTCOME, NativeResult},
 };
 

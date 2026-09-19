@@ -1,11 +1,11 @@
 #![cfg(feature = "card-returning-loader")]
 
 use svmvisor_dxe::{
-    delivery::returning::Delivery,
+    delivery::child_image::Delivery,
     diagnostics::{
         native_result::NativeResult,
         outcome::classify,
-        returning::{
+        returning_detail::{
             ENCODING_OVERFLOW, INVALID_INNER_HEADER, NON_BOOLEAN_FLAGS, ReturningDiagnostics,
         },
     },

@@ -1,7 +1,7 @@
 #![cfg(feature = "card-returning-loader")]
 
 use svmvisor_dxe::{
-    delivery::returning::Delivery,
+    delivery::child_image::Delivery,
     diagnostics::{
         native_result::NativeResult,
         outcome::{ReturningOutcome::*, classify},

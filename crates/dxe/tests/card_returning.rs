@@ -14,7 +14,7 @@ use std::{
 
 use sha2::{Digest, Sha256};
 use svmvisor_dxe::{
-    delivery::returning::{self as card_returning, Pin, State},
+    delivery::child_image::{self as card_returning, Pin, State},
     diagnostics::native_result::NativeResult,
 };
 use uefi_raw::{

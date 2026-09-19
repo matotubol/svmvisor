@@ -39,7 +39,7 @@ The card returning-loader image follows:
 ```text
 main.rs: efi_main
   -> firmware/driver.rs: install and bind
-  -> delivery/adapter.rs + delivery/returning.rs: validate and start child
+  -> delivery/adapter.rs + delivery/child_image.rs: validate and start child
   -> diagnostics/: classify the returned child result
   -> firmware/lifecycle.rs: journal firmware lifecycle events
 ```

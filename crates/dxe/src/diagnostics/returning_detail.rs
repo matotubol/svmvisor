@@ -2,7 +2,7 @@
 //! See docs/native-returning-diagnostics-contract.md for the exported word map.
 
 use crate::{
-    delivery::returning::Delivery,
+    delivery::child_image::Delivery,
     diagnostics::outcome::{self as returning_outcome, ReturningOutcome},
 };
 

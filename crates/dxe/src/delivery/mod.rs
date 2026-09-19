@@ -5,4 +5,4 @@
 #[cfg(feature = "card-load-only")]
 pub mod card;
 #[cfg(any(feature = "card-returning-loader", feature = "card-resident"))]
-pub mod returning;
+pub mod child_image;

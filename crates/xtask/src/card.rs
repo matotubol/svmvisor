@@ -329,7 +329,7 @@ fn utc_stamp(seconds: u64) -> String {
 }
 
 /// The fields of the 128-byte `SVMBPE01` envelope this tool reports. The
-/// loader (`crates/dxe/src/delivery/returning.rs`) and `flash-card.ps1` own
+/// loader (`crates/dxe/src/delivery/child_image.rs`) and `flash-card.ps1` own
 /// the full policy; this only refuses to describe something else.
 fn parse_header(header: &[u8]) -> Result<Header, String> {
     let word = |offset: usize| u64::from_le_bytes(header[offset..offset + 8].try_into().unwrap());

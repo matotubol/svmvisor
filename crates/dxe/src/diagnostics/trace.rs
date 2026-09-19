@@ -4,7 +4,7 @@ use uefi_raw::Status;
 
 use crate::diagnostics::journal::{JournalIo, commit};
 #[cfg(feature = "card-returning-loader")]
-use crate::diagnostics::returning::{self as returning_diagnostics, ReturningDiagnostics};
+use crate::diagnostics::returning_detail::{self as returning_diagnostics, ReturningDiagnostics};
 
 pub const TRACE_DETAIL: u32 = 4;
 pub const MAX_CALLBACK_RECORDS: u8 = 16;

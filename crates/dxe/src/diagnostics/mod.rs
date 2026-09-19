@@ -11,5 +11,5 @@ pub mod native_result;
 pub mod outcome;
 pub mod resident_boot;
 #[cfg(feature = "card-returning-loader")]
-pub mod returning;
+pub mod returning_detail;
 pub mod trace;
