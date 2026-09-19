@@ -13,9 +13,9 @@ use crate::{
     memory::address::is_canonical_48,
 };
 
-pub const IDT_ENTRIES: usize = 256;
-pub const IDT_GATE_BYTES: usize = 16;
-pub const IDT_BYTES: usize = IDT_ENTRIES * IDT_GATE_BYTES;
+pub(crate) const IDT_ENTRIES: usize = 256;
+pub(crate) const IDT_GATE_BYTES: usize = 16;
+pub(crate) const IDT_BYTES: usize = IDT_ENTRIES * IDT_GATE_BYTES;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct HostDescriptorRequest {

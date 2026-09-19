@@ -18,8 +18,8 @@
 //! without calling it unused, so it is answered here as RAZ/WRIG and never
 //! reaches hardware. MSRC000_2[FFF:400] is reserved and stays stopped.
 
-pub const FIRST: u32 = 0xc000_2000;
-pub const LAST: u32 = 0xc000_23ff;
+pub(crate) const FIRST: u32 = 0xc000_2000;
+pub(crate) const LAST: u32 = 0xc000_23ff;
 /// Register offsets within a bank (Table 23 p301).
 const STATUS: u32 = 1;
 const RESERVED: u32 = 7;

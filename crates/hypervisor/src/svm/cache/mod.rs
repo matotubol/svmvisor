@@ -22,7 +22,7 @@ mod survey;
 #[cfg(test)]
 mod tests;
 
-pub const MAX_CACHE_CPUS: usize = 32;
+pub(crate) const MAX_CACHE_CPUS: usize = 32;
 /// Last owned MtrrVarMask (eight pairs) and IORR_MASK (two pairs).
 const VAR_LAST: u32 = MTRR_VAR_BASE0 + 15;
 const IORR_LAST: u32 = IORR_BASE0 + 3;
@@ -56,7 +56,7 @@ const _: () = {
 };
 
 impl CacheObservation {
-    pub const EMPTY: Self = Self {
+    pub(crate) const EMPTY: Self = Self {
         capability: 0,
         default: 0,
         sys_cfg: 0,
@@ -184,7 +184,7 @@ impl CacheObservation {
     /// APM2 rev3.44 7.9.1/Table7-13, PDF295-296: valid type bits alone do
     /// not establish a supported active extended tuple. Dormant fixed type
     /// fields are not interpreted as though E/FE and extended attrs were on.
-    pub fn validate_active_fixed_types(&self) -> Result<(), CacheAdmissionFailure> {
+    pub(crate) fn validate_active_fixed_types(&self) -> Result<(), CacheAdmissionFailure> {
         if self.default & (DEF_TYPE_E | DEF_TYPE_FE) != DEF_TYPE_E | DEF_TYPE_FE {
             return Ok(());
         }
@@ -343,7 +343,7 @@ impl CacheCapture {
             && self.count as usize == count
             && self.valid == u32::MAX >> (MAX_CACHE_CPUS - count)
     }
-    pub fn observation(&self, slot: usize, count: usize) -> Option<&CacheObservation> {
+    pub(crate) fn observation(&self, slot: usize, count: usize) -> Option<&CacheObservation> {
         if !self.complete(count) || slot >= count {
             return None;
         }
@@ -503,7 +503,7 @@ impl CacheCoreState {
     };
 
     #[cfg(feature = "resident-runtime-test")]
-    pub fn fixture(bank: CacheObservation) -> Self {
+    pub(crate) fn fixture(bank: CacheObservation) -> Self {
         Self { bank, members: 3, ..Self::EMPTY }
     }
 
@@ -666,7 +666,7 @@ impl CacheCoreState {
 
 /// Shared physical-core bank. Access is serialized only while software copies
 /// or changes state; no caller may retain this guard while waiting for a peer.
-pub type CacheCore = TryLock<CacheCoreState>;
+pub(crate) type CacheCore = TryLock<CacheCoreState>;
 
 #[repr(C, align(4096))]
 pub struct CacheOwner {
@@ -746,7 +746,7 @@ pub fn native_topology_detailed() -> Result<[u32; 4], CacheAdmissionFailure> {
 pub fn owned_msr(index: u32) -> bool {
     owned_msrs().any(|owned| owned == index)
 }
-pub fn owned_msrs() -> impl Iterator<Item = u32> {
+pub(crate) fn owned_msrs() -> impl Iterator<Item = u32> {
     (MTRR_VAR_BASE0..=VAR_LAST)
         .chain(MTRR_FIXED)
         .chain([MTRR_CAP, MTRR_DEF_TYPE, SYS_CFG, HWCR])

@@ -15,14 +15,14 @@ pub const TARGET_PHYSICAL_BITS: u8 = 48;
 
 pub const MTRR_CAP: u32 = 0xfe;
 /// MtrrVarBase n is `MTRR_VAR_BASE0 + 2n`; its MtrrVarMask follows it.
-pub const MTRR_VAR_BASE0: u32 = 0x200;
-pub const MTRR_FIX_64K: u32 = 0x250;
-pub const MTRR_FIX_16K_0: u32 = 0x258;
-pub const MTRR_FIX_16K_1: u32 = 0x259;
+pub(crate) const MTRR_VAR_BASE0: u32 = 0x200;
+pub(crate) const MTRR_FIX_64K: u32 = 0x250;
+pub(crate) const MTRR_FIX_16K_0: u32 = 0x258;
+pub(crate) const MTRR_FIX_16K_1: u32 = 0x259;
 /// MtrrFix_4K_n is `MTRR_FIX_4K_0 + n` for n in 0..8.
-pub const MTRR_FIX_4K_0: u32 = 0x268;
+pub(crate) const MTRR_FIX_4K_0: u32 = 0x268;
 /// Every fixed-range MTRR, in address order.
-pub const MTRR_FIXED: [u32; 11] = [
+pub(crate) const MTRR_FIXED: [u32; 11] = [
     MTRR_FIX_64K,
     MTRR_FIX_16K_0,
     MTRR_FIX_16K_1,
@@ -46,8 +46,8 @@ pub const EFER_SVME: u64 = 1 << 12;
 pub const SYS_CFG: u32 = 0xc001_0010;
 pub const HWCR: u32 = 0xc001_0015;
 /// IORR_BASE n is `IORR_BASE0 + 2n` for n in 0..2; its IORR_MASK follows it.
-pub const IORR_BASE0: u32 = 0xc001_0016;
-pub const TOP_MEM: u32 = 0xc001_001a;
+pub(crate) const IORR_BASE0: u32 = 0xc001_0016;
+pub(crate) const TOP_MEM: u32 = 0xc001_001a;
 pub const TOM2: u32 = 0xc001_001d;
 pub const MMIO_CFG_BASE_ADDR: u32 = 0xc001_0058;
 
@@ -56,19 +56,19 @@ pub const SYS_CFG_DEFINED: u64 = 0x07fc_0000;
 /// SYS_CFG HMKEE, VmplEn, SecureNestedPagingEn and SMEE (bits 26:23).
 pub const SYS_CFG_ENCRYPTION: u64 = 0x0780_0000;
 /// Enables the fixed-MTRR RdDram/WrDram attributes. Core-shared.
-pub const SYS_CFG_MTRR_FIX_DRAM_EN: u64 = 1 << 18;
+pub(crate) const SYS_CFG_MTRR_FIX_DRAM_EN: u64 = 1 << 18;
 /// Makes the fixed-MTRR RdDram/WrDram bits read-write. Not shared between threads.
-pub const SYS_CFG_MTRR_FIX_DRAM_MOD_EN: u64 = 1 << 19;
-pub const SYS_CFG_MTRR_TOM2_EN: u64 = 1 << 21;
+pub(crate) const SYS_CFG_MTRR_FIX_DRAM_MOD_EN: u64 = 1 << 19;
+pub(crate) const SYS_CFG_MTRR_TOM2_EN: u64 = 1 << 21;
 /// Memory in [4GiB, TOM2) defaults to WB instead of MTRRdefType's type.
-pub const SYS_CFG_TOM2_FORCE_MEM_TYPE_WB: u64 = 1 << 22;
+pub(crate) const SYS_CFG_TOM2_FORCE_MEM_TYPE_WB: u64 = 1 << 22;
 
 /// 0: a non-zero write to an implemented MCA_STATUS raises #GP.
 pub const HWCR_MC_STATUS_WR_EN: u64 = 1 << 18;
 pub const HWCR_IO_CFG_GP_FAULT: u64 = 1 << 20;
-pub const HWCR_IRPERF_EN: u64 = 1 << 30;
+pub(crate) const HWCR_IRPERF_EN: u64 = 1 << 30;
 /// CPUID outside SMM at CPL > 0 raises #GP.
-pub const HWCR_CPUID_FLT_EN: u64 = 1 << 35;
+pub(crate) const HWCR_CPUID_FLT_EN: u64 = 1 << 35;
 
 /// SVM VM_CR (AMD APM2 rev3.44 15.30.1, Figure 15-27). Local APIC registers,
 /// including APIC_BASE, live in `arch::x86_64::apic`.

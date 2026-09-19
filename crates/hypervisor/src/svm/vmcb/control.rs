@@ -185,7 +185,7 @@ impl Vmcb {
     /// Table15-9: encoding1 includes all ASIDs and global translations.
     /// Call after monitor changes to live NPT mappings/permissions as well as
     /// emulated paging controls. This is a request, not a completed shootdown.
-    pub fn request_full_tlb_flush(&mut self) {
+    pub(crate) fn request_full_tlb_flush(&mut self) {
         self.bytes[0x05c] = 1;
         self.invalidate_all();
     }

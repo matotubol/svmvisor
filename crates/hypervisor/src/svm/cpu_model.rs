@@ -20,9 +20,9 @@ use crate::arch::x86_64::xstate::XstateLayout;
 
 pub const MAX_BASIC_LEAF: u32 = 0x0d;
 pub const MAX_EXTENDED_LEAF: u32 = 0x8000_0021;
-pub const VCPU_COUNT: u32 = 2;
+pub(crate) const VCPU_COUNT: u32 = 2;
 
-pub const MAX_CACHE_SUBLEAVES: usize = 8;
+pub(crate) const MAX_CACHE_SUBLEAVES: usize = 8;
 
 const FPU: u32 = 1;
 const TSC: u32 = 1 << 4;
@@ -198,7 +198,7 @@ impl AmdCpuModel {
         })
     }
 
-    pub const fn physical_address_bits(&self) -> u8 {
+    pub(crate) const fn physical_address_bits(&self) -> u8 {
         self.runtime.physical_address_bits
     }
     pub const fn xcr0_mask(&self) -> u64 {

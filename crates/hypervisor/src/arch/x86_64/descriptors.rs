@@ -11,11 +11,11 @@
 
 use crate::memory::address::is_canonical_48;
 
-pub const CODE_SELECTOR: u16 = 8;
-pub const DATA_SELECTOR: u16 = 16;
-pub const TSS_SELECTOR: u16 = 24;
-pub const GDT_BYTES: usize = 40;
-pub const TSS_BYTES: usize = 104;
+pub(crate) const CODE_SELECTOR: u16 = 8;
+pub(crate) const DATA_SELECTOR: u16 = 16;
+pub(crate) const TSS_SELECTOR: u16 = 24;
+pub(crate) const GDT_BYTES: usize = 40;
+pub(crate) const TSS_BYTES: usize = 104;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct GuestDescriptorRequest {

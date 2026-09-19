@@ -22,7 +22,7 @@ use crate::{
 /// source (its ICR write has completed) and a target that has applied a
 /// command. Every holder's critical section is a few atomic operations or
 /// MSR accesses, far below this bound, so reaching it means a lost holder.
-pub const ROUTE_WAIT_ATTEMPTS: u32 = 1 << 24;
+pub(crate) const ROUTE_WAIT_ATTEMPTS: u32 = 1 << 24;
 
 /// Immutable native CPU inventory for software INIT/SIPI publication and
 /// incomplete-IPI classification. Captured CPUs are running continuations,
@@ -368,7 +368,7 @@ impl NativeStartupMailbox {
         }
     }
 
-    pub fn is_ready(&self) -> bool {
+    pub(crate) fn is_ready(&self) -> bool {
         self.ready.load(Ordering::Acquire) != 0
     }
 
@@ -573,7 +573,7 @@ impl NativeDestinationCommit<'_> {
 
     /// Same guarded commit, retaining whether a mode came from guest INIT,
     /// a guest control write, or the initial hardware observation.
-    pub fn commit_destination_mode_from(self, cause: NativeDestinationCause) {
+    pub(crate) fn commit_destination_mode_from(self, cause: NativeDestinationCause) {
         let old = self.history.load(Ordering::Relaxed);
         let count = ((old >> 2) as u32)
             .saturating_add(u32::from(cause == NativeDestinationCause::GuestInit));
@@ -725,7 +725,7 @@ pub fn try_lock_routes(
 
 /// `try_lock_routes` with `attempts` acquisition attempts, each followed by a
 /// PAUSE. The caller holds no other lease while it waits.
-pub fn lock_routes_within(
+pub(crate) fn lock_routes_within(
     mailboxes: &[NativeStartupMailbox],
     attempts: u32,
 ) -> Result<NativeRouteGuard<'_>, NativeIcrError> {

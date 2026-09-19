@@ -19,7 +19,7 @@ pub struct DeferredFault {
 }
 
 impl DeferredFault {
-    pub const fn new() -> Self {
+    pub(crate) const fn new() -> Self {
         Self {
             state: AtomicU32::new(0),
             words: [const { AtomicU32::new(0) }; 19],

@@ -55,7 +55,7 @@ impl ClockPlan {
             guest_aux: if capabilities.rdtscp() { Some(guest_aux as u64) } else { None },
         })
     }
-    pub const fn capabilities(&self) -> ClockCapabilities {
+    pub(crate) const fn capabilities(&self) -> ClockCapabilities {
         self.capabilities
     }
     pub const fn host_aux(&self) -> Option<u64> {

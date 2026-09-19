@@ -24,7 +24,8 @@ use crate::{
     },
 };
 
-pub const FIXED_DRAM_CONTROL_MASK: u64 = SYS_CFG_MTRR_FIX_DRAM_EN | SYS_CFG_MTRR_FIX_DRAM_MOD_EN;
+pub(crate) const FIXED_DRAM_CONTROL_MASK: u64 =
+    SYS_CFG_MTRR_FIX_DRAM_EN | SYS_CFG_MTRR_FIX_DRAM_MOD_EN;
 
 /// All fallible guest-state checks precede construction. Holding this token
 /// prevents mutation of its VMCB between preparation and completion. Dropping

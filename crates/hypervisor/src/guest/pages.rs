@@ -15,7 +15,7 @@ use crate::memory::address::{
     ADDRESS_MASK, AddressError, AddressPolicy, PAGE_BYTES, PRESENT, PhysicalRange, WRITE,
 };
 
-pub const TABLE_COUNT: usize = 4;
+pub(crate) const TABLE_COUNT: usize = 4;
 pub const WINDOW_BYTES: u64 = 2 * 1024 * 1024;
 
 pub struct GuestPages<'a> {

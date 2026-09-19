@@ -83,7 +83,7 @@ impl BackingPage {
     }
     /// SVR bit 8 (ASE, Figure 16-17 p641). While it is clear, the virtual
     /// APIC accepts no further fixed interrupts (16.3.1 p629).
-    pub fn software_enabled(&self) -> bool {
+    pub(crate) fn software_enabled(&self) -> bool {
         self.words[word(apic::SVR)].load(Ordering::Acquire) & apic::SVR_SOFTWARE_ENABLE != 0
     }
 

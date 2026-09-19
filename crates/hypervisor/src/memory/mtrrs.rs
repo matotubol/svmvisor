@@ -8,11 +8,11 @@ use crate::arch::x86_64::msr::{
 /// MTRRcap FIX: fixed-range MTRRs are supported.
 pub const CAP_FIX: u64 = 1 << 8;
 /// MTRRdefType defines only its type byte, FE (bit10) and E (bit11).
-pub const DEF_TYPE_DEFINED: u64 = 0xcff;
+pub(crate) const DEF_TYPE_DEFINED: u64 = 0xcff;
 pub const DEF_TYPE_FE: u64 = 1 << 10;
 pub const DEF_TYPE_E: u64 = 1 << 11;
 /// MtrrVarMask valid bit.
-pub const VARIABLE_VALID: u64 = 1 << 11;
+pub(crate) const VARIABLE_VALID: u64 = 1 << 11;
 /// Largest enumerated variable-MTRR count this owner captures.
 pub const MAX_VARIABLE: usize = 16;
 
@@ -253,11 +253,11 @@ pub enum Tom2Error {
 }
 
 /// MTRRdefType with only defined bits and a valid default type.
-pub const fn valid_default(value: u64) -> bool {
+pub(crate) const fn valid_default(value: u64) -> bool {
     value & !DEF_TYPE_DEFINED == 0 && valid_type(value as u8)
 }
 
 /// APM2 rev3.44 7.7.1: UC, WC, WT, WP and WB; every other type is reserved.
-pub const fn valid_type(value: u8) -> bool {
+pub(crate) const fn valid_type(value: u8) -> bool {
     matches!(value, 0 | 1 | 4 | 5 | 6)
 }

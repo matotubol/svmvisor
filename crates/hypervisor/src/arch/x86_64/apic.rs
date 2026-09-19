@@ -17,9 +17,9 @@ pub const APIC_BASE: u32 = 0x1b;
 /// Boot-strap CPU core flag (BSC, bit 8, read-only).
 pub const APIC_BASE_BSP: u64 = 1 << 8;
 /// x2APIC mode enable (EXTD, bit 10).
-pub const APIC_BASE_EXTD: u64 = 1 << 10;
+pub(crate) const APIC_BASE_EXTD: u64 = 1 << 10;
 /// APIC enable (AE, bit 11).
-pub const APIC_BASE_AE: u64 = 1 << 11;
+pub(crate) const APIC_BASE_AE: u64 = 1 << 11;
 /// AE and EXTD together: enabled x2APIC, the only admitted interface.
 pub const APIC_BASE_X2APIC: u64 = APIC_BASE_AE | APIC_BASE_EXTD;
 /// APIC base address field (ABA, bits 51:12).
@@ -53,8 +53,8 @@ pub const ICR_HIGH: u16 = 0x310;
 pub const LVT_TIMER: u16 = 0x320;
 pub const LVT_THERMAL: u16 = 0x330;
 pub const LVT_PERFORMANCE: u16 = 0x340;
-pub const LVT_LINT0: u16 = 0x350;
-pub const LVT_LINT1: u16 = 0x360;
+pub(crate) const LVT_LINT0: u16 = 0x350;
+pub(crate) const LVT_LINT1: u16 = 0x360;
 pub const LVT_ERROR: u16 = 0x370;
 pub const TIMER_INITIAL_COUNT: u16 = 0x380;
 pub const TIMER_CURRENT_COUNT: u16 = 0x390;
@@ -66,39 +66,39 @@ pub const LVTS: [u16; 6] =
     [LVT_TIMER, LVT_THERMAL, LVT_PERFORMANCE, LVT_LINT0, LVT_LINT1, LVT_ERROR];
 
 /// SVR APIC software enable (ASE, bit 8; Figure 16-17 p641).
-pub const SVR_SOFTWARE_ENABLE: u32 = 1 << 8;
+pub(crate) const SVR_SOFTWARE_ENABLE: u32 = 1 << 8;
 /// LVT mask (bit 16); every standard LVT resets to exactly this value.
 pub const LVT_MASKED: u32 = 1 << 16;
 
 /// x2APIC ICR (MSR 830h) bits that must be zero: 31:20, 17:16 and 13:12
 /// (16.13 and Figure 16-34, p661; the figure's "55:20" row is a stale copy of
 /// Figure 16-18 whose bit diagram shows 31:20).
-pub const ICR_RESERVED: u64 = 0xfff0_0000 | (3 << 16) | (3 << 12);
+pub(crate) const ICR_RESERVED: u64 = 0xfff0_0000 | (3 << 16) | (3 << 12);
 /// ICR bit 12, the xAPIC delivery status (Figure 16-18 p642). 16.13 p661:
 /// "eliminated and must be zero" in x2APIC mode.
-pub const ICR_DELIVERY_STATUS: u64 = 1 << 12;
+pub(crate) const ICR_DELIVERY_STATUS: u64 = 1 << 12;
 
 /// LVT (Figure 16-7 p635) and ICR (Figure 16-18 pp642-643) message types,
 /// bits 10:8. x2APIC eliminates ICR encodings 1, 3 and 7 (16.13 p661).
-pub const MESSAGE_FIXED: u8 = 0;
-pub const MESSAGE_LOWEST_PRIORITY: u8 = 1;
-pub const MESSAGE_SMI: u8 = 2;
-pub const MESSAGE_REMOTE_READ: u8 = 3;
-pub const MESSAGE_NMI: u8 = 4;
-pub const MESSAGE_INIT: u8 = 5;
-pub const MESSAGE_STARTUP: u8 = 6;
-pub const MESSAGE_EXTERNAL: u8 = 7;
+pub(crate) const MESSAGE_FIXED: u8 = 0;
+pub(crate) const MESSAGE_LOWEST_PRIORITY: u8 = 1;
+pub(crate) const MESSAGE_SMI: u8 = 2;
+pub(crate) const MESSAGE_REMOTE_READ: u8 = 3;
+pub(crate) const MESSAGE_NMI: u8 = 4;
+pub(crate) const MESSAGE_INIT: u8 = 5;
+pub(crate) const MESSAGE_STARTUP: u8 = 6;
+pub(crate) const MESSAGE_EXTERNAL: u8 = 7;
 
 /// First and last MSR of the dedicated x2APIC range (16.11.1).
-pub const X2APIC_MSR_FIRST: u32 = 0x800;
-pub const X2APIC_MSR_LAST: u32 = 0x8ff;
+pub(crate) const X2APIC_MSR_FIRST: u32 = 0x800;
+pub(crate) const X2APIC_MSR_LAST: u32 = 0x8ff;
 
 /// Named MSRs used where a constant pattern is required.
-pub const ID_MSR: u32 = msr(ID);
+pub(crate) const ID_MSR: u32 = msr(ID);
 pub const ICR_MSR: u32 = msr(ICR);
-pub const TIMER_CURRENT_COUNT_MSR: u32 = msr(TIMER_CURRENT_COUNT);
+pub(crate) const TIMER_CURRENT_COUNT_MSR: u32 = msr(TIMER_CURRENT_COUNT);
 /// SELF IPI, x2APIC only (Table 16-6).
-pub const SELF_IPI_MSR: u32 = 0x83f;
+pub(crate) const SELF_IPI_MSR: u32 = 0x83f;
 
 const _: () = {
     assert!(msr(TPR) == 0x808 && msr(EOI) == 0x80b && msr(SVR) == 0x80f);
@@ -181,12 +181,12 @@ impl DoorbellTarget {
 
 /// Highest physical in-service vector. Host acceptance must stay closed for
 /// the whole scan. APM2 16.6.3 p647-648.
-pub fn highest_in_service(apic: &mut impl PhysicalX2Apic) -> Option<u8> {
+pub(crate) fn highest_in_service(apic: &mut impl PhysicalX2Apic) -> Option<u8> {
     highest_vector(&in_service_banks(apic))
 }
 
 /// All eight physical ISR banks (MSRs 810h-817h, Figure 16-24).
-pub fn in_service_banks(apic: &mut impl PhysicalX2Apic) -> [u32; 8] {
+pub(crate) fn in_service_banks(apic: &mut impl PhysicalX2Apic) -> [u32; 8] {
     let mut banks = [0; 8];
     for (index, bank) in banks.iter_mut().enumerate() {
         *bank = apic.read(msr(ISR) + index as u32) as u32;
@@ -206,7 +206,7 @@ pub fn highest_vector(bitmap: &[u32; 8]) -> Option<u8> {
 
 /// Physical TMR bit of a just-accepted vector (Figure 16-25, 16.6.3 p648):
 /// set for a level-sensitive interrupt, clear for an edge one.
-pub fn level_triggered(apic: &mut impl PhysicalX2Apic, vector: u8) -> bool {
+pub(crate) fn level_triggered(apic: &mut impl PhysicalX2Apic, vector: u8) -> bool {
     apic.read(msr(TMR) + u32::from(vector / 32)) & (1 << (vector % 32)) != 0
 }
 

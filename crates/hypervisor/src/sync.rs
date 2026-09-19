@@ -24,7 +24,7 @@ impl<T> TryLock<T> {
     }
 
     /// `None` means another owner currently holds the lock.
-    pub fn try_lock(&self) -> Option<TryLockGuard<'_, T>> {
+    pub(crate) fn try_lock(&self) -> Option<TryLockGuard<'_, T>> {
         self.locked.compare_exchange(false, true, Ordering::Acquire, Ordering::Relaxed).ok()?;
         Some(TryLockGuard { lock: self })
     }
@@ -36,7 +36,7 @@ impl<T> TryLock<T> {
     }
 
     /// Exclusive access through `&mut self`, for single-writer initialization.
-    pub fn get_mut(&mut self) -> &mut T {
+    pub(crate) fn get_mut(&mut self) -> &mut T {
         self.value.get_mut()
     }
 }
@@ -45,7 +45,7 @@ impl<T> TryLock<T> {
 // won the flag, so only `Send` data is ever handed between CPUs.
 unsafe impl<T: Send> Sync for TryLock<T> {}
 
-pub struct TryLockGuard<'a, T> {
+pub(crate) struct TryLockGuard<'a, T> {
     lock: &'a TryLock<T>,
 }
 

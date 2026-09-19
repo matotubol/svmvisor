@@ -22,16 +22,16 @@ use crate::{
 pub const HANDOFF_PAGE_BYTES: usize = 4096;
 pub const OWNERSHIP_OFFSET: usize = 64;
 pub const OWNERSHIP_HEADER_BYTES: usize = 64;
-pub const OWNERSHIP_ENTRY_BYTES: usize = 32;
+pub(crate) const OWNERSHIP_ENTRY_BYTES: usize = 32;
 pub const MAX_OWNERSHIP_DESCRIPTORS: usize = 124;
-pub const OWNERSHIP_VERSION: u16 = 1;
-pub const OWNERSHIP_SMP_VERSION: u16 = 2;
+pub(crate) const OWNERSHIP_VERSION: u16 = 1;
+pub(crate) const OWNERSHIP_SMP_VERSION: u16 = 2;
 pub const OWNERSHIP_SMP_HEADER_BYTES: usize = 160;
-pub const OWNERSHIP_SMP_ENTRY_BYTES: usize = 28;
+pub(crate) const OWNERSHIP_SMP_ENTRY_BYTES: usize = 28;
 pub const MAX_OWNERSHIP_SMP_DESCRIPTORS: usize =
     (HANDOFF_PAGE_BYTES - OWNERSHIP_OFFSET - OWNERSHIP_SMP_HEADER_BYTES)
         / OWNERSHIP_SMP_ENTRY_BYTES;
-pub const OWNERSHIP_MAGIC: [u8; 8] = *b"SVMOWN01";
+pub(crate) const OWNERSHIP_MAGIC: [u8; 8] = *b"SVMOWN01";
 pub const RESIDENT_ARENA_BYTES: u64 = 1024 * 1024;
 const _: () = assert!(
     OWNERSHIP_OFFSET + OWNERSHIP_HEADER_BYTES + MAX_OWNERSHIP_DESCRIPTORS * OWNERSHIP_ENTRY_BYTES

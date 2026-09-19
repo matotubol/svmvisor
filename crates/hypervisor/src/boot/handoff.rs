@@ -13,8 +13,8 @@ use crate::memory::{
 };
 
 pub const HANDOFF_SIZE: usize = 80;
-pub const HANDOFF_VERSION: u16 = 1;
-pub const HANDOFF_MAGIC: [u8; 8] = *b"SVMDEV01";
+pub(crate) const HANDOFF_VERSION: u16 = 1;
+pub(crate) const HANDOFF_MAGIC: [u8; 8] = *b"SVMDEV01";
 
 /// Validated in-process value. All physical addresses remain integer metadata.
 pub struct Handoff {

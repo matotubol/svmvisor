@@ -7,10 +7,10 @@
 //! Callers must disable EFER.FFXSR, clear CR0.EM/TS, enable CR4.OSFXSR and
 //! OSXMMEXCPT, and (for XSAVE) enable OSXSAVE and install the selected XCR0.
 
-pub const XSTATE_AREA_BYTES: usize = 4096;
-pub const LEGACY_BYTES: usize = 512;
+pub(crate) const XSTATE_AREA_BYTES: usize = 4096;
+pub(crate) const LEGACY_BYTES: usize = 512;
 pub const XSAVE_HEADER_OFFSET: usize = 512;
-pub const XSAVE_BASE_BYTES: usize = 576;
+pub(crate) const XSAVE_BASE_BYTES: usize = 576;
 pub const MXCSR_INITIAL: u32 = 0x1f80;
 pub const MXCSR_DEFAULT_MASK: u32 = 0xffbf;
 

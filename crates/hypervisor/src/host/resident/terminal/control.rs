@@ -45,7 +45,7 @@ impl TerminalControl {
             reserved: [0; 55],
         }
     }
-    pub fn publish_ready(&self, count: usize) -> bool {
+    pub(crate) fn publish_ready(&self, count: usize) -> bool {
         let Some(mask) = cpu_mask(count) else {
             return false;
         };
@@ -66,11 +66,11 @@ impl TerminalControl {
         let seen = self.initial_acknowledged.fetch_or(1 << slot, Ordering::AcqRel) | (1 << slot);
         if seen == mask { self.publish_ready(count) } else { false }
     }
-    pub fn ready(&self, count: usize) -> bool {
+    pub(crate) fn ready(&self, count: usize) -> bool {
         self.ready.load(Ordering::Acquire) == 1
             && cpu_mask(count) == Some(self.expected.load(Ordering::Relaxed))
     }
-    pub fn requested(&self) -> bool {
+    pub(crate) fn requested(&self) -> bool {
         self.request.load(Ordering::Acquire) == 1
     }
     pub fn claim(&self, slot: usize, count: usize) -> bool {
