@@ -19,7 +19,10 @@ use crate::{
         terminal::{self, TerminalEndpoint},
         valid_pool_slot,
     },
-    memory::npt::{PAGE_BYTES, TABLE_COUNT, TableStorage},
+    memory::{
+        address::PAGE_BYTES,
+        npt::{TABLE_COUNT, TableStorage},
+    },
     svm::{
         dispatch::NativeEfer,
         permission_maps::{Iopm, Msrpm},

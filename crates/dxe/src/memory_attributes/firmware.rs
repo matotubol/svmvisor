@@ -12,16 +12,13 @@
 
 use core::ptr::NonNull;
 
+use svmvisor_hypervisor::memory::address::{ADDRESS_MASK, NX, PRESENT, WRITE};
 use svmvisor_memory_attributes::{
     ACCESS_MASK, Attributes, Config, EXECUTE_PROTECT, Error, Memory, PAGE_SIZE, x86,
 };
 use uefi_raw::{Guid, Status, guid};
 
-const PRESENT: u64 = 1;
-const WRITABLE: u64 = 2;
 const LARGE: u64 = 1 << 7;
-const NX: u64 = 1 << 63;
-const ADDRESS_FIELD: u64 = 0x000f_ffff_ffff_f000;
 const HIGH_SOFTWARE: u64 = 0x07f0_0000_0000_0000;
 const MAX_POLICY_RANGES: usize = 128;
 
@@ -238,7 +235,7 @@ impl LeafPath {
             return false;
         }
         for index in 0..self.count {
-            let mask = if index + 1 == self.count { !(PRESENT | WRITABLE | NX) } else { u64::MAX };
+            let mask = if index + 1 == self.count { !(PRESENT | WRITE | NX) } else { u64::MAX };
             if self.values[index] & mask != other.values[index] & mask {
                 return false;
             }
@@ -390,7 +387,7 @@ fn qualify_single_leaf<R: QualifiedTableReader>(
 ) -> Result<LeafPath, Error> {
     // The shared walker has already validated configuration and range. Repeat
     // encoding checks on this final path rather than trusting unchecked values.
-    let address_mask = ((1u64 << config.physical_bits) - 1) & ADDRESS_FIELD;
+    let address_mask = ((1u64 << config.physical_bits) - 1) & ADDRESS_MASK;
     let allowed = address_mask | 0xfff | HIGH_SOFTWARE | if config.nxe { NX } else { 0 };
     let mut table = config.root;
     let mut path = LeafPath::default();
@@ -416,7 +413,7 @@ fn qualify_single_leaf<R: QualifiedTableReader>(
             if level == 3 && !config.page1gb {
                 return Err(Error::Unsupported);
             }
-            if large && value & ((size - 1) & ADDRESS_FIELD & !(1 << 12)) != 0 {
+            if large && value & ((size - 1) & ADDRESS_MASK & !(1 << 12)) != 0 {
                 return Err(Error::Unsupported);
             }
             if request.base & (size - 1) != 0 || request.length != size {
@@ -429,7 +426,7 @@ fn qualify_single_leaf<R: QualifiedTableReader>(
         }
         // CPU DXE's legacy setter changes leaf permissions. It cannot safely
         // clear inherited restrictions; deny every changed request on that path.
-        if value & PRESENT == 0 || value & WRITABLE == 0 || value & NX != 0 {
+        if value & PRESENT == 0 || value & WRITE == 0 || value & NX != 0 {
             return Err(Error::Unsupported);
         }
         table = value & address_mask;

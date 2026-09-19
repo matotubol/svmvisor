@@ -25,7 +25,7 @@ pub use crate::svm::x2avic::{
     exit::AvicExit,
     profile::{
         ENABLE_BITS, Error, GUEST_APIC_VERSION, MAX_ID, NATIVE_CONTROL, NativeX2AvicProfile,
-        PAGE_BYTES, V_NMI_ENABLE, X2AvicCapabilities,
+        V_NMI_ENABLE, X2AvicCapabilities,
     },
     table::PhysicalIdTable,
 };

@@ -1,8 +1,8 @@
 use svmvisor_hypervisor::{
     arch::x86_64::capabilities::EvidenceFlag,
     memory::{
-        address::{AddressPolicy, EncryptionState},
-        npt::{Npt, NptEvidence, PAGE_BYTES, PagePermissions, TABLE_COUNT, TableStorage},
+        address::{AddressPolicy, EncryptionState, PAGE_BYTES},
+        npt::{Npt, NptEvidence, PagePermissions, TABLE_COUNT, TableStorage},
     },
     svm::{
         exit::ExitAction,

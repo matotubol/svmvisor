@@ -1,8 +1,7 @@
 //! Native x2AVIC profile: control encodings, capability admission and page bindings.
 
-use crate::memory::address::{AddressError, AddressPolicy};
+use crate::memory::address::{AddressError, AddressPolicy, PAGE_BYTES};
 
-pub const PAGE_BYTES: usize = 4096;
 pub const MAX_ID: u16 = 511;
 pub const ENABLE_BITS: u64 = 3 << 30;
 /// V_NMI_ENABLE, offset 60h bit 26 (APM2 rev3.44 Table B-1 p740, 15.21.10

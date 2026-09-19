@@ -1,7 +1,7 @@
 use svmvisor_hypervisor::{
     arch::x86_64::capabilities::EvidenceFlag,
     memory::{
-        address::{AddressPolicy, EncryptionState},
+        address::{AddressPolicy, EncryptionState, PAGE_BYTES},
         npt::*,
     },
 };

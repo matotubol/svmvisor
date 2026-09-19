@@ -4,9 +4,11 @@
 //! supervisor leaves and PAT selection. This bounded prepublication builder
 //! does not allocate or borrow firmware tables. Its caller proves WB runtime
 //! backing, initializes it once, and retains it until the AP guest replaces CR3.
+
+use svmvisor_hypervisor::memory::address::{ADDRESS_MASK, PAGE_BYTES};
+
 pub const TABLE_PAGES: usize = 64;
-const PAGE: u64 = 4096;
-const ADDRESS: u64 = 0x000f_ffff_ffff_f000;
+const PAGE: u64 = PAGE_BYTES as u64;
 
 #[repr(C, align(4096))]
 pub struct BootstrapPaging {
@@ -59,7 +61,7 @@ impl BootstrapPaging {
                 self.tables[table][index] = (self.base + next as u64 * PAGE) | 3;
                 next
             } else {
-                ((entry & ADDRESS) - self.base) as usize / PAGE as usize
+                ((entry & ADDRESS_MASK) - self.base) as usize / PAGE as usize
             };
         }
         let index = ((page >> 12) & 511) as usize;

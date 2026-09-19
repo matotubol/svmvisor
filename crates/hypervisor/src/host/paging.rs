@@ -8,10 +8,7 @@
 //! modeled, nor is CET. Unsupported upper software/protection-key bits fail
 //! conservatively.
 
-use crate::memory::address::is_canonical_48;
-
-const ADDRESS: u64 = 0x000f_ffff_ffff_f000;
-const NX: u64 = 1 << 63;
+use crate::memory::address::{ADDRESS_MASK, NX, is_canonical_48};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct PagingConfig {
@@ -70,10 +67,10 @@ pub fn translate(
     }
     let physical_mask = (1u64 << config.physical_bits) - 1;
     let low_cr3 = if config.pcid { 0xfff } else { (1 << 3) | (1 << 4) };
-    if config.cr3 & !((physical_mask & ADDRESS) | low_cr3) != 0 {
+    if config.cr3 & !((physical_mask & ADDRESS_MASK) | low_cr3) != 0 {
         return Err(InvalidCr3);
     }
-    let mut table = config.cr3 & ADDRESS;
+    let mut table = config.cr3 & ADDRESS_MASK;
     let mut writable = true;
     let mut user = true;
     let mut executable = true;
@@ -85,7 +82,7 @@ pub fn translate(
         if entry & 1 == 0 {
             return Err(NotPresent { level });
         }
-        if entry & ADDRESS & !physical_mask != 0 || (!config.nxe && entry & NX != 0) {
+        if entry & ADDRESS_MASK & !physical_mask != 0 || (!config.nxe && entry & NX != 0) {
             return Err(ReservedEntry { level });
         }
         // Bits52..62 are not all architecturally reserved. This initial parser
@@ -112,7 +109,7 @@ pub fn translate(
             let offset = virtual_address & (page_bytes - 1);
             let pat_bit = if large { 12 } else { 7 };
             return Ok(Translation {
-                physical_address: (entry & ADDRESS & !(page_bytes - 1)) + offset,
+                physical_address: (entry & ADDRESS_MASK & !(page_bytes - 1)) + offset,
                 page_bytes,
                 pat_index: (((entry >> 3) & 3) | (((entry >> pat_bit) & 1) << 2)) as u8,
                 writable,
@@ -121,7 +118,7 @@ pub fn translate(
                 remaining_bytes: page_bytes - offset,
             });
         }
-        table = entry & ADDRESS;
+        table = entry & ADDRESS_MASK;
     }
     Err(IncompleteWalk)
 }

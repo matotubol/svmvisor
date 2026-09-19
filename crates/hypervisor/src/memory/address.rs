@@ -2,6 +2,16 @@
 //! not establish allocation ownership, WB caching, mappings, or DMA isolation.
 //! Width limit: pinned AMD APM vol. 2 rev. 3.44, chapter 5 (52-bit maximum).
 
+/// 4 KiB page size.
+pub const PAGE_BYTES: usize = 4096;
+/// Page-table entry bits, shared by host, guest and nested paging.
+pub const PRESENT: u64 = 1 << 0;
+pub const WRITE: u64 = 1 << 1;
+pub const USER: u64 = 1 << 2;
+pub const NX: u64 = 1 << 63;
+/// Physical-address field of a page-table entry, bits 51:12.
+pub const ADDRESS_MASK: u64 = 0x000f_ffff_ffff_f000;
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct AddressPolicy {
     physical_bits: u8,

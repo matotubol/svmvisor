@@ -3,8 +3,8 @@
 use core::sync::atomic::{AtomicU64, Ordering};
 
 use crate::{
-    memory::address::{AddressError, AddressPolicy},
-    svm::x2avic::{Error, MAX_ID, PAGE_BYTES},
+    memory::address::{ADDRESS_MASK, AddressError, AddressPolicy, PAGE_BYTES},
+    svm::x2avic::{Error, MAX_ID},
 };
 
 /// One shared table per VM; one-to-one guest/host APIC IDs, no migration.
@@ -28,7 +28,7 @@ impl PhysicalIdTable {
     /// entry with this before any irreversible change.
     pub fn is_stopped_entry(&self, id: u16, backing: u64) -> bool {
         id <= MAX_ID
-            && backing & !0x000f_ffff_ffff_f000 == 0
+            && backing & !ADDRESS_MASK == 0
             && self.entry(id) == Ok((1 << 63) | backing | u64::from(id))
     }
 
@@ -51,7 +51,7 @@ impl PhysicalIdTable {
             return Err(Error::Occupied);
         }
         for entry in &self.entries {
-            if entry.load(Ordering::Acquire) & 0x000f_ffff_ffff_f000 == backing {
+            if entry.load(Ordering::Acquire) & ADDRESS_MASK == backing {
                 return Err(Error::AliasedPages);
             }
         }

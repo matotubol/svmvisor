@@ -12,8 +12,9 @@
 //! separately; memory-type metadata alone is insufficient. The resident owner
 //! supplies private W^X mappings after takeover.
 use svmvisor_hypervisor::{
-    boot::memory::MemoryDescriptor, host::resident::MAX_RESIDENT_CPUS,
-    memory::address::AddressPolicy,
+    boot::memory::MemoryDescriptor,
+    host::resident::MAX_RESIDENT_CPUS,
+    memory::address::{self, AddressPolicy},
 };
 use uefi_raw::{
     Status,
@@ -25,7 +26,7 @@ use crate::native::resident::{
     memory::{ResidentMemoryError, validate_runtime_coverage},
 };
 
-const PAGE_BYTES: u64 = 4096;
+const PAGE_BYTES: u64 = address::PAGE_BYTES as u64;
 const ARENA_PAGES: usize = ARENA_BYTES / PAGE_BYTES as usize;
 const RESERVATION_PAGES: usize = ARENA_PAGES * 2;
 const LOW_RUNTIME_MAX: u64 = 0x3fff_ffff;

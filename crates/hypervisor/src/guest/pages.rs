@@ -11,14 +11,12 @@
 //! addresses are GPAs checked against the numeric AddressPolicy, not evidence
 //! of allocation or NPT membership. Never modify tables used by a running CPU.
 
-use crate::memory::address::{AddressError, AddressPolicy, PhysicalRange};
+use crate::memory::address::{
+    ADDRESS_MASK, AddressError, AddressPolicy, PAGE_BYTES, PRESENT, PhysicalRange, WRITE,
+};
 
-pub const PAGE_BYTES: usize = 4096;
 pub const TABLE_COUNT: usize = 4;
 pub const WINDOW_BYTES: u64 = 2 * 1024 * 1024;
-const PRESENT: u64 = 1;
-const WRITE: u64 = 2;
-const ADDRESS_MASK: u64 = 0x000f_ffff_ffff_f000;
 
 pub struct GuestPages<'a> {
     storage: &'a mut TableStorage,

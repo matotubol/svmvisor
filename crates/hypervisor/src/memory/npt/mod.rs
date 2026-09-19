@@ -23,7 +23,7 @@ pub use crate::memory::npt::{
         identity_protection_range, restore_identity_write_range,
     },
     synthetic::{Npt, NptError, PagePermissions, Translation},
-    table::{NptEvidence, PAGE_BYTES, TABLE_COUNT, TableStorage, TableView},
+    table::{NptEvidence, TABLE_COUNT, TableStorage, TableView},
 };
 
 mod identity;

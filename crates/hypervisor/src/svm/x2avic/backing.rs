@@ -5,7 +5,8 @@ use core::sync::atomic::{AtomicU32, Ordering};
 
 use crate::{
     arch::x86_64::apic,
-    svm::x2avic::{Error, GUEST_APIC_VERSION, MAX_ID, PAGE_BYTES, logical_x2apic_id},
+    memory::address::PAGE_BYTES,
+    svm::x2avic::{Error, GUEST_APIC_VERSION, MAX_ID, logical_x2apic_id},
 };
 
 /// Hardware sees 32-bit register slots at 16-byte strides. Atomic accesses

@@ -7,6 +7,8 @@ use core::{
 };
 
 use svmvisor_dxe::native::admission::{memory as native_memory, snapshot::NativeSnapshot};
+#[cfg(feature = "memory-attribute-f7")]
+use svmvisor_hypervisor::memory::address::ADDRESS_MASK;
 use svmvisor_hypervisor::{
     boot::{
         descriptors::{CapturedGdtPage, FirmwareSelectors, parse_firmware_gdt},
@@ -20,10 +22,10 @@ use uefi_raw::{
     table::boot::{BootServices, MemoryType, Tpl},
 };
 
+#[cfg(feature = "memory-attribute-f7")]
+use super::attribute::internal_access;
 #[cfg(target_os = "uefi")]
 use super::read_efer;
-#[cfg(feature = "memory-attribute-f7")]
-use super::{ADDRESS, attribute::internal_access};
 use super::{
     BorrowedAccess, BorrowedSpan, LeafObservation, MAX_GDT_PAGES, OwnedRange, PreparedTables,
     TableError, TableFailure, TableReport, TableStorage,
@@ -269,7 +271,7 @@ unsafe fn initialize(
                 svmvisor_dxe::memory_attributes::f7::F7TableReader::new_detailed(
                     &memory,
                     svmvisor_memory_attributes::Config {
-                        root: config.cr3 & ADDRESS,
+                        root: config.cr3 & ADDRESS_MASK,
                         physical_bits,
                         nxe: config.nxe,
                         page1gb,

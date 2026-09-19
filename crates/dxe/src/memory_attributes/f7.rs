@@ -6,14 +6,13 @@
 //! that premise. No exception handler, firmware setter or published protocol is
 //! involved. The later native cache, table-closure and CPU gates still apply.
 
-use svmvisor_hypervisor::boot::memory::ValidatedMemoryMap;
+use svmvisor_hypervisor::{boot::memory::ValidatedMemoryMap, memory::address::ADDRESS_MASK};
 use svmvisor_memory_attributes::{Config, Error};
 
 #[cfg(all(target_os = "uefi", target_arch = "x86_64"))]
 pub use native::F7TableReader;
 pub use svmvisor_hypervisor::arch::x86_64::msr::TARGET_SIGNATURE;
 
-const ADDRESS: u64 = 0x000f_ffff_ffff_f000;
 const LOW_CANONICAL_END: u64 = 1 << 47;
 const REQUIRED_CR0: u64 = (1 << 31) | (1 << 16) | 1;
 const FORBIDDEN_CR4: u64 = (1 << 12) | (1 << 17) | (1 << 21) | (1 << 22) | (1 << 23) | (1 << 24);
@@ -127,8 +126,8 @@ pub fn validate_observation_detailed(
     if config.root == 0
         || config.root & 4095 != 0
         || config.root >= LOW_CANONICAL_END
-        || state.cr3 & !(ADDRESS | 0x18) != 0
-        || state.cr3 & ADDRESS != config.root
+        || state.cr3 & !(ADDRESS_MASK | 0x18) != 0
+        || state.cr3 & ADDRESS_MASK != config.root
     {
         return Err(F7Failure::Cr3);
     }

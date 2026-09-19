@@ -49,7 +49,6 @@ pub const MAX_BORROWED_PAGES: usize = 1024;
 const INTERNAL_SPANS: usize = 2;
 const MAX_INTERNAL_PAGES: usize = 384;
 const MAX_GDT_PAGES: usize = 17;
-const ADDRESS: u64 = 0x000f_ffff_ffff_f000;
 
 /// Owns the final map, GDT bytes and finite mapping observations. No firmware
 /// callbacks or borrowed provider pointer are retained. Release at <= NOTIFY;

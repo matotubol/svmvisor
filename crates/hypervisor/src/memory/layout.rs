@@ -12,7 +12,9 @@
 //! The three distinct VMCBs and two stack guards are project policy. This
 //! deliberately omits the later emergency stack, page tables, and SMP objects.
 
-pub const PAGE_SIZE: u64 = 4096;
+use crate::memory::address::PAGE_BYTES;
+
+pub const PAGE_SIZE: u64 = PAGE_BYTES as u64;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Layout {

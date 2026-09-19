@@ -4,11 +4,10 @@
 use crate::{
     arch::x86_64::capabilities::EvidenceFlag,
     memory::{
-        address::{AddressError, AddressPolicy, PhysicalRange},
-        npt::table::{
-            ADDRESS_MASK, NptEvidence, PAGE_BYTES, PRESENT, TABLE_COUNT, TableStorage, TableView,
-            WRITE, indices,
+        address::{
+            ADDRESS_MASK, AddressError, AddressPolicy, PAGE_BYTES, PRESENT, PhysicalRange, WRITE,
         },
+        npt::table::{NptEvidence, TABLE_COUNT, TableStorage, TableView, indices},
     },
 };
 

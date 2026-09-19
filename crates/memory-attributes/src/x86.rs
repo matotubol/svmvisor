@@ -16,6 +16,7 @@ use crate::{
 /// Bound on reads, writes and allocations, shared by preflight and transaction.
 pub const MAX_ENTRY_OPERATIONS: usize = 131_072;
 
+// Standalone copies of PRESENT, WRITE, USER, NX and ADDRESS_MASK in hypervisor `memory::address`.
 const PRESENT: u64 = 1;
 const WRITABLE: u64 = 1 << 1;
 const USER: u64 = 1 << 2;

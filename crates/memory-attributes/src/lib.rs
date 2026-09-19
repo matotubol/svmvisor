@@ -12,6 +12,7 @@ pub const READ_PROTECT: u64 = 0x2000;
 pub const EXECUTE_PROTECT: u64 = 0x4000;
 pub const READ_ONLY: u64 = 0x20000;
 pub const ACCESS_MASK: u64 = READ_PROTECT | EXECUTE_PROTECT | READ_ONLY;
+// Standalone copy of `svmvisor_hypervisor::memory::address::PAGE_BYTES`.
 pub const PAGE_SIZE: u64 = 4096;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

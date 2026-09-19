@@ -6,6 +6,7 @@
 //! An unrelated fault or an abandoned owned callback deliberately FAIL-STOPS;
 //! this is not a production fallback or a graceful general exception handler.
 
+use svmvisor_memory_attributes::PAGE_SIZE;
 use uefi_raw::Status;
 
 #[cfg(all(target_os = "uefi", target_arch = "x86_64", feature = "memory-attribute-probe"))]
@@ -15,7 +16,6 @@ pub const PAGE_FAULT_VECTOR: isize = 14;
 pub const MAX_RAM_EXTENTS: usize = 128;
 pub const MAX_PROBE_READS: usize = 4096;
 pub const F7_DISPATCH_CR4_OR: u64 = 0x208;
-const PAGE_SIZE: u64 = 4096;
 const LOW_CANONICAL_END: u64 = 1 << 47;
 const RF: u64 = 1 << 16;
 const FORBIDDEN_FLAGS: u64 = (1 << 8) | (1 << 9) | (1 << 10) | (1 << 14) | (1 << 17) | (1 << 18);

@@ -2,12 +2,10 @@
 
 use svmvisor_hypervisor::{
     host::paging::{self as host_paging, PagingConfig},
-    memory::address::is_canonical_48,
+    memory::address::{ADDRESS_MASK, is_canonical_48},
 };
 
-use super::{
-    ADDRESS, EntryObservation, LeafObservation, RetainedWalks, TableError, TablePageObservation,
-};
+use super::{EntryObservation, LeafObservation, RetainedWalks, TableError, TablePageObservation};
 
 impl RetainedWalks {
     pub(super) fn entries(&self) -> Result<&[EntryObservation], TableError> {
@@ -135,7 +133,7 @@ impl RetainedWalks {
         config: PagingConfig,
         read: &mut impl FnMut(u64) -> Result<u64, TableError>,
     ) -> Result<(), TableError> {
-        self.remember_page(config.cr3 & ADDRESS)?;
+        self.remember_page(config.cr3 & ADDRESS_MASK)?;
         let mut index = 0;
         while index < self.page_count {
             let page = self.table_pages.get(index).ok_or(TableError::Bounds)?.physical_page;
