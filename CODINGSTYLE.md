@@ -183,8 +183,11 @@ or make it a directory.
 different name (`#[path = "physical_boot.rs"] mod physical;` is wrong twice).
 
 **M9.** The same basename means the same role everywhere. `descriptors.rs`
-under `arch`, `boot` and `host` is fine because the path disambiguates; using
-`returning.rs` for three unrelated roles is not.
+under `arch`, `boot` and `host` is fine because the path disambiguates. A mode
+name (`returning`, `resident`) is not a role: the file that is the mode's own
+entry keeps the name (`native/returning.rs`), and its supporting parts are
+named for what they do (`delivery/child_image.rs`,
+`diagnostics/returning_detail.rs`).
 
 **M10.** `#[path]` is permitted for exactly one purpose: selecting between
 cfg-gated implementations of one module that expose an identical API:
