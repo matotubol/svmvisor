@@ -18,11 +18,14 @@ use std::{
 };
 
 use sha2::{Digest, Sha256};
+use svmvisor_card_abi::envelope::{
+    DIGEST_BYTES, DIGEST_OFFSET, FLAGS_OFFSET, FLAGS_RESIDENT_BOOT, HEADER_BYTES, MIN_PE_BYTES,
+    PAYLOAD_BYTES_OFFSET, PAYLOAD_OFFSET_OFFSET, RESIDENT_BOOT_MAGIC, SLOT_BYTES,
+    SLOT_BYTES_OFFSET,
+};
 
 use crate::{json::Value, resident};
 
-const HEADER_BYTES: usize = 128;
-const SLOT_BYTES: u64 = 0x100000;
 const SECTOR_BYTES: u64 = 0x10000;
 const FIRST_SLOT_SECTOR: u64 = 64;
 
@@ -333,20 +336,23 @@ fn utc_stamp(seconds: u64) -> String {
 /// the full policy; this only refuses to describe something else.
 fn parse_header(header: &[u8]) -> Result<Header, String> {
     let word = |offset: usize| u64::from_le_bytes(header[offset..offset + 8].try_into().unwrap());
-    if header.len() != HEADER_BYTES || &header[..8] != b"SVMBPE01" {
+    if header.len() != HEADER_BYTES || header[..8] != RESIDENT_BOOT_MAGIC {
         return Err("pe-header.bin is not a 128-byte SVMBPE01 envelope".into());
     }
-    let payload_bytes = word(16);
-    if word(24) != SLOT_BYTES
-        || word(32) != HEADER_BYTES as u64
-        || word(40) != 4
-        || !(512..=SLOT_BYTES - HEADER_BYTES as u64).contains(&payload_bytes)
+    let payload_bytes = word(PAYLOAD_BYTES_OFFSET);
+    if word(SLOT_BYTES_OFFSET) != SLOT_BYTES as u64
+        || word(PAYLOAD_OFFSET_OFFSET) != HEADER_BYTES as u64
+        || word(FLAGS_OFFSET) != FLAGS_RESIDENT_BOOT
+        || !(MIN_PE_BYTES as u64..=(SLOT_BYTES - HEADER_BYTES) as u64).contains(&payload_bytes)
     {
         return Err("pe-header.bin does not describe a resident payload slot".into());
     }
     Ok(Header {
         payload_bytes,
-        digest: header[48..80].iter().map(|byte| format!("{byte:02x}")).collect(),
+        digest: header[DIGEST_OFFSET..DIGEST_OFFSET + DIGEST_BYTES]
+            .iter()
+            .map(|byte| format!("{byte:02x}"))
+            .collect(),
     })
 }
 
