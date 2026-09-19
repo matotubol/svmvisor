@@ -365,7 +365,7 @@ unsafe fn publish_admission_failure_with(processor: Option<Cpu>, map: &[MemoryDe
         let bank = if value.processor < count {
             value.processor as usize
         } else {
-            unsafe { physical::bsp_slot() }
+            unsafe { physical_boot::bsp_slot() }
         };
         terminal::commit_diagnostic(&mut io, bank, payload).map_err(|_| Status::DEVICE_ERROR)
     })();

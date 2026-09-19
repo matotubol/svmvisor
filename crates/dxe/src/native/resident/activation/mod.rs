@@ -15,7 +15,7 @@ use svmvisor_hypervisor::{
     memory::address::EncryptionState,
 };
 
-// Names the mounted children `boot_handoff`, `card_boot` and `physical` take through their
+// Names the mounted children `boot_handoff`, `card_boot` and `physical_boot` take through their
 // `use super::*;`. Nothing else in this file uses them.
 #[cfg(feature = "native-resident-smp-activate")]
 use core::{
@@ -74,8 +74,7 @@ mod diagnostic;
 mod install;
 mod mapping;
 #[cfg(feature = "native-resident-smp-activate")]
-#[path = "physical_boot.rs"]
-mod physical;
+mod physical_boot;
 mod preparation;
 
 include!(concat!(env!("OUT_DIR"), "/resident-entry.rs"));

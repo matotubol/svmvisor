@@ -14,7 +14,7 @@ use svmvisor_hypervisor::{
 };
 
 #[cfg(feature = "native-resident-smp-activate")]
-use super::physical;
+use super::physical_boot;
 use super::{
     Cpu, EFER,
     diagnostic::{admission_hint, trace_detail},
@@ -46,7 +46,7 @@ pub(super) unsafe fn cpu() -> Result<Cpu, u64> {
     }
     let one = __cpuid_count(1, 0);
     #[cfg(feature = "native-resident-smp-activate")]
-    physical::admission_cpu_id(one.ebx >> 24);
+    physical_boot::admission_cpu_id(one.ebx >> 24);
     let ext = __cpuid_count(0x80000001, 0);
     let svm = __cpuid_count(0x8000000a, 0);
     if svmvisor_hypervisor::svm::x2avic::X2AvicCapabilities::admit(one.ecx, svm.edx).is_err() {

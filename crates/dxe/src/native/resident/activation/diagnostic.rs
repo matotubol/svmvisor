@@ -6,12 +6,12 @@ use svmvisor_hypervisor::host::paging::{self, PagingConfig};
 use uefi_raw::Status;
 
 #[cfg(feature = "native-resident-smp-activate")]
-use super::physical;
+use super::physical_boot;
 
 // Shared qualification helpers also serve profiles without MP admission.
 pub(super) fn admission_hint(predicate: u32, item: u64, observed: u64, expected: u64) {
     #[cfg(feature = "native-resident-smp-activate")]
-    physical::admission_hint(predicate, item, observed, expected);
+    physical_boot::admission_hint(predicate, item, observed, expected);
     #[cfg(not(feature = "native-resident-smp-activate"))]
     let _ = (predicate, item, observed, expected);
 }
@@ -23,7 +23,7 @@ pub(super) fn admission_walk(
     last: Option<(u64, u64)>,
 ) {
     #[cfg(feature = "native-resident-smp-activate")]
-    physical::admission_walk(error, cfg, address, last);
+    physical_boot::admission_walk(error, cfg, address, last);
     #[cfg(not(feature = "native-resident-smp-activate"))]
     let _ = (error, cfg, address, last);
 }

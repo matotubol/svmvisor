@@ -48,7 +48,7 @@ use super::{boot_handoff, card_boot, preparation::identity_npt_error_code};
 #[cfg(feature = "native-resident-smp-activate")]
 use super::{
     diagnostic::admission_hint,
-    physical,
+    physical_boot,
     preparation::{address_error_code, resident_memory_error_code},
 };
 
@@ -235,7 +235,7 @@ unsafe fn install_inner(image: Handle, bs: &BootServices) -> Result<(), Status> 
     #[cfg(feature = "native-resident-smp-activate")]
     let mut physical_storage = {
         preparation_step(13, 0);
-        unsafe { physical::prepare(bs, bsp, count, cfg)? }
+        unsafe { physical_boot::prepare(bs, bsp, count, cfg)? }
     };
     trace(b'l');
     for (slot, directory) in directories.iter_mut().enumerate().take(count) {
@@ -410,23 +410,29 @@ unsafe fn install_inner(image: Handle, bs: &BootServices) -> Result<(), Status> 
         // on the card without any test feature; see `slot_admission_refused`.
         for (slot, d) in directories.iter().enumerate().take(count) {
             preparation_step(16, d.arena_base);
-            physical::admission_begin(9, slot as u32, d.apic_id as u32);
+            physical_boot::admission_begin(9, slot as u32, d.apic_id as u32);
             unsafe {
                 host_closure(&directories[..count], slot, map.descriptors(), processor, &mt, pat)
             }
             .map_err(|code| unsafe {
-                physical::slot_admission_refused(33, count, code, processor, map.descriptors())
+                physical_boot::slot_admission_refused(33, count, code, processor, map.descriptors())
             })?;
             let pool = policy.validate(d.pool_base, d.pool_bytes, 4096).map_err(|error| {
                 let code = address_error_code(error);
                 admission_hint(635, d.pool_base, d.pool_bytes, code);
                 unsafe {
-                    physical::slot_admission_refused(34, count, code, processor, map.descriptors())
+                    physical_boot::slot_admission_refused(
+                        34,
+                        count,
+                        code,
+                        processor,
+                        map.descriptors(),
+                    )
                 }
             })?;
-            physical::admission_clear();
+            physical_boot::admission_clear();
             preparation_step(17, d.arena_base);
-            physical::admission_begin(10, slot as u32, d.apic_id as u32);
+            physical_boot::admission_begin(10, slot as u32, d.apic_id as u32);
             let mut _npt = resident::memory::prepare_identity_npt(
                 unsafe { &mut *(d.npt as *mut TableStorage) },
                 d.npt,
@@ -445,7 +451,13 @@ unsafe fn install_inner(image: Handle, bs: &BootServices) -> Result<(), Status> 
                 let code = resident_memory_error_code(error);
                 admission_hint(636, d.npt, d.pool_base, code);
                 unsafe {
-                    physical::slot_admission_refused(35, count, code, processor, map.descriptors())
+                    physical_boot::slot_admission_refused(
+                        35,
+                        count,
+                        code,
+                        processor,
+                        map.descriptors(),
+                    )
                 }
             })?;
             #[cfg(feature = "native-resident-boot")]
@@ -453,13 +465,19 @@ unsafe fn install_inner(image: Handle, bs: &BootServices) -> Result<(), Status> 
                 let code = identity_npt_error_code(error);
                 admission_hint(637, d.npt, d.pool_base, code);
                 unsafe {
-                    physical::slot_admission_refused(36, count, code, processor, map.descriptors())
+                    physical_boot::slot_admission_refused(
+                        36,
+                        count,
+                        code,
+                        processor,
+                        map.descriptors(),
+                    )
                 }
             })?;
-            physical::admission_clear();
+            physical_boot::admission_clear();
         }
         preparation_step(18, 0);
-        unsafe { physical::validate(map.descriptors(), cfg, &mt, pat, count) }
+        unsafe { physical_boot::validate(map.descriptors(), cfg, &mt, pat, count) }
             .map_err(unsupported)?;
         unsafe {
             ptr::copy_nonoverlapping(
@@ -478,11 +496,11 @@ unsafe fn install_inner(image: Handle, bs: &BootServices) -> Result<(), Status> 
         map.release()?;
         preparation_step(19, 0);
         unsafe {
-            physical::admit_processors(bs)?;
+            physical_boot::admit_processors(bs)?;
         }
         preparation_step(20, arena.base());
         let _retained = arena.register_and_publish(|base, bytes| unsafe {
-            physical::publish(bs, count, base, bytes as u64)
+            physical_boot::publish(bs, count, base, bytes as u64)
         })?;
         physical_storage.retain();
         READY.store(true, Ordering::Release);

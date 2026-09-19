@@ -28,7 +28,7 @@ use uefi_raw::Event;
 #[cfg(feature = "native-resident-boot")]
 use super::card_boot;
 #[cfg(feature = "native-resident-smp-activate")]
-use super::physical;
+use super::physical_boot;
 use super::{
     ACTIVATING, COOKIE, CPU, CPU_COUNT, CPU_IDS, DIRECTORIES, EFER, GDT, GUEST_ACK, IMAGE, MAP,
     MAP_COUNT, READY,
@@ -61,7 +61,7 @@ pub unsafe extern "efiapi" fn svmvisor_resident_callback_inner(
         Ok(()) => 0,
         Err(code) => {
             #[cfg(feature = "native-resident-boot")]
-            if unsafe { physical::is_bsp(slot) } {
+            if unsafe { physical_boot::is_bsp(slot) } {
                 unsafe {
                     card_boot::takeover_failure(slot as u32, CPU_COUNT as u32, code);
                 }
@@ -128,7 +128,7 @@ unsafe fn callback(b: &NativeBoundary, slot: usize) -> Result<(), u64> {
         )
     }?;
     #[cfg(feature = "native-resident-boot")]
-    unsafe { physical::cache_sample_before_activation(processor, slot) }?;
+    unsafe { physical_boot::cache_sample_before_activation(processor, slot) }?;
     let sites = CallbackSites {
         resume: ptr::addr_of!(abi::svmvisor_resident_guest_resume) as u64,
         ack: ptr::addr_of!(abi::svmvisor_resident_guest_ack) as u64,
@@ -326,10 +326,10 @@ unsafe fn callback(b: &NativeBoundary, slot: usize) -> Result<(), u64> {
         card_boot::protect_config(&mut _npt).map_err(|_| 19u64)?;
     }
     #[cfg(feature = "native-resident-smp-activate")]
-    physical::validate_x2apic()?;
+    physical_boot::validate_x2apic()?;
     let arm: abi::ArmRuntime = unsafe { core::mem::transmute(d.arm as usize) };
     #[cfg(feature = "native-resident-guest-startup")]
-    let initial_icr = unsafe { physical::initial_icr(slot)? };
+    let initial_icr = unsafe { physical_boot::initial_icr(slot)? };
     #[cfg(not(feature = "native-resident-guest-startup"))]
     let initial_icr: *const u64 = ptr::null();
     if !initial_icr.is_null() {

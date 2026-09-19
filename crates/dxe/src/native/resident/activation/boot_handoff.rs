@@ -91,7 +91,7 @@ unsafe extern "efiapi" fn svmvisor_boot_inner(
     _: *const NativeBoundary,
 ) {
     unsafe { card_boot::stage(2, 0, 0) };
-    let result = unsafe { physical::start() };
+    let result = unsafe { physical_boot::start() };
     unsafe {
         svmvisor_boot_failure = result;
     }

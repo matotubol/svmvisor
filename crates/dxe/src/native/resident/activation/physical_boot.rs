@@ -13,8 +13,8 @@ use uefi_raw::table::boot::AllocateType;
 
 use super::*;
 use resident::{
+    activation_interface::{ACTIVATION_GUID, ActivationInterface},
     bootstrap_paging::BootstrapPaging,
-    physical::{ACTIVATION_GUID, ActivationInterface},
 };
 
 const BOOT_BYTES: usize = 128 * 1024;
