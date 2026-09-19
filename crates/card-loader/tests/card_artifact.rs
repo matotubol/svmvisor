@@ -1,5 +1,6 @@
 #![cfg(feature = "card-load-only")]
 
+use svmvisor_card_abi::envelope::{HEADER_BYTES, SLOT_BYTES};
 use svmvisor_card_loader::delivery::card::{self, Manifest};
 
 fn word(bytes: &[u8], offset: usize) -> u64 {
@@ -17,9 +18,9 @@ fn python_card_artifact_relocates_without_execution() {
     )
     .unwrap();
     let slot = std::fs::read(path).unwrap();
-    assert_eq!(slot.len(), card::SLOT_BYTES);
-    let manifest = Manifest::parse(&slot[..card::HEADER_BYTES], &pin).unwrap();
-    let bytes = &slot[card::HEADER_BYTES..card::HEADER_BYTES + manifest.package_bytes()];
+    assert_eq!(slot.len(), SLOT_BYTES);
+    let manifest = Manifest::parse(&slot[..HEADER_BYTES], &pin).unwrap();
+    let bytes = &slot[HEADER_BYTES..HEADER_BYTES + manifest.package_bytes()];
     let payload = manifest.package(bytes).unwrap();
     let linked_base = word(bytes, 8);
     let image_bytes = word(bytes, 24) as usize;

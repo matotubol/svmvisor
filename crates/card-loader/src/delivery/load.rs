@@ -3,6 +3,7 @@
 
 use core::ptr::{null_mut, slice_from_raw_parts_mut};
 
+use svmvisor_card_abi::envelope::HEADER_BYTES;
 use svmvisor_card_loader::{
     delivery::card::{self, Manifest},
     diagnostics::journal::{self, JournalIo},
@@ -81,7 +82,7 @@ fn stage(io: &Bar0, services: &BootServices, pinned: &str) -> Result<(), Status>
         return Err(Status::NOT_READY);
     }
     let pin = card::parse_pin(pinned).map_err(|_| Status::INVALID_PARAMETER)?;
-    let mut header = [0u8; card::HEADER_BYTES];
+    let mut header = [0u8; HEADER_BYTES];
     for (i, chunk) in header.chunks_exact_mut(4).enumerate() {
         chunk.copy_from_slice(&io.card_word((i * 4) as u64)?.to_le_bytes());
     }
@@ -100,7 +101,7 @@ fn stage(io: &Bar0, services: &BootServices, pinned: &str) -> Result<(), Status>
     // Exact allocated slice; manifest bounds make every DWORD remain in BAR1.
     let bytes = unsafe { &mut *slice_from_raw_parts_mut(pool.cast::<u8>(), rounded) };
     for (i, chunk) in bytes.chunks_exact_mut(4).enumerate() {
-        chunk.copy_from_slice(&io.card_word((card::HEADER_BYTES + i * 4) as u64)?.to_le_bytes());
+        chunk.copy_from_slice(&io.card_word((HEADER_BYTES + i * 4) as u64)?.to_le_bytes());
     }
     let package = manifest
         .package(&bytes[..manifest.package_bytes()])

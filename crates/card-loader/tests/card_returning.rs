@@ -14,7 +14,8 @@ use std::{
 
 use sha2::{Digest, Sha256};
 use svmvisor_card_abi::{
-    boot_options::ResidentBootOptions, endpoint::TerminalEndpoint, native_result::NativeResult,
+    boot_options::ResidentBootOptions, endpoint::TerminalEndpoint, envelope::SLOT_BYTES,
+    native_result::NativeResult,
 };
 use svmvisor_card_loader::delivery::child_image::{self as card_returning, Pin, State};
 use uefi_raw::{
@@ -85,7 +86,7 @@ fn fixture() -> (Pin, Vec<u8>) {
         w32(&mut pe, o, v);
     }
     pe[512] = 0xc3;
-    let mut slot = vec![0xff; card_returning::SLOT_BYTES];
+    let mut slot = vec![0xff; SLOT_BYTES];
     slot[..128].fill(0);
     slot[..8].copy_from_slice(b"SVMPE001");
     for (o, v) in
@@ -448,7 +449,7 @@ fn actual_adapter_covers_return_security_transport_and_retry_ownership() {
         let report = unsafe {
             card_returning::execute(&mut state, &bs, parent(), controller(), &pin, |offset| {
                 assert_eq!(offset & 3, 0);
-                assert!(offset + 4 <= card_returning::SLOT_BYTES as u64);
+                assert!(offset + 4 <= SLOT_BYTES as u64);
                 reads += 1;
                 if mode == 10 && offset >= 128 {
                     return Err(Status::DEVICE_ERROR);
@@ -518,7 +519,7 @@ fn optional_python_actual_slot_matches_rust_parser() {
         return;
     };
     let slot = std::fs::read(path).unwrap();
-    assert_eq!(slot.len(), card_returning::SLOT_BYTES);
+    assert_eq!(slot.len(), SLOT_BYTES);
     let pin = Pin::parse(&slot[..128]).unwrap();
     pin.verify(&slot[128..128 + pin.payload_bytes]).unwrap();
 }
@@ -667,7 +668,7 @@ fn dev_loader_refuses_every_corruption_class_with_the_pinned_status() {
         ("wrong kind: fully valid returning slot", |s| *s = fixture().1, 0),
         ("version", |s| w32(s, 8, 2), 0),
         ("header size", |s| w32(s, 12, 132), 0),
-        ("payload bytes beyond slot", |s| w64(s, 16, (card_returning::SLOT_BYTES - 127) as u64), 0),
+        ("payload bytes beyond slot", |s| w64(s, 16, (SLOT_BYTES - 127) as u64), 0),
         ("payload bytes below minimum", |s| w64(s, 16, 511), 0),
         ("slot size", |s| w64(s, 24, 0x200000), 0),
         ("flags", |s| w64(s, 40, 2), 0),

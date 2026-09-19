@@ -2,10 +2,13 @@
 //! not signature verification or authorization to execute its contents.
 
 use sha2::{Digest, Sha256};
+use svmvisor_card_abi::envelope::{
+    DIGEST_BYTES, DIGEST_OFFSET, FLAGS_OFFSET, FLAGS_PACKAGE, HEADER_BYTES, HEADER_BYTES_OFFSET,
+    MIN_PACKAGE_BYTES, PACKAGE_MAGIC, PACKAGE_RESERVED_OFFSET, PAYLOAD_BYTES_OFFSET,
+    PAYLOAD_OFFSET_OFFSET, SLOT_BYTES, SLOT_BYTES_OFFSET, VERSION, VERSION_OFFSET,
+};
 use svmvisor_firmware_handoff::layout::{LayoutError, Payload};
 
-pub const HEADER_BYTES: usize = 128;
-pub const SLOT_BYTES: usize = 0x100000;
 pub const JOURNAL_SUCCESS: u32 = 0x00050010;
 pub const JOURNAL_FAILURE: u32 = 0x0005001f;
 
@@ -18,21 +21,30 @@ pub struct Manifest {
 impl Manifest {
     pub fn parse(header: &[u8], pinned: &[u8; 32]) -> Result<Self, CardError> {
         if header.len() != HEADER_BYTES
-            || &header[..8] != b"SVMCRD01"
-            || &header[8..12] != 1u32.to_le_bytes().as_slice()
-            || &header[12..16] != (HEADER_BYTES as u32).to_le_bytes().as_slice()
-            || u64::from_le_bytes(header[24..32].try_into().unwrap()) != SLOT_BYTES as u64
-            || u64::from_le_bytes(header[32..40].try_into().unwrap()) != HEADER_BYTES as u64
-            || u64::from_le_bytes(header[40..48].try_into().unwrap()) != 1
-            || header[80..].iter().any(|&b| b != 0)
+            || &header[..8] != &PACKAGE_MAGIC
+            || &header[VERSION_OFFSET..VERSION_OFFSET + 4] != VERSION.to_le_bytes().as_slice()
+            || &header[HEADER_BYTES_OFFSET..HEADER_BYTES_OFFSET + 4]
+                != (HEADER_BYTES as u32).to_le_bytes().as_slice()
+            || u64::from_le_bytes(
+                header[SLOT_BYTES_OFFSET..SLOT_BYTES_OFFSET + 8].try_into().unwrap(),
+            ) != SLOT_BYTES as u64
+            || u64::from_le_bytes(
+                header[PAYLOAD_OFFSET_OFFSET..PAYLOAD_OFFSET_OFFSET + 8].try_into().unwrap(),
+            ) != HEADER_BYTES as u64
+            || u64::from_le_bytes(header[FLAGS_OFFSET..FLAGS_OFFSET + 8].try_into().unwrap())
+                != FLAGS_PACKAGE
+            || header[PACKAGE_RESERVED_OFFSET..].iter().any(|&b| b != 0)
         {
             return Err(CardError::Header);
         }
-        let size = u64::from_le_bytes(header[16..24].try_into().unwrap());
-        if size < 64 || size > (SLOT_BYTES - HEADER_BYTES) as u64 {
+        let size = u64::from_le_bytes(
+            header[PAYLOAD_BYTES_OFFSET..PAYLOAD_BYTES_OFFSET + 8].try_into().unwrap(),
+        );
+        if size < MIN_PACKAGE_BYTES as u64 || size > (SLOT_BYTES - HEADER_BYTES) as u64 {
             return Err(CardError::Bounds);
         }
-        let digest: [u8; 32] = header[48..80].try_into().unwrap();
+        let digest: [u8; DIGEST_BYTES] =
+            header[DIGEST_OFFSET..DIGEST_OFFSET + DIGEST_BYTES].try_into().unwrap();
         if &digest != pinned {
             return Err(CardError::Digest);
         }
@@ -44,7 +56,7 @@ impl Manifest {
     }
 
     pub fn package<'a>(&self, bytes: &'a [u8]) -> Result<Payload<'a>, CardError> {
-        if bytes.len() != self.package_bytes || bytes.len() < 64 {
+        if bytes.len() != self.package_bytes || bytes.len() < MIN_PACKAGE_BYTES {
             return Err(CardError::Bounds);
         }
         if Sha256::digest(bytes).as_slice() != self.digest {

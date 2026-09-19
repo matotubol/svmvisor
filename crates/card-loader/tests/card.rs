@@ -1,6 +1,7 @@
 #![cfg(feature = "card-load-only")]
 
 use sha2::{Digest, Sha256};
+use svmvisor_card_abi::envelope::SLOT_BYTES;
 use svmvisor_card_loader::delivery::card::*;
 use svmvisor_firmware_handoff::layout::{ARENA_BYTES, LayoutError};
 

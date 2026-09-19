@@ -4,6 +4,8 @@ use core::ptr;
 
 use svmvisor_card_abi::boot_options::ResidentBootOptions;
 #[cfg(not(feature = "card-resident-dev-loader"))]
+use svmvisor_card_abi::envelope::HEADER_BYTES;
+#[cfg(not(feature = "card-resident-dev-loader"))]
 use svmvisor_card_loader::delivery::child_image::Pin;
 #[cfg(feature = "card-returning-loader")]
 use svmvisor_card_loader::diagnostics::returning_detail::ReturningDiagnostics;
@@ -17,7 +19,7 @@ use crate::pci_io::Bar0;
 
 // The dev loader compiles in no header: it adopts the one in the flash slot.
 #[cfg(not(feature = "card-resident-dev-loader"))]
-const PIN: &[u8; 128] = include_bytes!(concat!(env!("OUT_DIR"), "/card-pe-header.bin"));
+const PIN: &[u8; HEADER_BYTES] = include_bytes!(concat!(env!("OUT_DIR"), "/card-pe-header.bin"));
 
 static mut STATE: State = State::new();
 #[cfg(feature = "card-returning-loader")]
