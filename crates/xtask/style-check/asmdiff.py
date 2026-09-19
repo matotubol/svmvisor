@@ -49,17 +49,23 @@ def short(symbol):
     return LEGACY_HASH.sub("", symbol)
 
 
-def normalize(line):
+def normalize(line, own):
     line = line.split("\t", 1)[1] if "\t" in line else line
     line = re.sub(r"#.*$", "", line)                       # objdump comments
-    line = re.sub(r"<([^>+]+)(\+0x[0-9a-f]+)?>", lambda m: "<" + short(m.group(1)) + ">", line)
+    # A jump inside a function is printed as <own_name+offset>; keeping the name
+    # would flag every renamed function that has internal branches.
+    line = re.sub(
+        r"<([^>+]+)(\+0x[0-9a-f]+)?>",
+        lambda m: "<self>" if m.group(1) == own else "<" + short(m.group(1)) + ">",
+        line,
+    )
     line = re.sub(r"-?0x[0-9a-f]+\(%rip\)", "REL(%rip)", line)
     line = re.sub(r"\b0x[0-9a-f]{5,}\b(?= <)", "ADDR", line)  # branch targets
     return line.strip()
 
 
 def functions(path):
-    result, name, body = [], None, []
+    result, name, body, own = [], None, [], None
     with open(path, encoding="utf-8", errors="replace") as handle:
         for raw in handle:
             raw = raw.rstrip("\n")
@@ -67,9 +73,10 @@ def functions(path):
             if header:
                 if name is not None:
                     result.append((name, body))
-                name, body = short(header.group(1)), []
+                own = header.group(1)
+                name, body = short(own), []
             elif name is not None and raw.startswith(" "):
-                text = normalize(raw)
+                text = normalize(raw, own)
                 if text and text != "int3" and not text.startswith("nop"):
                     body.append(text)
         if name is not None:
