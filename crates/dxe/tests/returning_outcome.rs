@@ -1,11 +1,9 @@
 #![cfg(feature = "card-returning-loader")]
 
+use svmvisor_card_abi::native_result::NativeResult;
 use svmvisor_dxe::{
     delivery::child_image::Delivery,
-    diagnostics::{
-        native_result::NativeResult,
-        outcome::{ReturningOutcome::*, classify},
-    },
+    diagnostics::outcome::{ReturningOutcome::*, classify},
 };
 use uefi_raw::Status;
 

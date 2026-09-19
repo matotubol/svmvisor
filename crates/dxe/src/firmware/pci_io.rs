@@ -2,6 +2,8 @@
 
 use core::ffi::c_void;
 
+#[cfg(feature = "card-resident")]
+use svmvisor_card_abi::endpoint::{PCI_CLASS_REVISION, PCI_VENDOR_DEVICE, TerminalEndpoint};
 use svmvisor_dxe::diagnostics::journal::JournalIo;
 use uefi_raw::{Status, table::boot::BootServices};
 
@@ -147,8 +149,7 @@ impl Bar0 {
         &mut self,
         journal_base: u64,
         boot_id: u32,
-    ) -> Result<svmvisor_hypervisor::host::resident::terminal::TerminalEndpoint, Status> {
-        use svmvisor_hypervisor::host::resident::terminal::{self, TerminalEndpoint};
+    ) -> Result<TerminalEndpoint, Status> {
         let vendor = core::arch::x86_64::__cpuid(0);
         if vendor.ebx != 0x6874_7541
             || vendor.edx != 0x6974_6e65
@@ -177,8 +178,8 @@ impl Bar0 {
         let mmio_config_msr = u64::from(low) | (u64::from(high) << 32);
         let config_page = TerminalEndpoint::config_page_from_msr(mmio_config_msr, segment_bdf)
             .ok_or(Status::UNSUPPORTED)?;
-        if self.config(0)? != terminal::PCI_VENDOR_DEVICE
-            || self.config(8)? != terminal::PCI_CLASS_REVISION
+        if self.config(0)? != PCI_VENDOR_DEVICE
+            || self.config(8)? != PCI_CLASS_REVISION
             || (self.config(0x0c)? >> 16) & 0xff != 0
         {
             return Err(Status::UNSUPPORTED);

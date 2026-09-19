@@ -10,10 +10,10 @@ The rules cover **organization, naming and layout**. They say nothing about
 what the hypervisor does. Rule IDs (`F2`, `N7`, ...) exist so reviews and
 commits can cite them.
 
-Scope: all Rust under `crates/`. The `no_std` crates (`hypervisor`, `dxe`,
-`firmware-handoff`, `resident-payload`, `memory-attributes`) and the host
-tools (`xtask`, `rompack`) follow the same style; rules marked **[no_std]**
-bind only the former.
+Scope: all Rust under `crates/`. The `no_std` crates (`card-abi`, `hypervisor`,
+`dxe`, `firmware-handoff`, `resident-payload`, `memory-attributes`) and the
+host tools (`xtask`, `rompack`) follow the same style; rules marked
+**[no_std]** bind only the former.
 
 Where these rules come from: the habits of a very consistent reference
 codebase (BurntSushi's `jiff`), filtered down to what makes sense for a
@@ -94,11 +94,12 @@ section order, not from ASCII art.
 
 ## 2. Crates
 
-**C1.** Dependency direction is fixed: `hypervisor` is the leaf (it knows
-nothing about UEFI); `dxe`, `firmware-handoff` and `resident-payload` depend
-on it; `memory-attributes`, `rompack` and `xtask` stand alone. A crate never
-reaches into another crate's source tree with `#[path]` or `include!`. Shared
-code is shared through a Cargo dependency.
+**C1.** Dependency direction is fixed: `card-abi` is the leaf (it knows
+nothing about UEFI or SVM); `hypervisor` depends on it and knows nothing about
+UEFI; `dxe` depends on both; `firmware-handoff` and `resident-payload` depend
+on `hypervisor`; `memory-attributes`, `rompack` and `xtask` stand alone. A
+crate never reaches into another crate's source tree with `#[path]` or
+`include!`. Shared code is shared through a Cargo dependency.
 
 **C2.** `lib.rs` / `main.rs` contain, in this order and nothing else: the
 `//!` crate doc, crate attributes, `compile_error!` feature guards, `use`
@@ -563,6 +564,7 @@ instead of restating it.
 | VMCB offsets | `hypervisor::svm::vmcb`, `pub(crate)`; other modules use `Vmcb` accessors, not offsets |
 | exit codes | `hypervisor::svm::exit` |
 | resident bridge ABI | `hypervisor::host::resident` |
+| card loader<->child contract (boot options, native result, journal record, terminal endpoint) | `card-abi` |
 | card image format | needs a `dxe` module compiled under every `card-*` feature (none exists yet); until then `delivery/card.rs`, `delivery/child_image.rs` and `xtask/card.rs` each keep a copy |
 
 A crate that depends on `hypervisor` imports these; it never re-declares

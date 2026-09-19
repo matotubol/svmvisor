@@ -1,9 +1,9 @@
 #![cfg(feature = "card-returning-loader")]
 
+use svmvisor_card_abi::native_result::NativeResult;
 use svmvisor_dxe::{
     delivery::child_image::Delivery,
     diagnostics::{
-        native_result::NativeResult,
         outcome::classify,
         returning_detail::{
             ENCODING_OVERFLOW, INVALID_INNER_HEADER, NON_BOOLEAN_FLAGS, ReturningDiagnostics,

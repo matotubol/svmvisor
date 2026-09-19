@@ -1,4 +1,5 @@
 //! Opt-in native preflight invoked at firmware image entry, before binding.
+use svmvisor_card_abi::native_result::NativeResult;
 use svmvisor_dxe::native::admission::preflight::{Outcome, collect};
 use svmvisor_hypervisor::boot::preflight::{CpuidEvidence, CpuidRegisters};
 use uefi_raw::{Handle, Status, table::system::SystemTable};
@@ -26,7 +27,7 @@ pub(crate) unsafe fn run(
         Err(_) => return Status::UNSUPPORTED,
     };
     // Default refusal until an admitted caller supplies actual observations.
-    let mut inner_result = svmvisor_dxe::diagnostics::native_result::NativeResult::new();
+    let mut inner_result = NativeResult::new();
     inner_result.outcome = 1;
     inner_result.refusal = 0x1000;
     for (field, value) in [

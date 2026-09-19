@@ -4,7 +4,7 @@
 //! The callback object stays in the original DXE image; runtime.S and its entire
 //! dispatch call graph must reside in independently retained monitor memory.
 
-use crate::host::resident::terminal;
+use svmvisor_card_abi::endpoint::TerminalEndpoint;
 
 /// 10: remote backing aliases below the physical-ID table; image bound lowered.
 pub const DIRECTORY_VERSION: u64 = 10;
@@ -206,7 +206,7 @@ pub type ArmRuntime = unsafe extern "win64" fn(
     usize,
     bool,
     *const u64,
-    *const terminal::TerminalEndpoint,
+    *const TerminalEndpoint,
 ) -> u64;
 
 /// One 1MiB image per dense slot; larger pools are 2MiB aligned below1GiB.

@@ -4,6 +4,8 @@
 
 use core::sync::atomic::{AtomicU32, AtomicU64};
 
+use svmvisor_card_abi::endpoint::TerminalEndpoint;
+
 #[cfg(test)]
 use crate::host::resident::runtime::linked_symbols::*;
 // The child files name `fetch`, `terminal`, the pool offsets, `is_valid_pool_slot` and
@@ -15,9 +17,7 @@ use crate::{
     host::resident::{
         BridgeContext, CACHE_CAPTURE_OFFSET, CACHE_OWNER_OFFSET, STARTUP_PAGE_OFFSET,
         X2AVIC_BACKING_ALIASES_OFFSET, X2AVIC_TABLE_OFFSET, captured_register_refusal, fetch,
-        is_valid_pool_slot,
-        runtime::exit::dispatch,
-        terminal::{self, TerminalEndpoint},
+        is_valid_pool_slot, runtime::exit::dispatch, terminal,
     },
     memory::{
         address::PAGE_BYTES,

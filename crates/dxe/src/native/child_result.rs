@@ -4,7 +4,7 @@ use core::{
     ptr,
 };
 
-use svmvisor_dxe::diagnostics::native_result::NativeResult;
+use svmvisor_card_abi::native_result::NativeResult;
 use uefi_raw::{
     Handle, Status, protocol::loaded_image::LoadedImageProtocol, table::boot::BootServices,
 };

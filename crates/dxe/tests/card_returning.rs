@@ -13,10 +13,10 @@ use std::{
 };
 
 use sha2::{Digest, Sha256};
-use svmvisor_dxe::{
-    delivery::child_image::{self as card_returning, Pin, State},
-    diagnostics::native_result::NativeResult,
+use svmvisor_card_abi::{
+    boot_options::ResidentBootOptions, endpoint::TerminalEndpoint, native_result::NativeResult,
 };
+use svmvisor_dxe::delivery::child_image::{self as card_returning, Pin, State};
 use uefi_raw::{
     Boolean, Char16, Handle, Status,
     protocol::{device_path::DevicePathProtocol, loaded_image::LoadedImageProtocol},
@@ -252,7 +252,6 @@ unsafe extern "efiapi" fn start(handle: Handle, _: *mut usize, exit: *mut *mut C
     let l = unsafe { &*(f.loaded as *const LoadedImageProtocol) };
     assert_eq!(l.load_options_size, 128);
     if f.mode >= 20 {
-        use svmvisor_dxe::diagnostics::resident_boot::ResidentBootOptions;
         let m = unsafe { &mut *l.load_options.cast_mut().cast::<ResidentBootOptions>() };
         assert_eq!(*m, resident_options(f.mode));
         if f.mode == 25 {
@@ -371,9 +370,7 @@ fn services() -> BootServices {
     }
 }
 
-fn resident_options(mode: u8) -> svmvisor_dxe::diagnostics::resident_boot::ResidentBootOptions {
-    use svmvisor_dxe::diagnostics::resident_boot::ResidentBootOptions;
-    use svmvisor_hypervisor::host::resident::terminal::TerminalEndpoint;
+fn resident_options(mode: u8) -> ResidentBootOptions {
     let options = ResidentBootOptions::new(0xd0000000, 42);
     if mode < 30 {
         return options;

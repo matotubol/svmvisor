@@ -3,6 +3,7 @@
 
 use core::{arch::x86_64::__cpuid_count, ptr};
 
+use svmvisor_card_abi::native_result::NativeResult;
 use svmvisor_dxe::native::{
     admission::{boundary::NativeBoundary, cpu as native_cpu},
     transition::{canary::svmvisor_native_transition_canary, state::*},
@@ -86,8 +87,8 @@ pub unsafe fn run(
     boundary: &NativeBoundary,
     physical_bits: u8,
     page1gb: bool,
-) -> svmvisor_dxe::diagnostics::native_result::NativeResult {
-    let mut result = svmvisor_dxe::diagnostics::native_result::NativeResult::new();
+) -> NativeResult {
+    let mut result = NativeResult::new();
     let hv = __cpuid_count(0x40000000, 0);
     if [hv.ebx, hv.ecx, hv.edx] != [0x54474354, 0x43544743, 0x47435447] {
         unsafe {

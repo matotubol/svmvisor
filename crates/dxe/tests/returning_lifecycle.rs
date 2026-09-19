@@ -36,11 +36,11 @@ use core::{
 };
 use std::sync::Mutex;
 
+use svmvisor_card_abi::native_result::NativeResult;
 use svmvisor_dxe::{
     delivery::child_image::Delivery,
     diagnostics::{
         journal::{self, JournalIo},
-        native_result::NativeResult,
         returning_detail::ReturningDiagnostics,
     },
 };

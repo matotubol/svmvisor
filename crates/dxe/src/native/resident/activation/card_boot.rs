@@ -2,14 +2,16 @@
 //! The pre-loader journal owner ends before returning to the Windows loader.
 //! Optional terminal diagnostics copy separately validated numeric PCI provenance
 //! to the core, which owns stopped-state revalidation and the sole terminal writer.
+use svmvisor_card_abi::{
+    boot_options::ResidentBootOptions,
+    endpoint::{self as card_endpoint, PCI_CLASS_REVISION, PCI_VENDOR_DEVICE, TerminalEndpoint},
+    journal as card_journal,
+};
 use svmvisor_dxe::diagnostics::{
     journal::{self, JournalIo},
-    resident_boot::{ApFailureObservation, ResidentBootOptions, ap_failure_words},
+    resident_boot::{ApFailureObservation, ap_failure_words},
 };
-use svmvisor_hypervisor::{
-    arch::x86_64::msr::MMIO_CFG_BASE_ADDR,
-    host::resident::terminal::{self, TerminalEndpoint},
-};
+use svmvisor_hypervisor::arch::x86_64::msr::MMIO_CFG_BASE_ADDR;
 
 use super::*;
 
@@ -171,7 +173,7 @@ impl JournalIo for Direct {
     }
 }
 
-impl terminal::JournalIo for Direct {
+impl card_journal::JournalIo for Direct {
     type Error = Status;
     fn read(&mut self, offset: u64) -> Result<u32, Status> {
         JournalIo::read(self, offset)
@@ -355,7 +357,7 @@ unsafe fn publish_admission_failure_with(processor: Option<Cpu>, map: &[MemoryDe
         unsafe {
             asm!("rdtsc",out("eax")low,out("edx")high,options(nostack,preserves_flags));
         }
-        let payload = terminal::diagnostic_payload(
+        let payload = card_journal::diagnostic_payload(
             1,
             12,
             true,
@@ -372,7 +374,7 @@ unsafe fn publish_admission_failure_with(processor: Option<Cpu>, map: &[MemoryDe
         } else {
             unsafe { physical_boot::bsp_slot() }
         };
-        terminal::commit_diagnostic(&mut io, bank, payload).map_err(|_| Status::DEVICE_ERROR)
+        card_journal::commit_diagnostic(&mut io, bank, payload).map_err(|_| Status::DEVICE_ERROR)
     })();
     if result.is_err() {
         JOURNAL_LOST.store(true, Ordering::Release);
@@ -428,9 +430,9 @@ unsafe fn terminal_config_matches(endpoint: TerminalEndpoint) -> bool {
         return false;
     }
     // PPR2.1.6.1 requires UC, aligned DWORDs and mov eax,[address].
-    let read = |offset| unsafe { terminal::read_config_dword(endpoint.config_page, offset) };
-    read(0) == terminal::PCI_VENDOR_DEVICE
-        && read(8) == terminal::PCI_CLASS_REVISION
+    let read = |offset| unsafe { card_endpoint::read_config_dword(endpoint.config_page, offset) };
+    read(0) == PCI_VENDOR_DEVICE
+        && read(8) == PCI_CLASS_REVISION
         && ((read(0x0c) >> 16) & 0xff) == 0
         && read(4) as u16 == endpoint.command
         && read(0x10) == endpoint.bar0_raw

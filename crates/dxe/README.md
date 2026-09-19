@@ -10,7 +10,7 @@ belongs in [`../hypervisor`](../hypervisor/README.md).
 | --- | --- |
 | `firmware/` | Option-ROM driver binding, PCI I/O, BAR mapping, CPU sampling, and lifecycle events. |
 | `delivery/` | Card payload validation, EFI child loading, and parent-side ownership and cleanup. |
-| `diagnostics/` | Journal serialization, lifecycle traces, child result records, and outcome classification. |
+| `diagnostics/` | Journal serialization, lifecycle traces, resident launcher failure records, and outcome classification. The records exchanged with a child (`ResidentBootOptions`, `NativeResult`) live in [`../card-abi`](../card-abi/README.md). |
 | `memory_attributes/` | Memory Attribute Protocol provider, registration, firmware access, and the F7 table qualification path. |
 | `native/admission/` | Entry boundary capture and CPU, memory, cache, and rendezvous admission evidence. |
 | `native/resources/` | Firmware-owned tables, image ranges, guest pages, arena allocation, and cache preparation. |

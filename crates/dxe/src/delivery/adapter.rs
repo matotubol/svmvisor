@@ -2,6 +2,7 @@
 
 use core::ptr;
 
+use svmvisor_card_abi::boot_options::ResidentBootOptions;
 #[cfg(not(feature = "card-resident-dev-loader"))]
 use svmvisor_dxe::delivery::child_image::Pin;
 #[cfg(feature = "card-returning-loader")]
@@ -104,7 +105,6 @@ pub(crate) fn execute_resident(
     boot_id: u32,
     journal_base: u64,
 ) -> Result<(), Status> {
-    use svmvisor_dxe::diagnostics::resident_boot::ResidentBootOptions;
     if has_attempted() {
         return Err(Status::UNSUPPORTED);
     }

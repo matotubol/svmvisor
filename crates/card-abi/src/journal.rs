@@ -1,62 +1,12 @@
-//! The card journal: the device access trait, the first-fault latch and record commits.
+//! The card journal: the device access trait and record commits.
 
-use core::sync::atomic::{AtomicU32, Ordering};
+use core::sync::atomic::Ordering;
 
 /// Fixed journal operation; adapters expose only admitted device DWORDs.
 pub trait JournalIo {
     type Error;
     fn read(&mut self, offset: u64) -> Result<u32, Self::Error>;
     fn write(&mut self, offset: u64, value: u32) -> Result<(), Self::Error>;
-}
-
-/// Per-runtime first-fault latch. No global guard or allocation is needed;
-/// a fault interrupting the writer never spins on that interrupted writer.
-/// Publication failure leaves the immutable payload available for later retry.
-pub struct DeferredFault {
-    state: AtomicU32,
-    words: [AtomicU32; 19],
-    failures: AtomicU32,
-}
-
-impl DeferredFault {
-    pub(crate) const fn new() -> Self {
-        Self {
-            state: AtomicU32::new(0),
-            words: [const { AtomicU32::new(0) }; 19],
-            failures: AtomicU32::new(0),
-        }
-    }
-    pub fn capture(&self, words: [u32; 19]) {
-        if self.state.compare_exchange(0, 1, Ordering::Acquire, Ordering::Relaxed).is_err() {
-            return;
-        }
-        for (to, from) in self.words.iter().zip(words) {
-            to.store(from, Ordering::Relaxed);
-        }
-        self.state.store(2, Ordering::Release);
-    }
-    pub fn pending(&self) -> Option<[u32; 19]> {
-        if self.state.load(Ordering::Acquire) != 2 {
-            return None;
-        }
-        Some(core::array::from_fn(|i| self.words[i].load(Ordering::Relaxed)))
-    }
-    pub fn published(&self) {
-        self.state.store(3, Ordering::Release);
-    }
-    pub fn failed(&self) {
-        self.failures.fetch_add(1, Ordering::Relaxed);
-    }
-    pub fn status(&self) -> u64 {
-        self.state.load(Ordering::Acquire) as u64
-            | ((self.failures.load(Ordering::Relaxed) as u64) << 32)
-    }
-}
-
-impl Default for DeferredFault {
-    fn default() -> Self {
-        Self::new()
-    }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -68,6 +18,8 @@ pub enum CommitError<E> {
 }
 
 /// Existing USER3 record wire format, shared by resident and BSP preparation.
+// Inlined as it was inside the hypervisor: the resident payload links without LTO.
+#[inline]
 #[allow(clippy::too_many_arguments)]
 pub fn diagnostic_payload(
     sequence: u32,
@@ -148,36 +100,6 @@ pub fn commit_record<I: JournalIo>(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::host::resident::terminal::TerminalControl;
-    #[test]
-    fn deferred_fault_survives_contention_missing_cpu_and_reentrant_capture() {
-        let control = TerminalControl::new();
-        assert!(control.publish_ready(2));
-        assert!(control.claim(0, 2));
-        assert!(control.acknowledge(0, 2));
-        let latch = DeferredFault::new();
-        let first = diagnostic_payload(17, 3, true, 1, 0, 2, [1, 2, 3, 4, 5, 6], 7);
-        let guard = control.diagnostic_lock().unwrap();
-        latch.capture(first);
-        assert!(control.diagnostic_lock().is_none());
-        latch.failed();
-        latch.capture([99; 19]);
-        assert_eq!(latch.pending(), Some(first));
-        assert_eq!(latch.status(), 2 | (1 << 32));
-        assert!(!control.all_acknowledged(2));
-        drop(guard);
-        let _guard = control.diagnostic_lock().unwrap();
-        // Publication is permitted by the lifetime guard despite missing peer.
-        assert_eq!(latch.pending(), Some(first));
-        latch.published();
-        assert_eq!(latch.pending(), None);
-        latch.capture([88; 19]);
-        assert_eq!(latch.status(), 3 | (1 << 32));
-        let interrupted = DeferredFault::new();
-        interrupted.state.store(1, Ordering::Relaxed);
-        interrupted.capture(first); // Returns immediately, never waits on itself.
-        assert_eq!(interrupted.pending(), None);
-    }
     struct MockJournal {
         staged: [u32; 8],
         committed: [u32; 8],

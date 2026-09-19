@@ -1,11 +1,9 @@
 //! Interpret returned child evidence without equating image delivery with SVM.
 
+use svmvisor_card_abi::native_result::{MULTI_EXIT_ENTRIES, MULTI_EXIT_OUTCOME, NativeResult};
 use uefi_raw::Status;
 
-use crate::{
-    delivery::child_image::Delivery,
-    diagnostics::native_result::{MULTI_EXIT_ENTRIES, MULTI_EXIT_OUTCOME, NativeResult},
-};
+use crate::delivery::child_image::Delivery;
 
 #[repr(u32)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

@@ -6,6 +6,8 @@ use core::{
     ptr,
 };
 
+use svmvisor_card_abi::endpoint::TerminalEndpoint;
+
 use crate::{
     arch::x86_64::{
         apic::{self, DoorbellTarget, HostX2Apic, PhysicalX2Apic},
@@ -34,7 +36,6 @@ use crate::{
                 svmvisor_resident_irq_offsets, svmvisor_resident_nmi, svmvisor_resident_sx,
                 text_end,
             },
-            terminal::TerminalEndpoint,
         },
     },
     svm::{

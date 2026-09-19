@@ -6,6 +6,7 @@ use core::{
     sync::atomic::Ordering,
 };
 
+use svmvisor_card_abi::endpoint::TerminalEndpoint;
 use svmvisor_dxe::native::{
     admission::boundary::NativeBoundary,
     resident::{self, CallbackRequest, CallbackSites, GuestStackSpan, launch::xstate_valid},
@@ -344,7 +345,7 @@ unsafe fn callback(b: &NativeBoundary, slot: usize) -> Result<(), u64> {
     #[cfg(feature = "native-resident-boot")]
     let terminal_endpoint = card_boot::terminal_endpoint();
     #[cfg(not(feature = "native-resident-boot"))]
-    let terminal_endpoint: *const abi::terminal::TerminalEndpoint = ptr::null();
+    let terminal_endpoint: *const TerminalEndpoint = ptr::null();
     if !terminal_endpoint.is_null() {
         unsafe {
             mapped(
@@ -353,7 +354,7 @@ unsafe fn callback(b: &NativeBoundary, slot: usize) -> Result<(), u64> {
                 &mt,
                 pat,
                 terminal_endpoint as u64,
-                core::mem::size_of::<abi::terminal::TerminalEndpoint>() as u64,
+                core::mem::size_of::<TerminalEndpoint>() as u64,
                 false,
                 false,
             )?;

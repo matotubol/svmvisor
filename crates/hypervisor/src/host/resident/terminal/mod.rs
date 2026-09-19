@@ -7,10 +7,7 @@ use crate::host::resident::fetch;
 
 pub use crate::host::resident::terminal::{
     control::{CONTROL_OFFSET, DiagnosticGuard, TerminalControl, cpu_mask},
-    endpoint::{PCI_CLASS_REVISION, PCI_VENDOR_DEVICE, TerminalEndpoint, read_config_dword},
-    journal::{
-        CommitError, DeferredFault, JournalIo, commit_diagnostic, commit_record, diagnostic_payload,
-    },
+    deferred_fault::DeferredFault,
     refusal::{
         FetchReadFailure, IrqSite, StartupStage, X2AvicStop, avic_exit_refusal, efer_failure,
         efer_nrip_failure, fan_out_failure, fetch_failure_code, init_error_code, ipi_refusal,
@@ -21,6 +18,5 @@ pub use crate::host::resident::terminal::{
 };
 
 mod control;
-mod endpoint;
-mod journal;
+mod deferred_fault;
 mod refusal;

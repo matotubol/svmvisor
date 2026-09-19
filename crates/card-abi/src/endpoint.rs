@@ -26,9 +26,12 @@ const _: () = {
     assert!(core::mem::offset_of!(TerminalEndpoint, version) == 54);
 };
 
+// `config_aperture` and `valid` are `#[inline]` so the resident payload, which links without LTO,
+// keeps compiling them into the hypervisor's own code as it did when they lived there.
 impl TerminalEndpoint {
     /// Complete admitted MMCONFIG aperture, including upstream bridge config.
     /// PPR57896 2.1.6.1: BusRange field gives log2(number of buses), each1MiB.
+    #[inline]
     pub fn config_aperture(&self) -> Option<(u64, u64)> {
         if !self.valid() {
             return None;
@@ -56,6 +59,7 @@ impl TerminalEndpoint {
         let page = base.checked_add(u64::from(segment_bdf) << 12)?;
         (base >= 0x100000 && page <= 0xffff_f000).then_some(page)
     }
+    #[inline]
     pub fn valid(&self) -> bool {
         self.version == 1
             && self.reserved == 0

@@ -4,13 +4,12 @@
 use core::{ptr, slice};
 
 use sha2::{Digest, Sha256};
+use svmvisor_card_abi::{boot_options::ResidentBootOptions, native_result::NativeResult};
 use uefi_raw::{
     Handle, Status,
     protocol::{device_path::DevicePathProtocol, loaded_image::LoadedImageProtocol},
     table::boot::{BootServices, MemoryType},
 };
-
-use crate::diagnostics::{native_result::NativeResult, resident_boot::ResidentBootOptions};
 
 pub const HEADER_BYTES: usize = 128;
 pub const SLOT_BYTES: usize = 0x100000;

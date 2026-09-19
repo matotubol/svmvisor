@@ -21,6 +21,11 @@ use core::{
     sync::atomic::{AtomicU32, AtomicU64, Ordering},
 };
 
+use svmvisor_card_abi::{
+    endpoint::{self as card_endpoint, PCI_CLASS_REVISION, PCI_VENDOR_DEVICE, TerminalEndpoint},
+    journal::{self, JournalIo},
+};
+
 use crate::{
     arch::x86_64::msr::{HWCR, HWCR_IO_CFG_GP_FAULT, MMIO_CFG_BASE_ADDR, PAT, TARGET_SIGNATURE},
     host::resident::{
@@ -32,7 +37,7 @@ use crate::{
             msr::read_msr,
             stop::{stop, terminal_control},
         },
-        terminal::{self, TerminalEndpoint},
+        terminal,
     },
     svm::vmcb::Vmcb,
 };
@@ -67,7 +72,7 @@ static mut COUNT: usize = 0;
 
 struct TerminalJournal(u64);
 
-impl terminal::JournalIo for TerminalJournal {
+impl JournalIo for TerminalJournal {
     type Error = ();
     fn read(&mut self, offset: u64) -> Result<u32, ()> {
         if offset > 0x9c || offset & 3 != 0 {
@@ -160,7 +165,7 @@ pub(super) unsafe fn record(event: u8, fault: bool, context: [u64; 6], aux: u32)
         if !unsafe { flush_locked(bar) } {
             return;
         }
-        let _ = terminal::commit_diagnostic(&mut TerminalJournal(bar), unsafe { SLOT }, payload);
+        let _ = journal::commit_diagnostic(&mut TerminalJournal(bar), unsafe { SLOT }, payload);
     } else if fault {
         FIRST_FAULT.failed();
     }
@@ -210,7 +215,7 @@ pub(super) unsafe fn export_context(index: usize, context: [u64; 6], aux: u32) {
                 FIRST_FAULT.failed();
                 return;
             };
-            if terminal::commit_diagnostic(&mut TerminalJournal(bar), slot, payload).is_err() {
+            if journal::commit_diagnostic(&mut TerminalJournal(bar), slot, payload).is_err() {
                 FIRST_FAULT.failed();
             }
             return;
@@ -245,7 +250,6 @@ pub(super) unsafe fn export_terminal(words: [u32; 3]) -> bool {
                 return false;
             };
             let mut io = TerminalJournal(bar);
-            use terminal::JournalIo;
             if io.read(0x24) != Ok(0) || io.read(0x84) != Ok(endpoint.boot_id) {
                 return false;
             }
@@ -257,7 +261,7 @@ pub(super) unsafe fn export_terminal(words: [u32; 3]) -> bool {
             unsafe {
                 asm!("rdtsc",out("eax")lo,out("edx")hi,options(nostack,preserves_flags));
             }
-            return terminal::commit_record(
+            return journal::commit_record(
                 &mut io,
                 [
                     sequence.wrapping_add(1),
@@ -389,7 +393,7 @@ unsafe fn record_locked(event: u8, fault: bool, context: [u64; 6], aux: u32) {
         return;
     };
     if unsafe { flush_locked(bar) } {
-        let _ = terminal::commit_diagnostic(&mut TerminalJournal(bar), unsafe { SLOT }, payload);
+        let _ = journal::commit_diagnostic(&mut TerminalJournal(bar), unsafe { SLOT }, payload);
     }
 }
 
@@ -403,7 +407,7 @@ unsafe fn make_payload(event: u8, fault: bool, context: [u64; 6], aux: u32) -> [
     unsafe {
         asm!("rdtsc",out("eax")lo,out("edx")hi,options(nostack,preserves_flags));
     }
-    terminal::diagnostic_payload(
+    journal::diagnostic_payload(
         seq,
         event,
         fault,
@@ -417,7 +421,7 @@ unsafe fn make_payload(event: u8, fault: bool, context: [u64; 6], aux: u32) -> [
 
 unsafe fn flush_locked(bar: u64) -> bool {
     if let Some(payload) = FIRST_FAULT.pending() {
-        if terminal::commit_diagnostic(&mut TerminalJournal(bar), unsafe { SLOT }, payload).is_err()
+        if journal::commit_diagnostic(&mut TerminalJournal(bar), unsafe { SLOT }, payload).is_err()
         {
             FIRST_FAULT.failed();
             return false;
@@ -447,11 +451,11 @@ unsafe fn checked_endpoint_locked() -> Option<(TerminalEndpoint, u64)> {
     }
     let base = ptr::addr_of!(image_start) as u64;
     let cfg = base + CONFIG_ALIAS;
-    let read_cfg = |offset| unsafe { terminal::read_config_dword(cfg, offset) };
+    let read_cfg = |offset| unsafe { card_endpoint::read_config_dword(cfg, offset) };
     // Not permanent: the guest may be sizing BAR0 or toggling Command.MEM, and
     // a later publication finds the endpoint routed again or stays silent.
-    if read_cfg(0) != terminal::PCI_VENDOR_DEVICE
-        || read_cfg(8) != terminal::PCI_CLASS_REVISION
+    if read_cfg(0) != PCI_VENDOR_DEVICE
+        || read_cfg(8) != PCI_CLASS_REVISION
         || (read_cfg(0x0c) >> 16) & 0x7f != 0
         || read_cfg(4) & 2 == 0
         || read_cfg(0x10) != endpoint.bar0_raw
