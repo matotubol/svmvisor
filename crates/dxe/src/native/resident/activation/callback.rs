@@ -11,7 +11,11 @@ use svmvisor_dxe::native::{
     resident::{self, CallbackRequest, CallbackSites, GuestStackSpan, launch::xstate_valid},
 };
 use svmvisor_hypervisor::{
-    arch::x86_64::{capabilities::EvidenceFlag, msr::PAT, registers::GuestRegisters},
+    arch::x86_64::{
+        capabilities::EvidenceFlag,
+        msr::{EFER, PAT},
+        registers::GuestRegisters,
+    },
     boot::{
         descriptors::{FirmwareSelectors, parse_firmware_gdt},
         memory::MemoryDescriptor,
@@ -30,7 +34,7 @@ use super::card_boot;
 #[cfg(feature = "native-resident-smp-activate")]
 use super::physical_boot;
 use super::{
-    ACTIVATING, COOKIE, CPU, CPU_COUNT, CPU_IDS, DIRECTORIES, EFER, GDT, GUEST_ACK, IMAGE, MAP,
+    ACTIVATING, COOKIE, CPU, CPU_COUNT, CPU_IDS, DIRECTORIES, GDT, GUEST_ACK, IMAGE, MAP,
     MAP_COUNT, READY,
     capture::{config, cpu, mtrrs, rdmsr, wrmsr},
     closure::{directories, host_closure},

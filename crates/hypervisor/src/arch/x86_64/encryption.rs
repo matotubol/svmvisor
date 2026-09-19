@@ -8,12 +8,11 @@
 
 use crate::{
     arch::x86_64::msr::{
-        SYS_CFG, SYS_CFG_DEFINED, SYS_CFG_ENCRYPTION, TARGET_PHYSICAL_BITS, TARGET_SIGNATURE,
+        SEV_STATUS, SYS_CFG, SYS_CFG_DEFINED, SYS_CFG_ENCRYPTION, TARGET_PHYSICAL_BITS,
+        TARGET_SIGNATURE,
     },
     memory::address::EncryptionState,
 };
-
-pub const SEV_STATUS: u32 = 0xc001_0131;
 
 /// A pure CPUID check authorizing only the MSR observations named by this plan.
 /// Callers must first establish native AMD CPL0 execution without a hypervisor.

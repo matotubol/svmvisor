@@ -10,14 +10,13 @@
 use crate::{
     arch::x86_64::{
         capabilities::{CapabilityError, CapabilityEvidence},
+        msr::EFER_SVME,
         xstate::XstateArea,
     },
     boot::xstate::{FirmwareXstateControls, FirmwareXstateError, FirmwareXstatePlan},
     memory::address::AddressError,
     svm::exit::ExitSnapshot,
 };
-
-pub const EFER_SVME: u64 = 1 << 12;
 
 pub struct Transaction<'a> {
     original: HostObservation,

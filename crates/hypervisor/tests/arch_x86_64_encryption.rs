@@ -1,7 +1,7 @@
 use svmvisor_hypervisor::{
     arch::x86_64::{
-        encryption::{EncryptionError, NativeEncryptionPlan, SEV_STATUS},
-        msr::SYS_CFG,
+        encryption::{EncryptionError, NativeEncryptionPlan},
+        msr::{SEV_STATUS, SYS_CFG},
     },
     memory::address::{AddressPolicy, EncryptionState},
 };

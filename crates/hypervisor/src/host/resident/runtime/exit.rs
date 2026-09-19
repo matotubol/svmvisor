@@ -8,7 +8,7 @@ use crate::host::resident::runtime::debug::read_native_apic;
 use crate::{
     arch::x86_64::{
         apic,
-        msr::{HWCR, HWCR_CPUID_FLT_EN, MMIO_CFG_BASE_ADDR, SYS_CFG, VM_CR},
+        msr::{EFER, HWCR, HWCR_CPUID_FLT_EN, MMIO_CFG_BASE_ADDR, SYS_CFG, VM_CR},
         registers::GuestRegisters,
     },
     host::resident::{
@@ -603,7 +603,7 @@ unsafe fn handle_exit(context: &mut ExitContext<'_>) -> bool {
                 caps.optional_features().nrip_save
                     && vmcb.guest_in_64_bit_code()
                     && vmcb.bytes()[0x4cb] == 0
-                    && matches!(frame.rcx as u32, 0xc000_0080 | VM_CR)
+                    && matches!(frame.rcx as u32, EFER | VM_CR)
             });
             if frame.rcx as u32 == VM_CR
                 && let Some(caps) = hardware_nrip
@@ -691,7 +691,7 @@ unsafe fn handle_exit(context: &mut ExitContext<'_>) -> bool {
                         state.pending_fault = true;
                         return true;
                     }
-                    Err(error) if frame.rcx as u32 == 0xc000_0080 => {
+                    Err(error) if frame.rcx as u32 == EFER => {
                         let (reason, value) =
                             super::terminal::efer_failure(error, vmcb, efer.logical(), instruction);
                         return stop(state, exit.code, exit.rip, reason, value);

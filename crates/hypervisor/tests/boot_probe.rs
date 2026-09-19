@@ -1,6 +1,7 @@
 use svmvisor_hypervisor::{
     arch::x86_64::{
         capabilities::{CapabilityEvidence, CpuVendor, EvidenceFlag, OptionalFeatures},
+        msr::EFER_SVME,
         xstate::*,
     },
     boot::{probe::*, xstate::*},

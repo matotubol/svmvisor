@@ -4,7 +4,11 @@
 //! entry, interrupt delivery, state capture or physical teardown happens here.
 
 use crate::{
-    arch::x86_64::{capabilities::ValidatedCapabilities, registers::GuestRegisters},
+    arch::x86_64::{
+        capabilities::ValidatedCapabilities,
+        msr::{EFER, EFER_SVME},
+        registers::GuestRegisters,
+    },
     svm::{
         emulation::{self, HypercallAction},
         exit::{ExitAction, ExitSnapshot, ResumeCandidate, ResumeError},
@@ -12,7 +16,6 @@ use crate::{
     },
 };
 
-const EFER_SVME: u64 = 1 << 12;
 const NATIVE_EFER_MASK: u64 = 0xd01;
 
 /// Native CPUID hides SVM and SVM-Lock. APM2 15.31 defines SVMDIS as
@@ -514,7 +517,7 @@ fn native_efer_inner(
     }
     let index = frame.rcx as u32;
     let write = snapshot.info1 == 1;
-    if index != 0xc000_0080 {
+    if index != EFER {
         return Err(E::UnsupportedMsr { index, write });
     }
     let input = ((frame.rdx as u32 as u64) << 32) | vmcb.guest_rax() as u32 as u64;

@@ -81,7 +81,6 @@ include!(concat!(env!("OUT_DIR"), "/resident-entry.rs"));
 const EMPTY: MemoryDescriptor =
     MemoryDescriptor { memory_type: 0, physical_start: 0, page_count: 0, attributes: 0 };
 const COOKIE: usize = 0x53564d52;
-const EFER: u32 = 0xc0000080;
 
 static PACKAGE: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/resident-payload.bin"));
 static INSTALLED: AtomicBool = AtomicBool::new(false);

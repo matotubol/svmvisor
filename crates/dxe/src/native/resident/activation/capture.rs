@@ -6,8 +6,8 @@ use svmvisor_hypervisor::{
     arch::x86_64::{
         apic,
         msr::{
-            MTRR_CAP, SYS_CFG, SYS_CFG_DEFINED, SYS_CFG_ENCRYPTION, TARGET_PHYSICAL_BITS,
-            TARGET_SIGNATURE, TOM2, VM_CR, VM_CR_SVMDIS,
+            EFER, MTRR_CAP, SEV_STATUS, SYS_CFG, SYS_CFG_DEFINED, SYS_CFG_ENCRYPTION,
+            TARGET_PHYSICAL_BITS, TARGET_SIGNATURE, TOM2, VM_CR, VM_CR_SVMDIS,
         },
     },
     host::paging::PagingConfig,
@@ -16,7 +16,7 @@ use svmvisor_hypervisor::{
 #[cfg(feature = "native-resident-smp-activate")]
 use super::physical_boot;
 use super::{
-    Cpu, EFER,
+    Cpu,
     diagnostic::{admission_hint, trace_detail},
 };
 
@@ -132,7 +132,7 @@ pub(super) unsafe fn cpu() -> Result<Cpu, u64> {
         if sys_cfg.is_some_and(|v| v & !allowed != 0) {
             admission_hint(153, SYS_CFG as u64, sys_cfg.unwrap(), allowed);
         } else {
-            admission_hint(154, 0xc0010131, sev_status.unwrap_or(0), 0);
+            admission_hint(154, SEV_STATUS as u64, sev_status.unwrap_or(0), 0);
         }
         3u64
     })?;

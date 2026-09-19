@@ -5,7 +5,7 @@ use core::sync::atomic::AtomicU32;
 
 use svmvisor_dxe::diagnostics::resident_boot::{AdmissionFailure, ApFailureObservation};
 use svmvisor_hypervisor::{
-    arch::x86_64::msr::{MTRR_DEF_TYPE, VM_CR_R_INIT},
+    arch::x86_64::msr::{EFER, MTRR_DEF_TYPE, VM_CR_R_INIT},
     host::descriptors::HostDescriptorRequest,
     memory::mtrrs::{CAP_FIX, DEF_TYPE_E, DEF_TYPE_FE},
 };

@@ -221,6 +221,7 @@ pub fn validate_table_source(memory: &ValidatedMemoryMap<'_>, address: u64) -> R
 mod native {
     use super::*;
     use core::{arch::asm, marker::PhantomData, ptr};
+    use svmvisor_hypervisor::arch::x86_64::msr::{EFER, SEV_STATUS};
     use svmvisor_memory_attributes::{Attributes, Memory, x86};
 
     /// Lexically local reader. It cannot be sent to an AP or shared; no stored
@@ -446,7 +447,7 @@ mod native {
             asm!("mov {}, cr0", out(reg) state.cr0, options(nomem, nostack, preserves_flags));
             asm!("mov {}, cr3", out(reg) state.cr3, options(nomem, nostack, preserves_flags));
             asm!("mov {}, cr4", out(reg) state.cr4, options(nomem, nostack, preserves_flags));
-            asm!("rdmsr", in("ecx") 0xc000_0080u32, out("eax") low, out("edx") high,
+            asm!("rdmsr", in("ecx") EFER, out("eax") low, out("edx") high,
                 options(nomem, nostack, preserves_flags));
         }
         state.efer = u64::from(low) | (u64::from(high) << 32);
@@ -461,7 +462,7 @@ mod native {
             let low: u32;
             let high: u32;
             unsafe {
-                asm!("rdmsr", in("ecx") 0xc001_0131u32, out("eax") low, out("edx") high,
+                asm!("rdmsr", in("ecx") SEV_STATUS, out("eax") low, out("edx") high,
                     options(nomem, nostack, preserves_flags));
             }
             state.sev_status = u64::from(low) | (u64::from(high) << 32);

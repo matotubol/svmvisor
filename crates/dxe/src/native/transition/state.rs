@@ -12,9 +12,7 @@ pub const XSTATE_CAPACITY: usize = 1024;
 /// Literal sites still need the architecture/CPUID guards in the contract.
 /// Listing an address here is not permission to probe its availability.
 pub mod msr {
-    pub use svmvisor_hypervisor::arch::x86_64::{encryption::SEV_STATUS, msr::HWCR};
-    pub const EFER: u32 = 0xc000_0080;
-    pub const VM_CR: u32 = 0xc001_0114;
+    pub use svmvisor_hypervisor::arch::x86_64::msr::{EFER, HWCR, SEV_STATUS, VM_CR};
     pub const VM_HSAVE_PA: u32 = 0xc001_0117;
     pub const DEBUGCTL: u32 = 0x0000_01d9;
     pub const DEBUG_EXTN_CTL: u32 = 0xc000_010f;

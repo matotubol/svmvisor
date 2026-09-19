@@ -12,6 +12,8 @@ use core::{
 use svmvisor_dxe::native::admission::{
     cpu::QuiescentBsp, memory as native_memory, snapshot::NativeSnapshot,
 };
+#[cfg(target_os = "uefi")]
+use svmvisor_hypervisor::arch::x86_64::msr::EFER;
 use svmvisor_hypervisor::{
     boot::memory::MAX_GDT_BYTES, host::paging as host_paging, memory::address::is_canonical_48,
 };
@@ -487,7 +489,7 @@ unsafe fn read_efer() -> u64 {
     let low: u32;
     let high: u32;
     unsafe {
-        core::arch::asm!("rdmsr", in("ecx") 0xc0000080u32, out("eax") low, out("edx") high,
+        core::arch::asm!("rdmsr", in("ecx") EFER, out("eax") low, out("edx") high,
         options(nostack, nomem, preserves_flags));
     }
     (u64::from(high) << 32) | u64::from(low)

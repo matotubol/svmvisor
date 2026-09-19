@@ -38,6 +38,11 @@ pub const MTRR_FIXED: [u32; 11] = [
 pub const PAT: u32 = 0x277;
 pub const MTRR_DEF_TYPE: u32 = 0x2ff;
 
+/// Extended Feature Enable Register.
+pub const EFER: u32 = 0xc000_0080;
+/// Secure Virtual Machine Enable (SVME, bit 12).
+pub const EFER_SVME: u64 = 1 << 12;
+
 pub const SYS_CFG: u32 = 0xc001_0010;
 pub const HWCR: u32 = 0xc001_0015;
 /// IORR_BASE n is `IORR_BASE0 + 2n` for n in 0..2; its IORR_MASK follows it.
@@ -79,3 +84,5 @@ pub const VM_CR_SVMDIS: u64 = 1 << 4;
 /// enabled by CPUID Fn8000_000A EDX[13]. The two widths conflict; the host
 /// primitive is `arch::x86_64::apic::ring_avic_doorbell`.
 pub const AVIC_DOORBELL: u32 = 0xc001_011b;
+
+pub const SEV_STATUS: u32 = 0xc001_0131;
