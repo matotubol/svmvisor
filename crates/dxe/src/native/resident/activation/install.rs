@@ -4,11 +4,11 @@
 use core::arch::x86_64::__cpuid_count;
 use core::{ffi::c_void, ptr, sync::atomic::Ordering};
 
+use svmvisor_card_abi::package::Payload;
 use svmvisor_dxe::native::{
     admission::memory,
     resident::{
         self, allocation,
-        delivery::Payload,
         launch::{common_backing_offset, directory_valid},
     },
 };

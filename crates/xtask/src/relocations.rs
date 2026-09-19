@@ -1,5 +1,5 @@
 //! Package an already-linked ELF64 image for the checked loader
-//! (`crates/firmware-handoff/src/layout.rs` is the consumer and the authority
+//! (`crates/card-abi/src/package.rs` is the consumer and the authority
 //! on the "SVMRELO1" format).
 //!
 //! No relinking happens at the requested load address. Retained ELF RELA

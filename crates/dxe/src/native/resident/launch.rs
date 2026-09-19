@@ -1,4 +1,5 @@
 //! Pure checks used by the actual resident firmware activation adapter.
+use svmvisor_card_abi::package::{ARENA_BYTES, is_valid_arena};
 use svmvisor_hypervisor::{
     arch::x86_64::{registers::GuestRegisters, xstate::effective_mxcsr_mask},
     guest::continuation::native_cr4_supported,
@@ -11,10 +12,7 @@ use svmvisor_hypervisor::{
     },
 };
 
-use crate::native::{
-    admission::boundary::NativeBoundary,
-    resident::delivery::{ARENA_BYTES, is_valid_arena},
-};
+use crate::native::admission::boundary::NativeBoundary;
 
 pub use svmvisor_hypervisor::memory::mtrrs::Mtrrs;
 

@@ -11,6 +11,14 @@
 //! firmware CR3. Current writable/executable identity backing must be admitted
 //! separately; memory-type metadata alone is insufficient. The resident owner
 //! supplies private W^X mappings after takeover.
+//!
+//! The native raw resident payload uses the existing checked package format.
+//!
+//! Share only the firmware-independent parser/relocator, not the emulator's
+//! opt-in protocol, ExitBootServices owner, or execution policy. This raw image
+//! is never registered as a loaded runtime PE: UEFI 2.11 8.4.1 automatic loaded
+//! image relocation must not rewrite the monitor's physical host pointers.
+use svmvisor_card_abi::package::{ARENA_BYTES, LayoutError, Payload, is_valid_arena};
 use svmvisor_hypervisor::{
     boot::memory::MemoryDescriptor,
     host::resident::MAX_RESIDENT_CPUS,
@@ -21,10 +29,7 @@ use uefi_raw::{
     table::boot::{AllocateType, BootServices, MemoryType},
 };
 
-use crate::native::resident::{
-    delivery::{ARENA_BYTES, LayoutError, Payload, is_valid_arena},
-    memory::{ResidentMemoryError, validate_runtime_coverage},
-};
+use crate::native::resident::memory::{ResidentMemoryError, validate_runtime_coverage};
 
 const PAGE_BYTES: u64 = address::PAGE_BYTES as u64;
 const ARENA_PAGES: usize = ARENA_BYTES / PAGE_BYTES as usize;

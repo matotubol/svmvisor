@@ -1,4 +1,4 @@
-use svmvisor_firmware_handoff::layout::{
+use svmvisor_card_abi::package::{
     ARENA_BYTES, HANDOFF_OFFSET, LayoutError, Payload, is_valid_arena,
 };
 

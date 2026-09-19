@@ -6,15 +6,13 @@
 
 use core::arch::asm;
 
+use svmvisor_card_abi::package::{ARENA_BYTES, HANDOFF_OFFSET, Payload, is_valid_arena};
 use uefi::{
     Handle, Status,
     boot::{self, AllocateType, MemoryType},
     proto::loaded_image::LoadedImage,
 };
 
-use crate::layout::{ARENA_BYTES, HANDOFF_OFFSET, Payload};
-
-pub mod layout;
 mod ownership;
 mod smp;
 
@@ -77,7 +75,7 @@ pub unsafe fn run_initialized(payload: &[u8], entry_offset: usize, reject: bool)
         }
     };
     let requested: u64 = env!("SVMVISOR_SELECTED_ARENA_BASE").parse().unwrap();
-    if requested != 0 && !layout::is_valid_arena(requested) {
+    if requested != 0 && !is_valid_arena(requested) {
         debug("FAIL uefi-arena-layout\n");
         return Status::INVALID_PARAMETER;
     }

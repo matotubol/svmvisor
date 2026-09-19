@@ -28,7 +28,7 @@ linked. The output directory must not exist; it keeps every artifact and one
 4. `ld.lld --gc-sections --emit-relocs -T crates/resident-payload/payload.ld`
    -> `payload.elf`; `llvm-objcopy -O binary` -> `payload.bin`.
 5. Package the retained relocations (`src/relocations.rs`) -> `payload.reloc`,
-   the `SVMRELO1` container that `crates/firmware-handoff/src/layout.rs` loads
+   the `SVMRELO1` container that `crates/card-abi/src/package.rs` loads
    and `crates/dxe/build.rs` embeds through `SVMVISOR_RESIDENT_PAYLOAD`.
 6. Audit the linked payload (`src/audit.rs`): no undefined symbols
    (`llvm-nm`); over the `llvm-objdump` disassembly, no FP/SIMD/xstate

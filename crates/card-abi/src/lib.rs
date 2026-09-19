@@ -15,3 +15,4 @@ pub mod endpoint;
 pub mod envelope;
 pub mod journal;
 pub mod native_result;
+pub mod package;

@@ -2,12 +2,15 @@
 //! not signature verification or authorization to execute its contents.
 
 use sha2::{Digest, Sha256};
-use svmvisor_card_abi::envelope::{
-    DIGEST_BYTES, DIGEST_OFFSET, FLAGS_OFFSET, FLAGS_PACKAGE, HEADER_BYTES, HEADER_BYTES_OFFSET,
-    MIN_PACKAGE_BYTES, PACKAGE_MAGIC, PACKAGE_RESERVED_OFFSET, PAYLOAD_BYTES_OFFSET,
-    PAYLOAD_OFFSET_OFFSET, SLOT_BYTES, SLOT_BYTES_OFFSET, VERSION, VERSION_OFFSET,
+use svmvisor_card_abi::{
+    envelope::{
+        DIGEST_BYTES, DIGEST_OFFSET, FLAGS_OFFSET, FLAGS_PACKAGE, HEADER_BYTES,
+        HEADER_BYTES_OFFSET, MIN_PACKAGE_BYTES, PACKAGE_MAGIC, PACKAGE_RESERVED_OFFSET,
+        PAYLOAD_BYTES_OFFSET, PAYLOAD_OFFSET_OFFSET, SLOT_BYTES, SLOT_BYTES_OFFSET, VERSION,
+        VERSION_OFFSET,
+    },
+    package::{LayoutError, Payload},
 };
-use svmvisor_firmware_handoff::layout::{LayoutError, Payload};
 
 pub const JOURNAL_SUCCESS: u32 = 0x00050010;
 pub const JOURNAL_FAILURE: u32 = 0x0005001f;

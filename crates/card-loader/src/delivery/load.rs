@@ -3,12 +3,14 @@
 
 use core::ptr::{null_mut, slice_from_raw_parts_mut};
 
-use svmvisor_card_abi::envelope::HEADER_BYTES;
+use svmvisor_card_abi::{
+    envelope::HEADER_BYTES,
+    package::{ARENA_BYTES, is_valid_arena},
+};
 use svmvisor_card_loader::{
     delivery::card::{self, Manifest},
     diagnostics::journal::{self, JournalIo},
 };
-use svmvisor_firmware_handoff::layout::ARENA_BYTES;
 use uefi_raw::{
     Status,
     table::boot::{AllocateType, BootServices, MemoryType},
@@ -121,9 +123,7 @@ fn stage(io: &Bar0, services: &BootServices, pinned: &str) -> Result<(), Status>
             unsafe {
                 ARENA = Some(address);
             }
-            if address != index * 0x200000
-                || !svmvisor_firmware_handoff::layout::is_valid_arena(address)
-            {
+            if address != index * 0x200000 || !is_valid_arena(address) {
                 return Err(Status::DEVICE_ERROR);
             }
             selected = Some(address);
