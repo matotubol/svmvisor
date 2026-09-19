@@ -43,6 +43,9 @@ pub const EFER: u32 = 0xc000_0080;
 /// Secure Virtual Machine Enable (SVME, bit 12).
 pub const EFER_SVME: u64 = 1 << 12;
 
+pub const TSC_AUX: u32 = 0xc000_0103;
+pub const TSC_RATIO: u32 = 0xc000_0104;
+
 pub const SYS_CFG: u32 = 0xc001_0010;
 pub const HWCR: u32 = 0xc001_0015;
 /// IORR_BASE n is `IORR_BASE0 + 2n` for n in 0..2; its IORR_MASK follows it.

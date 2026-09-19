@@ -5,8 +5,6 @@
 //! 188–189 supplies CPUID gates and AUX/ratio layouts. Zero ratio is refused
 //! by our positive-rate restoration policy, not claimed to be an invalid MSR.
 
-pub const TSC_AUX_MSR: u32 = 0xc000_0103;
-pub const TSC_RATIO_MSR: u32 = 0xc000_0104;
 pub const IDENTITY_TSC_RATIO: u64 = 1 << 32;
 const RATIO_MASK: u64 = (1 << 40) - 1;
 
