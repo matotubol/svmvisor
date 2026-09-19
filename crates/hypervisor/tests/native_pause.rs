@@ -1,4 +1,4 @@
-use svmvisor_hypervisor::svm::{native_pause::native_pause_retry_ready, vmcb::Vmcb};
+use svmvisor_hypervisor::svm::vmcb::{Vmcb, native_pause_retry_ready};
 
 fn write(vmcb: &mut Vmcb, offset: usize, bytes: &[u8]) {
     // Test-only construction of fields normally written by VMRUN/VMEXIT.

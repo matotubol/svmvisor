@@ -451,7 +451,7 @@ unsafe fn handle_exit(context: &mut ExitContext<'_>) -> bool {
             unsafe {
                 diagnostic_record(5, false, [exit.rip, vmcb.guest_cr3(), state.exits, 0, 0, 0], 0);
             }
-            if crate::svm::native_pause::native_pause_retry_ready(vmcb) {
+            if crate::svm::vmcb::native_pause_retry_ready(vmcb) {
                 return true;
             }
             return stop(state, exit.code, exit.rip, exit.info1, exit.info2);

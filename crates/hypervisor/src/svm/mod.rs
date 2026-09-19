@@ -11,7 +11,6 @@ pub mod emulation;
 pub mod events;
 pub mod exit;
 pub mod mcax;
-pub mod native_pause;
 pub mod permission_maps;
 pub mod syscfg;
 pub mod vmcb;

@@ -14,7 +14,7 @@ use crate::{
     },
 };
 
-pub use crate::svm::vmcb::reflection::ReinjectOutcome;
+pub use crate::svm::vmcb::{control::native_pause_retry_ready, reflection::ReinjectOutcome};
 
 mod continuation;
 mod control;
