@@ -4,7 +4,7 @@ pub const ARENA_BYTES: usize = 0x100000;
 pub const HANDOFF_OFFSET: usize = 0xff000;
 const HEADER_BYTES: usize = 64;
 
-pub struct Payload<'a> {
+pub struct Package<'a> {
     bytes: &'a [u8],
     linked_base: u64,
     image_bytes: usize,
@@ -13,17 +13,17 @@ pub struct Payload<'a> {
     relocation_count: usize,
 }
 
-impl<'a> Payload<'a> {
+impl<'a> Package<'a> {
     /// Validate every byte range before firmware allocates or writes memory.
-    pub fn parse(bytes: &'a [u8], entry_offset: usize) -> Result<Self, LayoutError> {
+    pub fn parse(bytes: &'a [u8], entry_offset: usize) -> Result<Self, PackageError> {
         if bytes.len() < HEADER_BYTES
             || &bytes[..8] != b"SVMRELO1"
             || word(bytes, 16) != ARENA_BYTES as u64
             || word(bytes, 56) != 0
         {
-            return Err(LayoutError::Header);
+            return Err(PackageError::Header);
         }
-        let size = |offset| usize::try_from(word(bytes, offset)).map_err(|_| LayoutError::Bounds);
+        let size = |offset| usize::try_from(word(bytes, offset)).map_err(|_| PackageError::Bounds);
         let payload = Self {
             bytes,
             linked_base: word(bytes, 8),
@@ -37,33 +37,33 @@ impl<'a> Payload<'a> {
             || payload.image_bytes > payload.memory_bytes
             || payload.memory_bytes > HANDOFF_OFFSET
         {
-            return Err(LayoutError::Bounds);
+            return Err(PackageError::Bounds);
         }
         if payload.entry_offset != entry_offset || entry_offset >= payload.image_bytes {
-            return Err(LayoutError::Entry);
+            return Err(PackageError::Entry);
         }
         let total = payload
             .relocation_count
             .checked_mul(16)
             .and_then(|n| n.checked_add(HEADER_BYTES))
             .and_then(|n| n.checked_add(payload.image_bytes))
-            .ok_or(LayoutError::Bounds)?;
+            .ok_or(PackageError::Bounds)?;
         if total != bytes.len() {
-            return Err(LayoutError::Bounds);
+            return Err(PackageError::Bounds);
         }
         let mut previous_end = 0;
         for i in 0..payload.relocation_count {
             let (offset, width) = payload.relocation(i)?;
-            let end = offset.checked_add(width).ok_or(LayoutError::Relocation)?;
+            let end = offset.checked_add(width).ok_or(PackageError::Relocation)?;
             if offset < previous_end || end > payload.image_bytes {
-                return Err(LayoutError::Relocation);
+                return Err(PackageError::Relocation);
             }
             previous_end = end;
             let value = payload.value(offset, width);
             if value < payload.linked_base
                 || value > payload.linked_base + payload.memory_bytes as u64
             {
-                return Err(LayoutError::Relocation);
+                return Err(PackageError::Relocation);
             }
         }
         Ok(payload)
@@ -71,9 +71,9 @@ impl<'a> Payload<'a> {
 
     /// Initialize only the caller's exact owned arena. Validation precedes all
     /// writes; no firmware pointers or allocation side effects are needed here.
-    pub fn load(&self, arena: &mut [u8], base: u64) -> Result<(), LayoutError> {
+    pub fn load(&self, arena: &mut [u8], base: u64) -> Result<(), PackageError> {
         if !is_valid_arena(base) || arena.len() != ARENA_BYTES {
-            return Err(LayoutError::Arena);
+            return Err(PackageError::Arena);
         }
         arena.fill(0);
         arena[..self.image_bytes]
@@ -102,13 +102,13 @@ impl<'a> Payload<'a> {
         Ok(())
     }
 
-    fn relocation(&self, index: usize) -> Result<(usize, usize), LayoutError> {
+    fn relocation(&self, index: usize) -> Result<(usize, usize), PackageError> {
         let record = HEADER_BYTES + self.image_bytes + index * 16;
         let offset =
-            usize::try_from(word(self.bytes, record)).map_err(|_| LayoutError::Relocation)?;
+            usize::try_from(word(self.bytes, record)).map_err(|_| PackageError::Relocation)?;
         let width = word(self.bytes, record + 8);
         if width != 4 && width != 8 {
-            return Err(LayoutError::Relocation);
+            return Err(PackageError::Relocation);
         }
         Ok((offset, width as usize))
     }
@@ -124,7 +124,7 @@ impl<'a> Payload<'a> {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum LayoutError {
+pub enum PackageError {
     Header,
     Bounds,
     Entry,

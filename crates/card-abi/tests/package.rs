@@ -1,5 +1,5 @@
 use svmvisor_card_abi::package::{
-    ARENA_BYTES, HANDOFF_OFFSET, LayoutError, Payload, is_valid_arena,
+    ARENA_BYTES, HANDOFF_OFFSET, Package, PackageError, is_valid_arena,
 };
 
 fn set_word(bytes: &mut [u8], offset: usize, value: u64) {
@@ -21,14 +21,14 @@ fn package() -> Vec<u8> {
     bytes
 }
 
-fn rejects(bytes: &[u8], error: LayoutError) {
-    assert!(matches!(Payload::parse(bytes, 16), Err(actual) if actual == error));
+fn rejects(bytes: &[u8], error: PackageError) {
+    assert!(matches!(Package::parse(bytes, 16), Err(actual) if actual == error));
 }
 
 #[test]
 fn same_package_relocates_initialized_addresses_and_zeros_owned_memory() {
     let bytes = package();
-    let payload = Payload::parse(&bytes, 16).unwrap();
+    let payload = Package::parse(&bytes, 16).unwrap();
     for base in [0x100000, 0x200000, 0x300000, 0x810000, 0x3ff00000] {
         let mut arena = vec![0xcc; ARENA_BYTES];
         payload.load(&mut arena, base).unwrap();
@@ -47,16 +47,16 @@ fn same_package_relocates_initialized_addresses_and_zeros_owned_memory() {
 
 #[test]
 fn malformed_header_and_arithmetic_overflow_are_rejected() {
-    rejects(&[], LayoutError::Header);
+    rejects(&[], PackageError::Header);
     for (offset, value, error) in [
-        (0, 0, LayoutError::Header),
-        (8, u64::MAX, LayoutError::Bounds),
-        (16, 0, LayoutError::Header),
-        (24, u64::MAX, LayoutError::Bounds),
-        (32, ARENA_BYTES as u64, LayoutError::Bounds),
-        (40, 32, LayoutError::Entry),
-        (48, u64::MAX, LayoutError::Bounds),
-        (56, 1, LayoutError::Header),
+        (0, 0, PackageError::Header),
+        (8, u64::MAX, PackageError::Bounds),
+        (16, 0, PackageError::Header),
+        (24, u64::MAX, PackageError::Bounds),
+        (32, ARENA_BYTES as u64, PackageError::Bounds),
+        (40, 32, PackageError::Entry),
+        (48, u64::MAX, PackageError::Bounds),
+        (56, 1, PackageError::Header),
     ] {
         let mut bytes = package();
         set_word(&mut bytes, offset, value);
@@ -64,9 +64,9 @@ fn malformed_header_and_arithmetic_overflow_are_rejected() {
     }
     let mut bytes = package();
     bytes.push(0);
-    rejects(&bytes, LayoutError::Bounds);
+    rejects(&bytes, PackageError::Bounds);
     bytes.truncate(100);
-    rejects(&bytes, LayoutError::Bounds);
+    rejects(&bytes, PackageError::Bounds);
 }
 
 #[test]
@@ -74,7 +74,7 @@ fn relocation_sites_must_be_sorted_disjoint_and_initialized() {
     for (offset, value) in [(96, u64::MAX), (96, 29), (104, 3), (112, 4), (112, 0), (112, 32)] {
         let mut bytes = package();
         set_word(&mut bytes, offset, value);
-        rejects(&bytes, LayoutError::Relocation);
+        rejects(&bytes, PackageError::Relocation);
     }
 }
 
@@ -83,19 +83,19 @@ fn relocation_targets_cannot_escape_declared_memory() {
     for value in [0, 0xfffff, 0x101001, u64::MAX] {
         let mut bytes = package();
         set_word(&mut bytes, 64, value);
-        rejects(&bytes, LayoutError::Relocation);
+        rejects(&bytes, PackageError::Relocation);
     }
 }
 
 #[test]
 fn invalid_arena_rejection_preserves_destination() {
     let bytes = package();
-    let payload = Payload::parse(&bytes, 16).unwrap();
+    let payload = Package::parse(&bytes, 16).unwrap();
     let mut arena = vec![0xa5; ARENA_BYTES];
     for base in [0, 0x80000, 0x200001, 0x180000, 0x40000000, u64::MAX - 4095] {
         assert!(!is_valid_arena(base));
-        assert_eq!(payload.load(&mut arena, base), Err(LayoutError::Arena));
+        assert_eq!(payload.load(&mut arena, base), Err(PackageError::Arena));
         assert!(arena.iter().all(|&b| b == 0xa5));
     }
-    assert_eq!(payload.load(&mut arena[..ARENA_BYTES - 1], 0x200000), Err(LayoutError::Arena));
+    assert_eq!(payload.load(&mut arena[..ARENA_BYTES - 1], 0x200000), Err(PackageError::Arena));
 }

@@ -9,7 +9,7 @@ use svmvisor_card_abi::{
         PAYLOAD_BYTES_OFFSET, PAYLOAD_OFFSET_OFFSET, SLOT_BYTES, SLOT_BYTES_OFFSET, VERSION,
         VERSION_OFFSET,
     },
-    package::{LayoutError, Payload},
+    package::{Package, PackageError},
 };
 
 pub const JOURNAL_SUCCESS: u32 = 0x00050010;
@@ -58,7 +58,7 @@ impl Manifest {
         self.package_bytes
     }
 
-    pub fn package<'a>(&self, bytes: &'a [u8]) -> Result<Payload<'a>, CardError> {
+    pub fn package<'a>(&self, bytes: &'a [u8]) -> Result<Package<'a>, CardError> {
         if bytes.len() != self.package_bytes || bytes.len() < MIN_PACKAGE_BYTES {
             return Err(CardError::Bounds);
         }
@@ -67,7 +67,7 @@ impl Manifest {
         }
         let entry = u64::from_le_bytes(bytes[40..48].try_into().unwrap());
         let entry = usize::try_from(entry).map_err(|_| CardError::Bounds)?;
-        Payload::parse(bytes, entry).map_err(CardError::Package)
+        Package::parse(bytes, entry).map_err(CardError::Package)
     }
 }
 
@@ -76,7 +76,7 @@ pub enum CardError {
     Header,
     Bounds,
     Digest,
-    Package(LayoutError),
+    Package(PackageError),
 }
 
 /// Decode the build's exact digest. Missing/malformed pins are never accepted.

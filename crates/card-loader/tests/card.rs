@@ -3,7 +3,7 @@
 use sha2::{Digest, Sha256};
 use svmvisor_card_abi::{
     envelope::SLOT_BYTES,
-    package::{ARENA_BYTES, LayoutError},
+    package::{ARENA_BYTES, PackageError},
 };
 use svmvisor_card_loader::delivery::card::*;
 
@@ -52,10 +52,10 @@ fn pinned_package_is_copied_relocated_and_zero_filled_only_in_owned_arena() {
     assert!(arena[16..0xff000].iter().all(|&b| b == 0));
     for base in [0, 0x100001, 0x180000, 0x40000000] {
         arena.fill(0xaa);
-        assert_eq!(payload.load(&mut arena, base), Err(LayoutError::Arena));
+        assert_eq!(payload.load(&mut arena, base), Err(PackageError::Arena));
         assert!(arena.iter().all(|&b| b == 0xaa));
     }
-    assert_eq!(payload.load(&mut arena[..ARENA_BYTES - 1], 0x400000), Err(LayoutError::Arena));
+    assert_eq!(payload.load(&mut arena[..ARENA_BYTES - 1], 0x400000), Err(PackageError::Arena));
 }
 
 #[test]

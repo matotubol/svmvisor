@@ -6,7 +6,7 @@
 
 use core::arch::asm;
 
-use svmvisor_card_abi::package::{ARENA_BYTES, HANDOFF_OFFSET, Payload, is_valid_arena};
+use svmvisor_card_abi::package::{ARENA_BYTES, HANDOFF_OFFSET, Package, is_valid_arena};
 use uefi::{
     Handle, Status,
     boot::{self, AllocateType, MemoryType},
@@ -67,7 +67,7 @@ pub unsafe fn run_initialized(payload: &[u8], entry_offset: usize, reject: bool)
         debug("handoff-not-authorized\n");
         return Status::ACCESS_DENIED;
     }
-    let package = match Payload::parse(payload, entry_offset) {
+    let package = match Package::parse(payload, entry_offset) {
         Ok(package) => package,
         Err(_) => {
             debug("FAIL uefi-payload-layout\n");

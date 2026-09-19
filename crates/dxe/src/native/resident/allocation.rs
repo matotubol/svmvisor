@@ -18,7 +18,7 @@
 //! opt-in protocol, ExitBootServices owner, or execution policy. This raw image
 //! is never registered as a loaded runtime PE: UEFI 2.11 8.4.1 automatic loaded
 //! image relocation must not rewrite the monitor's physical host pointers.
-use svmvisor_card_abi::package::{ARENA_BYTES, LayoutError, Payload, is_valid_arena};
+use svmvisor_card_abi::package::{ARENA_BYTES, Package, PackageError, is_valid_arena};
 use svmvisor_hypervisor::{
     boot::memory::MemoryDescriptor,
     host::resident::MAX_RESIDENT_CPUS,
@@ -90,7 +90,7 @@ impl RuntimeArena<'_> {
     /// The destination's entry/code must separately be proven executable before
     /// transferring control. The source is a separately linked audited raw
     /// payload, never a copy of an initialized runtime delivery PE (8.4.1).
-    pub unsafe fn initialize(&mut self, package: &Payload<'_>) -> Result<(), AllocationError> {
+    pub unsafe fn initialize(&mut self, package: &Package<'_>) -> Result<(), AllocationError> {
         if self.processors() != 1 {
             return Err(AllocationError::Address(self.base()));
         }
@@ -102,7 +102,7 @@ impl RuntimeArena<'_> {
     /// applied independently to this slot. No slot may be executing during load.
     pub unsafe fn initialize_slot(
         &mut self,
-        package: &Payload<'_>,
+        package: &Package<'_>,
         slot: usize,
     ) -> Result<(), AllocationError> {
         if self.owned.pages != self.owned.keep_pages {
@@ -294,7 +294,7 @@ pub enum AllocationError {
     Address(u64),
     Cleanup(Status, u64),
     Released,
-    Layout(LayoutError),
+    Layout(PackageError),
     Map(ResidentMemoryError),
 }
 

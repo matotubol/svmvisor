@@ -4,7 +4,7 @@
 use core::arch::x86_64::__cpuid_count;
 use core::{ffi::c_void, ptr, sync::atomic::Ordering};
 
-use svmvisor_card_abi::package::Payload;
+use svmvisor_card_abi::package::Package;
 use svmvisor_dxe::native::{
     admission::memory,
     resident::{
@@ -173,7 +173,7 @@ unsafe fn install_inner(image: Handle, boot_services: &BootServices) -> Result<(
     }
     trace(b'd');
     preparation_step(5, image_base);
-    let package = Payload::parse(PACKAGE, RESIDENT_ENTRY_OFFSET).map_err(|error| {
+    let package = Package::parse(PACKAGE, RESIDENT_ENTRY_OFFSET).map_err(|error| {
         trace_detail(&error);
         Status::LOAD_ERROR
     })?;
