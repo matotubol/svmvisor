@@ -555,17 +555,25 @@ instead of restating it.
 
 | What | Home |
 |---|---|
-| MSR numbers and their bits | `hypervisor::arch::x86_64::msr` (`EFER`, `SEV_STATUS` and the TSC MSRs are still to move in) |
+| MSR numbers and their bits | `hypervisor::arch::x86_64::msr` (the TSC MSRs in `clock.rs` are still to move in) |
 | APIC / x2APIC registers | `hypervisor::arch::x86_64::apic` |
-| page size, address mask, page-table bits | `hypervisor::memory::address` (to be created there; today each user has a copy) |
+| page size, address mask, page-table bits | `hypervisor::memory::address`. A `u64` view is derived from it (`PAGE_BYTES as u64`), never a second literal |
+| memory-map descriptor bound `MAX_DESCRIPTORS` | `hypervisor::boot::memory` |
+| MP Services status bits | `dxe::native::admission::cpu` |
 | VMCB offsets | `hypervisor::svm::vmcb`, `pub(crate)`; other modules use `Vmcb` accessors, not offsets |
 | exit codes | `hypervisor::svm::exit` |
 | resident bridge ABI | `hypervisor::host::resident` |
-| card image format | one module, shared by `dxe` and `xtask` |
+| card image format | needs a `dxe` module compiled under every `card-*` feature (none exists yet); until then `delivery/card.rs`, `delivery/child_image.rs` and `xtask/card.rs` each keep a copy |
 
 A crate that depends on `hypervisor` imports these; it never re-declares
 them. A deliberately standalone crate (`memory-attributes`, `rompack`) may
 keep its own copy, with a comment naming the authoritative one.
+
+Same value is not same concept: `APIC_BASE_ADDRESS` and the AVIC pointer
+masks equal `ADDRESS_MASK` numerically and stay separate. A constant whose only
+candidate homes are feature-disjoint or binary-only mounts (`ARENA_PAGES`)
+stays duplicated, guarded by a `const _` equality assert, until the M10 debt
+is paid.
 
 **K4.** A wire struct — anything assembly, firmware, the card or another
 binary reads — is `#[repr(C)]` (plus `align` where required), has fixed-width
