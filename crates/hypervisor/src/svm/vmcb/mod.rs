@@ -8,7 +8,6 @@
 
 use crate::{
     arch::x86_64::descriptors::SegmentState,
-    memory::address::ADDRESS_MASK,
     svm::{
         events::{self, ExternalInterruptError, ReflectedException},
         exit::ExitSnapshot,
@@ -280,8 +279,8 @@ impl Vmcb {
             || self.read_u64::<0x098>() != 0
             || self.read_u64::<0x0e8>() != 0
             || self.read_u64::<0x0f0>() != 0
-            || backing == 0 || backing & !ADDRESS_MASK != 0
-            || table & ADDRESS_MASK == 0
+            || backing == 0 || backing & !0x000f_ffff_ffff_f000 != 0
+            || table & 0x000f_ffff_ffff_f000 == 0
             || table >> 52 != 0 || table & 0xfff > super::x2avic::MAX_ID as u64
             || backing == table & !0xfff
             || !self.event_intercept(EventIntercept::PhysicalInterrupt)
