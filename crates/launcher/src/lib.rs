@@ -1,9 +1,8 @@
-//! Native child admission, resource ownership, and observable launcher results.
+//! Native child admission, resident preparation, and observable launcher results.
 //!
 //! Public modules follow the source directories, for example
-//! `native::admission::cpu` or `diagnostics::resident_boot`. Firmware image entry
-//! points, resource ownership, and emulator fixtures are wired separately by
-//! `main.rs`.
+//! `native::admission::cpu` or `diagnostics::resident_boot`. The firmware image
+//! entry point and the resident activation are wired separately by `main.rs`.
 
 #![no_std]
 #![forbid(unsafe_op_in_unsafe_fn)]

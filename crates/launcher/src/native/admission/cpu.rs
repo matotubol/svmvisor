@@ -42,12 +42,6 @@ impl PreparedCpus<'_> {
         self.report
     }
 
-    /// Copy an already validated inventory record without a firmware call.
-    /// Like report(), this is historical outside the retained CPU scope.
-    pub fn processor_information(&self, number: usize) -> Result<ProcessorInformation, CpuError> {
-        Ok(self.record(number)?.information)
-    }
-
     fn record(&self, number: usize) -> Result<&Record, CpuError> {
         if number >= self.report.total_processors {
             return Err(CpuError::Bounds);
@@ -217,7 +211,6 @@ impl PreparedCpus<'_> {
     /// ApObservation's callback contract and remain allocated through blocking
     /// return, including timeout termination. Projection runs at NOTIFY and
     /// must not unwind, alter TPL, or transfer scoped resources elsewhere.
-    #[cfg_attr(feature = "native-returning", inline(always))]
     pub unsafe fn with_prepared_quiescent_bsp_and_ap_observation<P, E, R, F>(
         &mut self,
         prepare: impl FnOnce() -> Result<P, E>,
@@ -252,7 +245,6 @@ impl PreparedCpus<'_> {
 
     // Internal scope called only with TPL_NOTIFY held by the outer owner. Keep
     // fallible high/CPU paths here so every return rejoins explicit finish.
-    #[cfg_attr(feature = "native-returning", inline(always))]
     unsafe fn operate_at_high<P, R>(
         &mut self,
         prepared: &mut P,
@@ -261,15 +253,6 @@ impl PreparedCpus<'_> {
     ) -> Result<(CpuReport, R), CpuError> {
         let report = unsafe { self.rendezvous_with_observation(observation(prepared)) }?;
         let previous = unsafe { (self.services.raise_tpl)(Tpl::HIGH_LEVEL) };
-        #[cfg(all(feature = "native-returning", target_os = "uefi"))]
-        #[allow(named_asm_labels)]
-        unsafe {
-            core::arch::asm!(
-                ".globl svmvisor_native_high_begin",
-                "svmvisor_native_high_begin:",
-                options(nostack, preserves_flags),
-            )
-        };
         let high = TplScope {
             services: self.services,
             // NOTIFY is the state we established, even if the provider reports
@@ -278,25 +261,12 @@ impl PreparedCpus<'_> {
         };
         let result =
             Self::checked_high_operation(previous, report, self.rendezvous, prepared, operation);
-        #[cfg(all(feature = "native-returning", target_os = "uefi"))]
-        #[allow(named_asm_labels)]
-        unsafe {
-            core::arch::asm!(
-                ".globl svmvisor_native_high_end",
-                "svmvisor_native_high_end:",
-                options(nostack, preserves_flags),
-            )
-        };
         drop(high); // No MP or pool operations at HIGH_LEVEL.
         let result = result?;
         unsafe { self.recheck() }?;
         Ok((report, result))
     }
 
-    // Keep one unconditional call between the audit markers. A non-inlined
-    // checked body prevents LLVM tail-duplicating the end label into refusal
-    // and success paths. The linked guard still traverses both actual paths.
-    #[cfg_attr(feature = "native-returning", inline(never))]
     fn checked_high_operation<P, R>(
         previous: Tpl,
         report: CpuReport,

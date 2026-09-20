@@ -1,39 +1,4 @@
-//! Opt-in DXE host observations, not a native SVM admission token.
-//! The helper runs after compiler entry/CPUID work; this is not a complete
-//! original xstate or original image-entry register snapshot. It never reads
-//! MSRs/debug registers, dereferences a descriptor table, or enables SVM.
-
-#[cfg(target_os = "uefi")]
-unsafe extern "efiapi" {
-    fn svmvisor_native_snapshot(out: *mut NativeSnapshot) -> u32;
-}
-
-#[repr(C)]
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
-pub struct NativeSnapshot {
-    pub gdtr: TableSnapshot,
-    pub idtr: TableSnapshot,
-    pub cs: u16,
-    pub ss: u16,
-    pub ds: u16,
-    pub es: u16,
-    pub cr0: u64,
-    pub cr3: u64,
-    pub cr4: u64,
-    pub rflags: u64,
-}
-
-const _: () = assert!(core::mem::size_of::<NativeSnapshot>() == 72);
-const _: () = assert!(core::mem::offset_of!(NativeSnapshot, gdtr) == 0);
-const _: () = assert!(core::mem::offset_of!(NativeSnapshot, idtr) == 16);
-const _: () = assert!(core::mem::offset_of!(NativeSnapshot, cs) == 32);
-const _: () = assert!(core::mem::offset_of!(NativeSnapshot, ss) == 34);
-const _: () = assert!(core::mem::offset_of!(NativeSnapshot, ds) == 36);
-const _: () = assert!(core::mem::offset_of!(NativeSnapshot, es) == 38);
-const _: () = assert!(core::mem::offset_of!(NativeSnapshot, cr0) == 40);
-const _: () = assert!(core::mem::offset_of!(NativeSnapshot, cr3) == 48);
-const _: () = assert!(core::mem::offset_of!(NativeSnapshot, cr4) == 56);
-const _: () = assert!(core::mem::offset_of!(NativeSnapshot, rflags) == 64);
+//! Descriptor-table register image captured by the entry boundary assembly.
 
 #[repr(C)]
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -54,29 +19,6 @@ impl TableSnapshot {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum CaptureError {
-    PrivilegeLevel,
-    UnexpectedStatus,
-}
-
-/// Observe tables/selectors/control state after the caller's CPUID admission.
-///
-/// # Safety
-/// Call only from the native preflight's synchronous firmware context with a
-/// valid stack and memory. The helper refuses CPL!=0 before SGDT/SIDT/CR reads,
-/// but supplies no fault containment for inaccessible memory or hostile VMM
-/// intercepts. No descriptor-table contents or mappings are accessed/proven.
-#[cfg(target_os = "uefi")]
-pub unsafe fn capture() -> Result<NativeSnapshot, CaptureError> {
-    let mut snapshot = NativeSnapshot::default();
-    match unsafe { svmvisor_native_snapshot(&mut snapshot) } {
-        0 => Ok(snapshot),
-        1 => Err(CaptureError::PrivilegeLevel),
-        _ => Err(CaptureError::UnexpectedStatus),
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -91,10 +33,7 @@ mod tests {
     }
     #[test]
     fn abi_layout_matches_assembly_storage() {
-        assert_eq!(core::mem::align_of::<NativeSnapshot>(), 8);
         assert_eq!(core::mem::offset_of!(TableSnapshot, bytes), 0);
         assert_eq!(core::mem::offset_of!(TableSnapshot, reserved), 10);
-        assert_eq!(core::mem::size_of::<NativeSnapshot>(), 72);
-        assert_eq!(core::mem::offset_of!(NativeSnapshot, rflags), 64);
     }
 }
