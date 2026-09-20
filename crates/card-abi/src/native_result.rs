@@ -1,4 +1,5 @@
 //! Parent-owned result ABI for the returning PE child. No pointers are carried.
+//! No image produces one any more; the loader still sizes a child's LoadOptions with it.
 //!
 //! Rust markers cover the inner routine only. The parent observes StartImage
 //! return independently; no marker proves the outer assembly restored its caller.

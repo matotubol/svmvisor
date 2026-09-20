@@ -1,4 +1,4 @@
-//! Card payload validation and returning child image delivery.
+//! Card payload validation and resident child image delivery.
 //!
 //! `adapter.rs` is a firmware binary module wired by `main.rs`.
 

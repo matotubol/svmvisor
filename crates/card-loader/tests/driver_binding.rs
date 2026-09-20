@@ -2,7 +2,7 @@
 //! This checks software dispatch/ownership, not automatic platform ROM dispatch.
 
 // This record-only fixture does not provide payload-loader hooks.
-// Returning delivery/lifecycle have their own fixtures and image build checks.
+// Resident delivery has its own fixture (delivery_child_image.rs) and image build checks.
 #![cfg(not(feature = "card-resident"))]
 
 #[path = "../src/firmware/cpu.rs"]

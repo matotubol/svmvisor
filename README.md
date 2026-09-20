@@ -33,7 +33,6 @@ crates/
   hypervisor/          no_std core: VMCB, exits, x2AVIC, nested paging, resident runtime
   launcher/            the EFI child: admission checks, allocation, activation
   resident-payload/    resident image staticlib and linker script
-  memory-attributes/   UEFI Memory Attribute Protocol
   rompack/             PCI option ROM packager
   xtask/               cargo xtask: build, audit, package, flash, snapshot
 firmware/card/         FPGA card RTL, flashing scripts, snapshot decoder
@@ -58,5 +57,6 @@ every hypervisor stop carries a tag and its operands, decoded by
 `firmware/card/read_snapshot.py`.
 
 More detail: [hypervisor](crates/hypervisor/README.md),
-[DXE driver](crates/dxe/README.md), [xtask](crates/xtask/README.md),
+[card loader](crates/card-loader/README.md), [launcher](crates/launcher/README.md),
+[xtask](crates/xtask/README.md),
 [card](firmware/card/README.md).

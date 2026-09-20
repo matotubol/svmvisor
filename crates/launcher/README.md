@@ -15,47 +15,49 @@ exchange live in [`../card-abi`](../card-abi/README.md).
 
 | Source directory | Responsibility |
 | --- | --- |
-| `diagnostics/` | Resident launcher failure records. The records exchanged with the loader (`ResidentBootOptions`, `NativeResult`) live in [`../card-abi`](../card-abi/README.md). |
-| `memory_attributes/` | Memory Attribute Protocol provider, registration, firmware access, and the F7 table qualification path. |
-| `native/admission/` | Entry boundary capture and CPU, memory, cache, and rendezvous admission evidence. |
-| `native/resources/` | Firmware-owned tables, image ranges, guest pages, arena allocation, and cache preparation. |
-| `native/transition/` | The assembly transition, its fixed Rust state layout, and restoration canary. |
+| `diagnostics/` | Resident launcher failure records. The record exchanged with the loader (`ResidentBootOptions`) lives in [`../card-abi`](../card-abi/README.md). |
+| `native/admission/` | Entry boundary capture (`boundary.S`, `NativeBoundary`), MP Services inventory and the firmware memory map. |
 | `native/resident/` | Native callback activation, retained raw payload allocation, per-CPU observations/preparation and separately audited resident assembly. |
-| `native/entry.rs`, `native/child_result.rs`, `native/returning.rs` | Native image entry, parent mailbox, and admitted returning execution. |
-| `fixtures/` | Native transition fixtures and their negative cases. |
 
 `lib.rs` exposes only the grouped library namespaces, for example
-`native::transition::state`, `native::admission::cpu` or
-`diagnostics::resident_boot`; there are no root compatibility aliases. Library
-files that are also compiled by a test through `#[path]` name their siblings
-with `super::` (for example `native::admission::cache_rendezvous`), and that
-test's crate root provides the same sibling names.
+`native::admission::cpu`, `native::resident::allocation` or
+`diagnostics::resident_boot`; there are no root compatibility aliases.
+`tests/native_cpu.rs` also compiles `native/admission/cpu.rs` through `#[path]`.
 
-`main.rs` selects the binary-only modules with explicit paths and feature gates.
-These include image entry, resource ownership, and fixtures. They do not become
-part of the library merely because they share a directory with public modules.
-Assembly lives beside the Rust contract it implements and is selected by
-`build.rs`.
+`main.rs` selects the binary-only module `native/resident/activation/` with an
+explicit path and feature gate. It does not become part of the library merely
+because it shares a directory with public modules. Assembly lives beside the
+Rust contract it implements: `build.rs` assembles `resident/bridge.S`,
+`resident/boot.S` and `resident/physical.S` (the first two include
+`admission/boundary.S`); `cargo xtask resident` assembles `resident/runtime.S`,
+`resident/irq.S` and `resident/fault.S` into the payload.
 
 ## Entry flow
 
-Every image of this package is a `native-*` feature selection; a UEFI build
-without one is rejected. `cargo xtask resident` builds the production resident
-image (`native-resident-boot`).
+The package builds one image, the resident child. The features form a chain
+(`native-preflight`, `native-resident`, `native-resident-test`,
+`native-resident-smp-prepare`, `native-resident-smp-activate`,
+`native-resident-guest-startup`, `native-resident-boot`,
+`native-resident-low-runtime`); a UEFI build without `native-resident` is
+rejected. `cargo xtask resident` builds the production image
+(`native-resident-boot`, with `--low-runtime` also
+`native-resident-low-runtime`) and embeds the resident payload named by
+`SVMVISOR_RESIDENT_PAYLOAD`.
 
-The native returning child follows:
+The production image follows:
 
 ```text
-native/admission/boundary.S: capture original firmware state
-  -> main.rs: svmvisor_native_efi_main_inner
-  -> native/entry.rs: attach result mailbox and collect admission evidence
-  -> native/returning.rs: admit CPU/cache/memory and prepare owned resources
-  -> native/transition/run.S: execute the bounded guest and restore host state
-  -> native/transition/canary.*: check restored execution state
-  -> native/returning.rs + native/child_result.rs: clean up and publish result
+main.rs: efi_main
+  -> native/resident/activation/install.rs: read the loader's options, hook
+     ExitBootServices, allocate and load the payload, admit the processors
+  -> native/resident/boot.S: after the original ExitBootServices succeeds, capture
+     the boundary (admission/boundary.S) and call activation/boot_handoff.rs
+  -> native/resident/activation/physical_boot.rs + resident/physical.S: start the
+     application processors and take each admitted processor into the payload
+  -> native/resident/bridge.S + activation/callback.rs: the qualified callback
+     capture through which a processor enters the resident runtime
 ```
 
 Keep firmware calls and allocation on the DXE side of this boundary. New
 persistent CPU state, guest runtime policy, and VM-exit handling should be owned
-by `svmvisor-hypervisor`; the currently proven returning transition remains here
-with its firmware restoration and admission contracts.
+by `svmvisor-hypervisor`.

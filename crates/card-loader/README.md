@@ -4,7 +4,7 @@ This crate is the UEFI driver in the card's option ROM. It binds the card's PCI
 function, reads the payload slot through BAR0, starts the EFI child image found
 there through the firmware's own image services, and journals what happened. It
 knows nothing about SVM: it depends on [`../card-abi`](../card-abi/README.md)
-and `uefi-raw` (plus `sha2` for the delivery images). The child it starts
+and `uefi-raw` (plus `sha2` for the resident loaders). The child it starts
 today is the native resident launcher in [`../launcher`](../launcher/README.md).
 
 ## Where to work
@@ -13,42 +13,41 @@ today is the native resident launcher in [`../launcher`](../launcher/README.md).
 | --- | --- |
 | `firmware/` | Option-ROM driver binding, PCI I/O, BAR mapping, CPU sampling, and lifecycle events. |
 | `delivery/` | Card payload validation, EFI child loading, and parent-side ownership and cleanup. |
-| `diagnostics/` | Journal serialization, lifecycle traces, and returning-child outcome classification. The records exchanged with a child (`ResidentBootOptions`, `NativeResult`) live in [`../card-abi`](../card-abi/README.md). |
+| `diagnostics/` | Journal serialization and lifecycle traces. The record exchanged with a child (`ResidentBootOptions`) lives in [`../card-abi`](../card-abi/README.md). |
 
 `lib.rs` exposes only the grouped library namespaces, for example
-`delivery::child_image` or `diagnostics::outcome`; there are no root
+`delivery::child_image` or `diagnostics::trace`; there are no root
 compatibility aliases.
 
-`main.rs` selects the binary-only modules (`firmware/*`, `delivery/adapter.rs`,
-`delivery/load.rs`) with explicit paths and feature gates. They do not become
-part of the library merely because they share a directory with public modules.
+`main.rs` selects the binary-only modules (`firmware/*`, `delivery/adapter.rs`)
+with explicit paths and feature gates. They do not become part of the library
+merely because they share a directory with public modules.
 
 ## Images
 
-One package builds five images, selected by feature (`cargo build-card-loader
+One package builds three images, selected by feature (`cargo build-card-loader
 [--features <feature>]`, profile `rom`):
 
 | Feature | Image |
 | --- | --- |
 | none | Record-only driver: binds the card and journals lifecycle events. |
-| `card-load-only` | Validates the card payload against `SVMVISOR_CARD_PAYLOAD_SHA256` and loads it without starting a child. |
-| `card-returning-loader` | Starts the returning child pinned by `SVMVISOR_CARD_PE_HEADER` and classifies its `NativeResult`. |
 | `card-resident-loader` | Starts the resident child pinned by `SVMVISOR_CARD_PE_HEADER`. |
 | `card-resident-dev-loader` | Starts the resident child described by the header found in the payload slot. |
 
-The delivery features are mutually exclusive; `card-resident` is the internal
-feature the two resident loaders share.
+The two resident loaders are mutually exclusive; `card-resident` is the
+internal feature they share.
 
 ## Entry flow
 
-The card returning-loader image follows:
+A resident loader image follows:
 
 ```text
 main.rs: efi_main
   -> firmware/driver.rs: install and bind
+  -> firmware/lifecycle.rs: register the firmware lifecycle events
   -> delivery/adapter.rs + delivery/child_image.rs: validate and start child
-  -> diagnostics/: classify the returned child result
-  -> firmware/lifecycle.rs: journal firmware lifecycle events
+  -> delivery/adapter.rs: journal the load/arm record, retain an armed child
+  -> firmware/lifecycle.rs: journal lifecycle events unless a retained child owns the journal
 ```
 
 The resident loader has two mutually exclusive builds: `card-resident-loader`

@@ -1,10 +1,10 @@
 //! The card image envelope: the 128-byte header at the start of the card's 1 MiB payload slot.
 //!
-//! Three envelope kinds share bytes `0x000..0x050`. All integers are little-endian.
+//! Two envelope kinds share bytes `0x000..0x050`. All integers are little-endian.
 //!
 //! | Offset | Width | Field |
 //! | --- | --- | --- |
-//! | `0x000` | 8 | magic: `SVMCRD01`, `SVMPE001` or `SVMBPE01` |
+//! | `0x000` | 8 | magic: `SVMPE001` or `SVMBPE01` |
 //! | `0x008` | 4 | envelope version, 1 |
 //! | `0x00c` | 4 | header bytes, 128 |
 //! | `0x010` | 8 | payload bytes |
@@ -15,11 +15,13 @@
 //!
 //! | Magic | Flags | Payload |
 //! | --- | --- | --- |
-//! | `SVMCRD01` | `1 << 0` | an `SVMRELO1` relocatable package; bytes `0x050..0x080` are zero |
 //! | `SVMPE001` | `1 << 1` | a PE32+ child that returns, subsystem 11 (boot service driver) |
 //! | `SVMBPE01` | `1 << 2` | a PE32+ child that stays resident, subsystem 12 (runtime driver) |
 //!
-//! The two PE kinds continue with metadata that must equal the payload's own PE headers:
+//! Flag `1 << 0` belonged to the retired `SVMCRD01` package envelope. The card loader builds only
+//! resident images; the returning kind is still parsed.
+//!
+//! Both kinds continue with metadata that must equal the payload's own PE headers:
 //!
 //! | Offset | Width | Field |
 //! | --- | --- | --- |
@@ -38,14 +40,11 @@
 //! The payload follows the header; the rest of the slot is erased flash (`0xff`).
 //!
 //! The PE envelopes are written by `firmware/card/package-payload.py` (Python, `struct` format
-//! `<8sII4Q32s4H6I16s`). The `svmvisor-card-loader` test
-//! `optional_python_actual_slot_matches_rust_parser` cross-checks a slot that script produced
-//! against this parser.
+//! `<8sII4Q32s4H6I16s`).
 //!
 //! `Envelope::parse` accepts a PE envelope header, `parse_pe_kind` applies the same narrow policy
 //! to the payload's own PE headers; a loader or packager compares the two `PeMetadata` values and
-//! the SHA-256. The `SVMCRD01` header has no metadata and is parsed by its one user, the loader's
-//! `delivery::card`.
+//! the SHA-256.
 
 pub const HEADER_BYTES: usize = 128;
 pub const SLOT_BYTES: usize = 0x10_0000;
