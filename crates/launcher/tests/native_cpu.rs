@@ -22,7 +22,7 @@ use std::{
     collections::BTreeMap,
 };
 
-use svmvisor_dxe::native::admission::snapshot;
+use svmvisor_launcher::native::admission::snapshot;
 use uefi_raw::{
     Boolean, Event, Guid, Status,
     table::boot::{BootServices, MemoryType, Tpl},

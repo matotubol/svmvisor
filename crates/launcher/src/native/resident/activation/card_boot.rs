@@ -7,8 +7,8 @@ use svmvisor_card_abi::{
     endpoint::{self as card_endpoint, PCI_CLASS_REVISION, PCI_VENDOR_DEVICE, TerminalEndpoint},
     journal::{self as card_journal, JournalIo},
 };
-use svmvisor_dxe::diagnostics::resident_boot::{ApFailureObservation, ap_failure_words};
 use svmvisor_hypervisor::arch::x86_64::msr::MMIO_CFG_BASE_ADDR;
+use svmvisor_launcher::diagnostics::resident_boot::{ApFailureObservation, ap_failure_words};
 
 use super::*;
 
@@ -21,7 +21,7 @@ static JOURNAL_LOST: AtomicBool = AtomicBool::new(false);
 // into caller-owned options before that call returns, never used by VM exits.
 static mut PREPARATION: (u32, u32, u64, u64) = (0, 0, 0, 0);
 static mut ADMISSION_FAILURE: Option<(
-    svmvisor_dxe::diagnostics::resident_boot::AdmissionFailure,
+    svmvisor_launcher::diagnostics::resident_boot::AdmissionFailure,
     u32,
 )> = None;
 // Exclusively owned by the serialized BSP activation before loader return.
@@ -189,7 +189,7 @@ pub(super) fn protect_config(
 /// been resolved. USER3 carries exact full operands; the preparation or
 /// activation result identifies which ownership boundary refused execution.
 pub(super) fn admission_failure(
-    value: svmvisor_dxe::diagnostics::resident_boot::AdmissionFailure,
+    value: svmvisor_launcher::diagnostics::resident_boot::AdmissionFailure,
     count: u32,
 ) {
     unsafe {
@@ -208,7 +208,7 @@ pub(super) fn admission_failure(
 /// is the source's exact code and whose address packs slot, operation and
 /// predicate (`slot_preparation_address`).
 pub(super) unsafe fn slot_admission_failure(
-    value: svmvisor_dxe::diagnostics::resident_boot::AdmissionFailure,
+    value: svmvisor_launcher::diagnostics::resident_boot::AdmissionFailure,
     count: u32,
     reason: u32,
     processor: Cpu,
@@ -217,7 +217,7 @@ pub(super) unsafe fn slot_admission_failure(
     preparation_failure(
         reason,
         value.status,
-        svmvisor_dxe::diagnostics::resident_boot::slot_preparation_address(
+        svmvisor_launcher::diagnostics::resident_boot::slot_preparation_address(
             value.processor,
             value.operation,
             value.predicate,
@@ -234,7 +234,9 @@ pub(super) unsafe fn slot_admission_failure(
 pub(super) unsafe fn takeover_failure(slot: u32, count: u32, code: u64) {
     unsafe {
         BSP_TAKEOVER_FAILURE =
-            svmvisor_dxe::diagnostics::resident_boot::takeover_failure_words(slot, count, code);
+            svmvisor_launcher::diagnostics::resident_boot::takeover_failure_words(
+                slot, count, code,
+            );
     }
 }
 

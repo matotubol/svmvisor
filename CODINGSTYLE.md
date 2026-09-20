@@ -115,7 +115,7 @@ comment on the line above saying why.
 
 **C4.** Cargo features are named `<area>-<noun>` in kebab case, grouped by
 area prefix (`card-*` in `card-loader`; `native-*` and `memory-attribute-*` in
-`dxe`), each with a `#` comment above it in `Cargo.toml` stating what it
+`launcher`), each with a `#` comment above it in `Cargo.toml` stating what it
 selects. Mutually exclusive features are rejected by a `compile_error!` in the
 crate root, never silently resolved.
 
@@ -344,9 +344,9 @@ never repeated.
 place: `use super::*;` as the first line of `mod tests`. A child module names
 its parent's private items through `crate::` like anything else.
 Exception while M10 debt exists: a file mounted by `#[path]` from more than
-one place (the `card-loader` and `dxe` binary-only files and the `src/` files
-that `tests/` mount) keeps whatever import paths resolve in every mount; only
-the grouping and ordering of its imports is normalized.
+one place (the `card-loader` and `launcher` binary-only files and the `src/`
+files that `tests/` mount) keeps whatever import paths resolve in every mount;
+only the grouping and ordering of its imports is normalized.
 
 **I4.** No glob imports, with two exceptions: `use super::*;` in `mod tests`
 (I3), and `use SomeEnum::*;` as the *first statement of a function* whose body
@@ -562,7 +562,7 @@ instead of restating it.
 | APIC / x2APIC registers | `hypervisor::arch::x86_64::apic` |
 | page size, address mask, page-table bits | `hypervisor::memory::address`. A `u64` view is derived from it (`PAGE_BYTES as u64`), never a second literal |
 | memory-map descriptor bound `MAX_DESCRIPTORS` | `hypervisor::boot::memory` |
-| MP Services status bits | `dxe::native::admission::cpu` |
+| MP Services status bits | `launcher::native::admission::cpu` |
 | VMCB offsets | `hypervisor::svm::vmcb`, `pub(crate)`; other modules use `Vmcb` accessors, not offsets |
 | exit codes | `hypervisor::svm::exit` |
 | resident bridge ABI | `hypervisor::host::resident` |
@@ -717,10 +717,10 @@ cargo fmt --all -- --check
 cargo test --workspace
 cargo test -p svmvisor-hypervisor --lib --features resident-runtime
 cargo test -p svmvisor-hypervisor --lib --features resident-runtime-test
-cargo test -p svmvisor-dxe --features native-returning
-cargo test -p svmvisor-dxe --features native-resident-boot
-cargo test -p svmvisor-dxe --features native-transition-multi-exit
-cargo test -p svmvisor-dxe --features memory-attribute-probe
+cargo test -p svmvisor-launcher --features native-returning
+cargo test -p svmvisor-launcher --features native-resident-boot
+cargo test -p svmvisor-launcher --features native-transition-multi-exit
+cargo test -p svmvisor-launcher --features memory-attribute-probe
 cargo test -p svmvisor-card-loader --features card-load-only
 cargo test -p svmvisor-card-loader --features card-returning-loader
 cargo test -p svmvisor-card-loader --features card-resident-dev-loader
@@ -745,8 +745,8 @@ Notes:
   symbol names reduced to their final identifier: mangled names embed the
   module path and a per-checkout crate hash, so a raw diff flags every moved
   function and every git worktree.
-- That comparison covers the resident payload only; `card-loader` and `dxe`
-  code is not in it. For a change to either, build the affected UEFI feature
+- That comparison covers the resident payload only; `card-loader` and
+  `launcher` code is not in it. For a change to either, build the affected UEFI feature
   sets with `--emit=asm` before and after and compare per-function bodies the
   same way.
 

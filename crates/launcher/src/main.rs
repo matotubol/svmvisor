@@ -77,7 +77,7 @@ pub unsafe extern "efiapi" fn efi_main(image: Handle, table: *const SystemTable)
 pub unsafe extern "efiapi" fn svmvisor_native_efi_main_inner(
     image: Handle,
     table: *const SystemTable,
-    capture: *const svmvisor_dxe::native::admission::boundary::NativeBoundary,
+    capture: *const svmvisor_launcher::native::admission::boundary::NativeBoundary,
 ) -> Status {
     let Some(capture) = (unsafe { capture.as_ref() }) else {
         return Status::INVALID_PARAMETER;
@@ -120,5 +120,5 @@ fn resident_panic(_: &core::panic::PanicInfo) -> ! {
 
 #[cfg(not(target_os = "uefi"))]
 fn main() {
-    eprintln!("svmvisor-dxe is a UEFI-only native child; use cargo xtask resident");
+    eprintln!("svmvisor-launcher is a UEFI-only native child; use cargo xtask resident");
 }

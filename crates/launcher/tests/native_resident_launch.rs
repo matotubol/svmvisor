@@ -1,15 +1,15 @@
 #![cfg(feature = "native-preflight")]
 
-use svmvisor_dxe::native::{
+use svmvisor_hypervisor::host::resident::{
+    DIRECTORY_VERSION, MAX_RESIDENT_CPUS, ResidentDirectory, X2AVIC_BACKING_ALIASES_OFFSET,
+    X2AVIC_TABLE_OFFSET,
+};
+use svmvisor_launcher::native::{
     admission::boundary::NativeBoundary,
     resident::launch::{
         Mtrrs, backing_aliases, common_backing_offset, directory_valid, native_paging_config,
         xstate_valid,
     },
-};
-use svmvisor_hypervisor::host::resident::{
-    DIRECTORY_VERSION, MAX_RESIDENT_CPUS, ResidentDirectory, X2AVIC_BACKING_ALIASES_OFFSET,
-    X2AVIC_TABLE_OFFSET,
 };
 
 fn directory(base: u64) -> ResidentDirectory {

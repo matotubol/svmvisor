@@ -1,6 +1,5 @@
 #![cfg(feature = "native-preflight")]
 
-use svmvisor_dxe::native::resident::memory::{ResidentMemoryError as E, prepare_identity_npt};
 use svmvisor_hypervisor::{
     arch::x86_64::capabilities::EvidenceFlag as F,
     boot::memory::{MemoryDescriptor as D, MemoryError},
@@ -9,6 +8,7 @@ use svmvisor_hypervisor::{
         npt::{NptEvidence, TABLE_COUNT, TableStorage},
     },
 };
+use svmvisor_launcher::native::resident::memory::{ResidentMemoryError as E, prepare_identity_npt};
 
 const RUNTIME: u64 = 1 << 63;
 

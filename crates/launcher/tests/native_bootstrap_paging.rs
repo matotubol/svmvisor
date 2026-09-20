@@ -1,7 +1,7 @@
 #![cfg(feature = "native-preflight")]
 
-use svmvisor_dxe::native::resident::bootstrap_paging::{BootstrapPaging, Error};
 use svmvisor_hypervisor::host::paging::{self, PagingConfig, WalkError};
+use svmvisor_launcher::native::resident::bootstrap_paging::{BootstrapPaging, Error};
 
 fn config() -> PagingConfig {
     PagingConfig {

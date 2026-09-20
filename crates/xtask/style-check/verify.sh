@@ -58,7 +58,7 @@ step "test workspace"           cargo test --workspace
 step "test hypervisor resident-runtime (lib)"      cargo test -p svmvisor-hypervisor --lib --features resident-runtime
 step "test hypervisor resident-runtime-test (lib)" cargo test -p svmvisor-hypervisor --lib --features resident-runtime-test
 for feature in native-returning native-resident-boot native-transition-multi-exit memory-attribute-probe; do
-    step "test dxe $feature" cargo test -p svmvisor-dxe --features "$feature"
+    step "test launcher $feature" cargo test -p svmvisor-launcher --features "$feature"
 done
 for feature in card-load-only card-returning-loader card-resident-dev-loader card-resident-loader; do
     step "test card-loader $feature" cargo test -p svmvisor-card-loader --features "$feature"

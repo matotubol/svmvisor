@@ -1,6 +1,6 @@
 //! Preparation-record diagnostics: the stage/failure recorder shims and the stable
 //! error-to-code tables they carry.
-use svmvisor_dxe::native::{admission::memory, resident};
+use svmvisor_launcher::native::{admission::memory, resident};
 use uefi_raw::Status;
 
 #[cfg(feature = "native-resident-boot")]

@@ -6,7 +6,6 @@ use core::{
     ptr::{self, NonNull},
 };
 
-use svmvisor_dxe::native::admission::{memory as native_memory, snapshot::NativeSnapshot};
 #[cfg(feature = "memory-attribute-f7")]
 use svmvisor_hypervisor::memory::address::ADDRESS_MASK;
 use svmvisor_hypervisor::{
@@ -17,6 +16,7 @@ use svmvisor_hypervisor::{
     host::{descriptors::HostTablePointer, paging::PagingConfig},
     memory::address::is_canonical_48,
 };
+use svmvisor_launcher::native::admission::{memory as native_memory, snapshot::NativeSnapshot};
 use uefi_raw::{
     Status,
     table::boot::{BootServices, MemoryType, Tpl},
@@ -209,7 +209,7 @@ unsafe fn initialize(
     borrowed: &[BorrowedSpan],
 ) -> Result<(), TableFailure> {
     use TableError as E;
-    use svmvisor_dxe::native::admission::snapshot as native_snapshot;
+    use svmvisor_launcher::native::admission::snapshot as native_snapshot;
     prepared.map = Some(unsafe { native_memory::collect(prepared.services) }.map_err(|error| {
         // Preserve an explicit nested free failure even if its Drop later
         // succeeds; the outer caller must not report complete cleanup.
@@ -268,7 +268,7 @@ unsafe fn initialize(
                 // The explicit prepare contract supplies the initial firmware
                 // identity/residency premise. Metadata and this constructor do not
                 // invent permission proof or qualify arbitrary physical pointers.
-                svmvisor_dxe::memory_attributes::f7::F7TableReader::new_detailed(
+                svmvisor_launcher::memory_attributes::f7::F7TableReader::new_detailed(
                     &memory,
                     svmvisor_memory_attributes::Config {
                         root: config.cr3 & ADDRESS_MASK,

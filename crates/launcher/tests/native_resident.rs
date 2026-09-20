@@ -1,12 +1,5 @@
 #![cfg(feature = "native-preflight")]
 
-use svmvisor_dxe::native::{
-    admission::{
-        boundary::{ABI_VERSION, NativeBoundary},
-        snapshot::TableSnapshot,
-    },
-    resident::{CallbackError, CallbackRequest, CallbackSites, GuestStackSpan, prepare_callback},
-};
 use svmvisor_hypervisor::{
     arch::x86_64::{descriptors::GuestDescriptorRequest, registers::GuestRegisters},
     boot::descriptors::{FirmwareSelectors, ParsedFirmwareGdt, parse_firmware_gdt},
@@ -14,6 +7,13 @@ use svmvisor_hypervisor::{
     host::descriptors::HostTablePointer,
     memory::address::{AddressPolicy, EncryptionState},
     svm::vmcb::Vmcb,
+};
+use svmvisor_launcher::native::{
+    admission::{
+        boundary::{ABI_VERSION, NativeBoundary},
+        snapshot::TableSnapshot,
+    },
+    resident::{CallbackError, CallbackRequest, CallbackSites, GuestStackSpan, prepare_callback},
 };
 
 fn policy() -> AddressPolicy {

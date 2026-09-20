@@ -9,13 +9,13 @@ use core::{
     ptr::{self, NonNull},
 };
 
-use svmvisor_dxe::native::admission::{
-    cpu::QuiescentBsp, memory as native_memory, snapshot::NativeSnapshot,
-};
 #[cfg(target_os = "uefi")]
 use svmvisor_hypervisor::arch::x86_64::msr::EFER;
 use svmvisor_hypervisor::{
     boot::memory::MAX_GDT_BYTES, host::paging as host_paging, memory::address::is_canonical_48,
+};
+use svmvisor_launcher::native::admission::{
+    cpu::QuiescentBsp, memory as native_memory, snapshot::NativeSnapshot,
 };
 use uefi_raw::{Status, table::boot::BootServices};
 
@@ -182,7 +182,7 @@ impl PreparedTables<'_> {
 
     #[cfg(target_os = "uefi")]
     unsafe fn compare_live(&self, high_tpl: bool) -> Result<(), TableError> {
-        use svmvisor_dxe::native::admission::snapshot as native_snapshot;
+        use svmvisor_launcher::native::admission::snapshot as native_snapshot;
         let now = unsafe { native_snapshot::capture() }.map_err(|_| TableError::Snapshot)?;
         context_unchanged(&self.before, self.efer, &now, unsafe { read_efer() }, high_tpl)?;
         let storage = self.storage()?;

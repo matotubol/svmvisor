@@ -5,11 +5,11 @@
 
 use core::ptr;
 
-use svmvisor_dxe::native::admission::{
+use svmvisor_launcher::native::admission::{
     boundary::NativeBoundary, cache_rendezvous::PreparedCacheRendezvous,
 };
 #[cfg(not(feature = "native-returning"))]
-use svmvisor_dxe::native::admission::{
+use svmvisor_launcher::native::admission::{
     cache_rendezvous as native_cache_rendezvous, cpu as native_cpu,
 };
 #[cfg(not(feature = "native-returning"))]
@@ -218,7 +218,7 @@ pub(crate) unsafe fn prepare<'a>(
                     initialized.bind(
                         boundary,
                         tables.captured_gdt().map_err(|_| 9u64)?,
-                        svmvisor_dxe::native::transition::state::mode::MULTI_EXIT,
+                        svmvisor_launcher::native::transition::state::mode::MULTI_EXIT,
                     )
                 }
                 .map_err(|error| 0x200 + error)?,

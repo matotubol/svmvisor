@@ -2,7 +2,7 @@
 
 use std::mem::{align_of, offset_of, size_of};
 
-use svmvisor_dxe::memory_attributes::probe::*;
+use svmvisor_launcher::memory_attributes::probe::*;
 use uefi_raw::Status;
 
 fn profile() -> ProbeProfile {

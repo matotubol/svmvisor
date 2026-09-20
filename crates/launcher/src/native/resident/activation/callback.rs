@@ -7,10 +7,6 @@ use core::{
 };
 
 use svmvisor_card_abi::endpoint::TerminalEndpoint;
-use svmvisor_dxe::native::{
-    admission::boundary::NativeBoundary,
-    resident::{self, CallbackRequest, CallbackSites, GuestStackSpan, launch::xstate_valid},
-};
 use svmvisor_hypervisor::{
     arch::x86_64::{
         capabilities::EvidenceFlag,
@@ -27,6 +23,10 @@ use svmvisor_hypervisor::{
         npt::{NptEvidence, TableStorage},
     },
     svm::vmcb::Vmcb,
+};
+use svmvisor_launcher::native::{
+    admission::boundary::NativeBoundary,
+    resident::{self, CallbackRequest, CallbackSites, GuestStackSpan, launch::xstate_valid},
 };
 use uefi_raw::Event;
 

@@ -6,7 +6,7 @@ use std::{
     sync::{Arc, Mutex},
 };
 
-use svmvisor_dxe::memory_attributes::{Adapter, registration::*};
+use svmvisor_launcher::memory_attributes::{Adapter, registration::*};
 use svmvisor_memory_attributes::{Attributes, Error};
 use uefi_raw::{Handle, Status};
 

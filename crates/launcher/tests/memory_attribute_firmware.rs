@@ -6,7 +6,7 @@ use std::{
     sync::{Arc, Mutex},
 };
 
-use svmvisor_dxe::memory_attributes::firmware::{
+use svmvisor_launcher::memory_attributes::firmware::{
     CPU_ARCH_PROTOCOL_GUID, CpuArchProtocol, CpuArchSetter, FirmwareAttributes,
     QualifiedCpuContext, QualifiedTableReader, Range, Setter,
 };

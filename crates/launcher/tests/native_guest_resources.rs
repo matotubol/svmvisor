@@ -6,7 +6,7 @@ mod native_guest_resources;
 
 use std::alloc::{Layout, alloc, dealloc, handle_alloc_error};
 
-use svmvisor_dxe::native::{
+use svmvisor_launcher::native::{
     admission::boundary::{self as native_boundary, NativeBoundary},
     transition::state::{self as native_transition, ScalarState, guest_capture, mode, outcome},
 };

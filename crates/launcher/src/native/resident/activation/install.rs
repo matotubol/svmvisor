@@ -5,13 +5,6 @@ use core::arch::x86_64::__cpuid_count;
 use core::{ffi::c_void, ptr, sync::atomic::Ordering};
 
 use svmvisor_card_abi::package::Package;
-use svmvisor_dxe::native::{
-    admission::memory,
-    resident::{
-        self, allocation,
-        launch::{common_backing_offset, directory_valid},
-    },
-};
 #[cfg(feature = "native-resident-boot")]
 use svmvisor_hypervisor::arch::x86_64::msr::TARGET_SIGNATURE;
 #[cfg(any(feature = "native-resident-smp-prepare", feature = "native-resident-smp-activate"))]
@@ -24,6 +17,13 @@ use svmvisor_hypervisor::{
     boot::memory::ValidatedMemoryMap,
     host::resident::{self as abi, ResidentDirectory},
     memory::address::AddressPolicy,
+};
+use svmvisor_launcher::native::{
+    admission::memory,
+    resident::{
+        self, allocation,
+        launch::{common_backing_offset, directory_valid},
+    },
 };
 use uefi_raw::{
     Handle, Status, guid,

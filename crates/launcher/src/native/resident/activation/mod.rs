@@ -26,13 +26,6 @@ use core::{
 };
 
 #[cfg(feature = "native-resident-boot")]
-use svmvisor_dxe::native::admission::boundary::NativeBoundary;
-#[cfg(feature = "native-resident-smp-activate")]
-use svmvisor_dxe::native::{
-    admission::memory,
-    resident::{self, launch::Mtrrs},
-};
-#[cfg(feature = "native-resident-boot")]
 use svmvisor_hypervisor::arch::x86_64::msr::TARGET_SIGNATURE;
 #[cfg(feature = "native-resident-smp-activate")]
 use svmvisor_hypervisor::{
@@ -41,6 +34,13 @@ use svmvisor_hypervisor::{
         msr::{MTRR_CAP, PAT, VM_CR},
     },
     host::paging::{self, PagingConfig},
+};
+#[cfg(feature = "native-resident-boot")]
+use svmvisor_launcher::native::admission::boundary::NativeBoundary;
+#[cfg(feature = "native-resident-smp-activate")]
+use svmvisor_launcher::native::{
+    admission::memory,
+    resident::{self, launch::Mtrrs},
 };
 #[cfg(feature = "native-resident-boot")]
 use uefi_raw::{Handle, protocol::loaded_image::LoadedImageProtocol, table::boot::Tpl};

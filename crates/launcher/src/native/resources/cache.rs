@@ -1,7 +1,7 @@
 //! Join actual retained leaf/fetch observations to the reviewed WB classifier.
 //! This adds no ownership, global-alias, TLB, DMA or native-entry authority.
 
-use svmvisor_dxe::native::admission::cache::{
+use svmvisor_launcher::native::admission::cache::{
     self as native_cache, CacheError, CacheSnapshot, PageMapping,
 };
 

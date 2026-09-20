@@ -1,7 +1,6 @@
 //! Prepared resident directories and validation of each slot's private host closure.
 use core::ptr;
 
-use svmvisor_dxe::native::resident::launch::{Mtrrs, backing_aliases};
 use svmvisor_hypervisor::{
     boot::memory::MemoryDescriptor,
     host::{
@@ -10,6 +9,7 @@ use svmvisor_hypervisor::{
     },
     memory::npt::TableStorage,
 };
+use svmvisor_launcher::native::resident::launch::{Mtrrs, backing_aliases};
 
 use super::{
     CPU_COUNT, Cpu, DIRECTORIES,

@@ -4,7 +4,7 @@
 use core::{arch::x86_64::__cpuid_count, ptr};
 
 use svmvisor_card_abi::native_result::NativeResult;
-use svmvisor_dxe::native::{
+use svmvisor_launcher::native::{
     admission::{boundary::NativeBoundary, cpu as native_cpu},
     transition::{canary::svmvisor_native_transition_canary, state::*},
 };

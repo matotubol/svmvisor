@@ -215,7 +215,7 @@ pub fn build(out: &Path, low_runtime: bool) -> Result<(), String> {
             "build".as_ref(),
             "--locked".as_ref(),
             "-p".as_ref(),
-            "svmvisor-dxe".as_ref(),
+            "svmvisor-launcher".as_ref(),
             "--target".as_ref(),
             "x86_64-unknown-uefi".as_ref(),
             "--target-dir".as_ref(),
@@ -228,7 +228,7 @@ pub fn build(out: &Path, low_runtime: bool) -> Result<(), String> {
         &[("SVMVISOR_RESIDENT_PAYLOAD", package.as_os_str())],
     )?;
     let driver = out.join("driver.efi");
-    copy(&target.join("x86_64-unknown-uefi/release/svmvisor-dxe.efi"), &driver)?;
+    copy(&target.join("x86_64-unknown-uefi/release/svmvisor-launcher.efi"), &driver)?;
     audit::audit_runtime_driver(&io(fs::read(&driver), "read", &driver)?)?;
 
     let object = out.join("physical-audit.obj");

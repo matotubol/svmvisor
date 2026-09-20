@@ -1,10 +1,10 @@
 #![cfg(feature = "native-preflight")]
 
-use svmvisor_dxe::native::admission::preflight::{Outcome, collect};
 use svmvisor_hypervisor::{
     boot::preflight::{CpuidRegisters as R, PreflightError},
     svm::cpu_model::CpuIdentityError,
 };
+use svmvisor_launcher::native::admission::preflight::{Outcome, collect};
 
 fn raw_brand() -> [u8; 48] {
     // Deliberately includes NUL and non-UTF8 bytes: this is CPUID evidence,

@@ -6,7 +6,7 @@
 use core::cell::Cell;
 
 use svmvisor_card_abi::native_result::{MULTI_EXIT_ENTRIES, MULTI_EXIT_OUTCOME, NativeResult};
-use svmvisor_dxe::native::{
+use svmvisor_launcher::native::{
     admission::{
         boundary::NativeBoundary,
         cache_rendezvous::{self as native_cache_rendezvous, RendezvousError},

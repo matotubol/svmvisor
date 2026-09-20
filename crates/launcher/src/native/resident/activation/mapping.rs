@@ -2,11 +2,11 @@
 //! card's UC MMIO leaf.
 use core::ptr;
 
-use svmvisor_dxe::native::resident::launch::Mtrrs;
 use svmvisor_hypervisor::{
     boot::memory::MemoryDescriptor,
     host::paging::{self, PagingConfig},
 };
+use svmvisor_launcher::native::resident::launch::Mtrrs;
 
 use super::diagnostic::{admission_hint, admission_walk, trace_detail};
 

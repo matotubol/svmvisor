@@ -31,7 +31,7 @@ Expected results for a pure move, rename or reorder:
 Limits:
 
 - The disassembly comparison covers the **resident payload** (the hypervisor
-  core as linked by `cargo xtask resident`). `card-loader` and `dxe` driver
+  core as linked by `cargo xtask resident`). `card-loader` and `launcher` driver
   code is not in it. For a change to either, build the affected UEFI feature
   sets with `--emit=asm` before and after and compare per-function bodies.
 - A constant whose value changes but is never used by the payload is caught by

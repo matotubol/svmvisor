@@ -35,7 +35,7 @@ linked. The output directory must not exist; it keeps every artifact and one
    instruction, debug registers touched only by the exact DR0-3 reset helper,
    all 256 host fault frames, the capture sequence, the IRQ window gates and
    the #SX shape.
-7. `cargo build --locked -p svmvisor-dxe --target x86_64-unknown-uefi
+7. `cargo build --locked -p svmvisor-launcher --target x86_64-unknown-uefi
    --release --features native-resident-boot[,native-resident-low-runtime]`
    -> `driver.efi`, which must be an EFI runtime driver (PE subsystem 12).
 8. Audit `physical.S` (the copied AP wait span lives in `.rdata`, has no COFF

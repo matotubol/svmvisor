@@ -2,7 +2,7 @@
 
 use std::sync::{Arc, Mutex};
 
-use svmvisor_dxe::memory_attributes::Adapter;
+use svmvisor_launcher::memory_attributes::Adapter;
 use svmvisor_memory_attributes::{ACCESS_MASK, Attributes, Error, READ_ONLY};
 use uefi_raw::{
     Status, protocol::memory_protection::MemoryAttributeProtocol, table::boot::MemoryAttribute,

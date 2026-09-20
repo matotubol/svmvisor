@@ -1,7 +1,6 @@
 //! Same-CPU capture: CPUID/MSR admission, MTRRs, cache observation and paging controls.
 use core::arch::{asm, x86_64::__cpuid_count};
 
-use svmvisor_dxe::native::resident::launch::{Mtrrs, native_paging_config};
 use svmvisor_hypervisor::{
     arch::x86_64::{
         apic,
@@ -12,6 +11,7 @@ use svmvisor_hypervisor::{
     },
     host::paging::PagingConfig,
 };
+use svmvisor_launcher::native::resident::launch::{Mtrrs, native_paging_config};
 
 #[cfg(feature = "native-resident-smp-activate")]
 use super::physical_boot;

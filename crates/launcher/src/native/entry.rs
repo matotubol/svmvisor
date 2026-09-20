@@ -1,7 +1,7 @@
 //! Opt-in native preflight invoked at firmware image entry, before binding.
 use svmvisor_card_abi::native_result::NativeResult;
-use svmvisor_dxe::native::admission::preflight::{Outcome, collect};
 use svmvisor_hypervisor::boot::preflight::{CpuidEvidence, CpuidRegisters};
+use svmvisor_launcher::native::admission::preflight::{Outcome, collect};
 use uefi_raw::{Handle, Status, table::system::SystemTable};
 
 /// Caller provides the same live image/system table and TPL_APPLICATION entry
@@ -11,7 +11,7 @@ use uefi_raw::{Handle, Status, table::system::SystemTable};
 pub(crate) unsafe fn run(
     image: Handle,
     table: *const SystemTable,
-    capture: &svmvisor_dxe::native::admission::boundary::NativeBoundary,
+    capture: &svmvisor_launcher::native::admission::boundary::NativeBoundary,
 ) -> Status {
     if image.is_null() || table.is_null() {
         return Status::INVALID_PARAMETER;
@@ -73,7 +73,7 @@ pub(crate) unsafe fn run(
             if !resources_observed {
                 inner_result.cleanup_complete = 0;
             }
-            match unsafe { svmvisor_dxe::native::admission::snapshot::capture() } {
+            match unsafe { svmvisor_launcher::native::admission::snapshot::capture() } {
                 Ok(snapshot) => {
                     for (field, value) in [
                         ("cr0", snapshot.cr0),
@@ -225,7 +225,7 @@ unsafe fn collect_boot_identity(table: &SystemTable) -> (CpuidEvidence, Outcome)
 unsafe fn observe_owned_tables(table: &SystemTable, physical_bits: u8, page1gb: bool) -> bool {
     use crate::native_tables::{self, TableError};
     use core::{cell::Cell, convert::Infallible};
-    use svmvisor_dxe::native::admission::{cpu as native_cpu, snapshot as native_snapshot};
+    use svmvisor_launcher::native::admission::{cpu as native_cpu, snapshot as native_snapshot};
     let services = unsafe { &*table.boot_services };
     let Ok(mut cpus) = (unsafe { native_cpu::prepare(services) }) else {
         unsafe { snapshot_line(table, "cpu-refused", 1) };

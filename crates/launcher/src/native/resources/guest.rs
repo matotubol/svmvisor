@@ -6,10 +6,6 @@
 
 use core::{arch::x86_64::__cpuid_count, ptr};
 
-use svmvisor_dxe::native::{
-    admission::boundary::NativeBoundary,
-    transition::{canary::TransitionCanary, state::*},
-};
 use svmvisor_hypervisor::{
     arch::x86_64::{capabilities::EvidenceFlag, descriptors::GuestDescriptorRequest},
     guest::{
@@ -21,6 +17,10 @@ use svmvisor_hypervisor::{
         npt::{Npt, NptEvidence, PagePermissions as NPerm, TableStorage as NTables},
     },
     svm::vmcb::Vmcb,
+};
+use svmvisor_launcher::native::{
+    admission::boundary::NativeBoundary,
+    transition::{canary::TransitionCanary, state::*},
 };
 
 pub const ARENA_PAGES: usize = 33;
