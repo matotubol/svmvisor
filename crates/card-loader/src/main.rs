@@ -7,12 +7,7 @@
 #![cfg_attr(target_os = "uefi", no_std)]
 #![forbid(unsafe_op_in_unsafe_fn)]
 
-#[cfg(all(feature = "card-returning-loader", feature = "card-load-only"))]
-compile_error!("returning PE delivery is a separate resident loader mode");
-#[cfg(all(
-    feature = "card-resident",
-    any(feature = "card-returning-loader", feature = "card-load-only")
-))]
+#[cfg(all(feature = "card-resident", feature = "card-returning-loader"))]
 compile_error!("resident PE delivery is a separate parent image");
 
 #[cfg(target_os = "uefi")]
@@ -22,9 +17,6 @@ use uefi_raw::{Handle, Status, table::system::SystemTable};
 // firmware ownership without changing the reviewed call graph or compiling
 // these image-specific modules into the host-testable library.
 
-#[cfg(all(target_os = "uefi", feature = "card-load-only"))]
-#[path = "delivery/load.rs"]
-mod card_load;
 #[cfg(all(target_os = "uefi", any(feature = "card-returning-loader", feature = "card-resident")))]
 #[path = "delivery/adapter.rs"]
 mod card_returning_adapter;
@@ -60,24 +52,13 @@ pub unsafe extern "efiapi" fn efi_main(image: Handle, table: *const SystemTable)
 // The default ROM image has no runtime panic policy. A reachable Rust panic makes linking
 // fail; size-optimized LTO must prove this handler unreachable. This avoids
 // pulling in the general UEFI crate's console/delay/shutdown panic machinery.
-#[cfg(all(target_os = "uefi", not(feature = "card-load-only")))]
+#[cfg(target_os = "uefi")]
 #[panic_handler]
 fn panic(_: &core::panic::PanicInfo) -> ! {
     unsafe extern "C" {
         fn svmvisor_dxe_must_not_panic() -> !;
     }
     unsafe { svmvisor_dxe_must_not_panic() }
-}
-
-// Candidate-only last resort for an internal invariant failure. Expected bad
-// card data never takes this path. No firmware calls or transfer are possible;
-// recovery requires an external reset. Default record-only policy is unchanged.
-#[cfg(all(target_os = "uefi", feature = "card-load-only"))]
-#[panic_handler]
-fn panic(_: &core::panic::PanicInfo) -> ! {
-    loop {
-        core::hint::spin_loop();
-    }
 }
 
 #[cfg(not(target_os = "uefi"))]

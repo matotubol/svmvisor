@@ -32,17 +32,6 @@ fn main() {
             println!("cargo:rerun-if-changed={}", pin.display());
         }
     }
-    if std::env::var_os("CARGO_FEATURE_CARD_LOAD_ONLY").is_some() {
-        println!("cargo:rerun-if-env-changed=SVMVISOR_CARD_PAYLOAD_SHA256");
-        if std::env::var("CARGO_CFG_TARGET_OS").as_deref() == Ok("uefi") {
-            let pin = std::env::var("SVMVISOR_CARD_PAYLOAD_SHA256")
-                .expect("card-load-only requires SVMVISOR_CARD_PAYLOAD_SHA256");
-            assert!(
-                pin.len() == 64 && pin.bytes().all(|b| b.is_ascii_hexdigit()),
-                "card payload pin must contain exactly64 hex digits"
-            );
-        }
-    }
     // The Rust UEFI target defaults to EFI_APPLICATION. This package is the
     // resident option-ROM DXE driver, so give only this PE/COFF image the boot
     // service driver subsystem. Other UEFI packages keep their own subsystem.

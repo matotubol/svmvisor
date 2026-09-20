@@ -153,24 +153,6 @@ fn record_budget_reserves_after_and_exit_slots_without_extra_bus_access() {
     assert_eq!(io.writes, MAX_CALLBACK_RECORDS as usize * 9);
 }
 
-#[cfg(feature = "card-load-only")]
-#[test]
-fn candidate_result_survives_every_lifecycle_record_and_default_is_unmarked() {
-    for success in [true, false] {
-        let mut trace = Trace::new_card_result(77, success);
-        let mut io = Journal::new();
-        for event in [ReadyToBoot, AfterReadyToBoot, ExitBootServices] {
-            trace.record(&mut io, event, 1, 0).unwrap();
-            assert_eq!((io.last[7] >> 16) & 0x6000, if success { 0x2000 } else { 0x4000 });
-            assert_eq!((io.last[7] >> 16) & 0xff, 4);
-        }
-    }
-    let mut trace = Trace::new(77);
-    let mut io = Journal::new();
-    trace.record(&mut io, ReadyToBoot, 1, 0).unwrap();
-    assert_eq!((io.last[7] >> 16) & 0x6000, 0);
-}
-
 #[cfg(feature = "card-returning-loader")]
 #[test]
 fn returning_outcome_survives_lifecycle_without_hiding_order_anomalies() {

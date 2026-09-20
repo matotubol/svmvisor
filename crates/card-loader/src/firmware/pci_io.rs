@@ -67,11 +67,7 @@ type GetBarAttributes =
 pub(crate) struct Bar0(pub(crate) *const PciIo);
 
 impl Bar0 {
-    #[cfg(any(
-        feature = "card-load-only",
-        feature = "card-returning-loader",
-        feature = "card-resident"
-    ))]
+    #[cfg(any(feature = "card-returning-loader", feature = "card-resident"))]
     pub(crate) fn card_word(&self, offset: u64) -> Result<u32, Status> {
         if offset & 3 != 0 || offset > 0x100000 - 4 {
             return Err(Status::INVALID_PARAMETER);

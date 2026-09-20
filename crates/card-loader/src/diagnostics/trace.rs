@@ -18,8 +18,6 @@ pub struct Trace {
     anomalies: u32,
     attempts: u8,
     failed: bool,
-    #[cfg(feature = "card-load-only")]
-    card_result: u32,
     #[cfg(feature = "card-returning-loader")]
     returning_result: u32,
     #[cfg(feature = "card-returning-loader")]
@@ -36,8 +34,6 @@ impl Trace {
             anomalies: 0,
             attempts: 0,
             failed: false,
-            #[cfg(feature = "card-load-only")]
-            card_result: 0,
             #[cfg(feature = "card-returning-loader")]
             returning_result: 0,
             #[cfg(feature = "card-returning-loader")]
@@ -66,14 +62,6 @@ impl Trace {
     ) -> Self {
         let mut trace = Self::new_returning_result(boot_id, diagnostics.result_bits());
         trace.returning_diagnostics = Some(diagnostics);
-        trace
-    }
-
-    /// Candidate-only persistent result: detail bit13 success, bit14 failure.
-    #[cfg(feature = "card-load-only")]
-    pub const fn new_card_result(boot_id: u32, success: bool) -> Self {
-        let mut trace = Self::new(boot_id);
-        trace.card_result = if success { 1 << 13 } else { 1 << 14 };
         trace
     }
 
@@ -133,8 +121,6 @@ impl Trace {
             self.anomalies |= 1 << 10;
         }
         let detail = TRACE_DETAIL | self.anomalies | (self.failed as u32) << 9;
-        #[cfg(feature = "card-load-only")]
-        let detail = detail | self.card_result;
         #[cfg(feature = "card-returning-loader")]
         let detail = if self.returning_result == 0 {
             detail

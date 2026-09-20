@@ -184,8 +184,6 @@ unsafe extern "efiapi" fn start(
         let (tsc, cpu) = cpu::sample();
         let boot_id = (tsc as u32) ^ (tsc >> 32) as u32;
         mark(&mut io, boot_id, tsc, cpu)?;
-        #[cfg(feature = "card-load-only")]
-        crate::card_load::verify(&mut io, services(), boot_id, tsc, cpu)?;
         #[cfg(feature = "card-returning-loader")]
         crate::card_returning_adapter::execute(
             &mut io,
@@ -294,10 +292,6 @@ fn open(controller: Handle) -> Result<*const PciIo, Status> {
 fn cleanup(controller: Handle, io: &mut Bar0) -> Status {
     #[cfg(any(feature = "card-returning-loader", feature = "card-resident"))]
     if let Err(error) = crate::card_returning_adapter::cleanup(services()) {
-        return error;
-    }
-    #[cfg(feature = "card-load-only")]
-    if let Err(error) = crate::card_load::cleanup(services()) {
         return error;
     }
     let events = lifecycle::unregister(services());

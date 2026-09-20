@@ -34,10 +34,6 @@ pub(crate) fn register(
         EXITED.store(false, Ordering::Release);
         MAPPING = Some(mapping);
         TRACE = Trace::new(boot_id);
-        #[cfg(feature = "card-load-only")]
-        {
-            TRACE = Trace::new_card_result(boot_id, true);
-        }
         #[cfg(feature = "card-returning-loader")]
         {
             TRACE = match crate::card_returning_adapter::diagnostics() {
