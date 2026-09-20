@@ -51,13 +51,11 @@ pub const HEADER_BYTES: usize = 128;
 pub const SLOT_BYTES: usize = 0x10_0000;
 pub const DIGEST_BYTES: usize = 32;
 
-pub const PACKAGE_MAGIC: [u8; 8] = *b"SVMCRD01";
 pub const RETURNING_MAGIC: [u8; 8] = *b"SVMPE001";
 pub const RESIDENT_BOOT_MAGIC: [u8; 8] = *b"SVMBPE01";
 
 pub const VERSION: u32 = 1;
 
-pub const FLAGS_PACKAGE: u64 = 1 << 0;
 pub const FLAGS_RETURNING: u64 = 1 << 1;
 pub const FLAGS_RESIDENT_BOOT: u64 = 1 << 2;
 
@@ -68,8 +66,6 @@ pub const SLOT_BYTES_OFFSET: usize = 0x018;
 pub const PAYLOAD_OFFSET_OFFSET: usize = 0x020;
 pub const FLAGS_OFFSET: usize = 0x028;
 pub const DIGEST_OFFSET: usize = 0x030;
-/// `SVMCRD01` only: everything from here to the end of the header is zero.
-pub const PACKAGE_RESERVED_OFFSET: usize = 0x050;
 pub const MACHINE_OFFSET: usize = 0x050;
 pub const SUBSYSTEM_OFFSET: usize = 0x052;
 pub const OPTIONAL_MAGIC_OFFSET: usize = 0x054;
@@ -93,7 +89,6 @@ pub const FILE_ALIGNMENT: u32 = 512;
 pub const MAX_IMAGE_BYTES: u32 = 16 * 1024 * 1024;
 pub const MAX_SECTIONS: u32 = 16;
 pub const MIN_PE_BYTES: usize = 512;
-pub const MIN_PACKAGE_BYTES: usize = 64;
 
 const _: () = {
     assert!(RESERVED_OFFSET + 16 == HEADER_BYTES);

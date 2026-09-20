@@ -3,11 +3,6 @@
 //! Rust markers cover the inner routine only. The parent observes StartImage
 //! return independently; no marker proves the outer assembly restored its caller.
 
-/// Fixed multi-exit diagnostic profile: 32 CPUID/query rounds and a final stop.
-/// These constants bind child observations to the independent parent classifier.
-pub const MULTI_EXIT_OUTCOME: u64 = 12;
-pub const MULTI_EXIT_ENTRIES: u64 = 65;
-
 #[repr(C)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct NativeResult {
