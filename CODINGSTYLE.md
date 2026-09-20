@@ -11,7 +11,7 @@ what the hypervisor does. Rule IDs (`F2`, `N7`, ...) exist so reviews and
 commits can cite them.
 
 Scope: all Rust under `crates/`. The `no_std` crates (`card-abi`,
-`card-loader`, `hypervisor`, `launcher`, `firmware-handoff`, `resident-payload`,
+`card-loader`, `hypervisor`, `launcher`, `resident-payload`,
 `memory-attributes`) and the host tools (`xtask`, `rompack`) follow the same
 style; rules marked **[no_std]** bind only the former.
 
@@ -57,12 +57,11 @@ use_small_heuristics = "Max"
 lines; width 79 grows it by 17% and still leaves 1,179 lines over, because of
 register and constant names. `jiff` uses 79; we do not.)
 
-**F2.** Every commit is `cargo fmt`-clean. The two crates outside the
-workspace are formatted explicitly:
+**F2.** Every commit is `cargo fmt`-clean. The crate outside the
+workspace is formatted explicitly:
 
 ```
 cargo fmt --all
-cargo fmt --manifest-path crates/firmware-handoff/Cargo.toml
 cargo fmt --manifest-path crates/resident-payload/Cargo.toml
 ```
 
@@ -98,8 +97,8 @@ section order, not from ASCII art.
 nothing about UEFI or SVM); `hypervisor` depends on it and knows nothing about
 UEFI; `card-loader` depends on `card-abi` only and knows nothing about SVM;
 `launcher` depends on `card-abi` and `hypervisor` (and on `memory-attributes`
-under its `memory-attribute-*` features); `firmware-handoff` depends on
-`card-abi` and `hypervisor`; `resident-payload` depends on `hypervisor`;
+under its `memory-attribute-*` features); `resident-payload` depends on
+`hypervisor`;
 `xtask` depends on `card-abi`; `memory-attributes` and `rompack` stand alone.
 A crate never reaches into another crate's source tree with `#[path]` or
 `include!`. Shared code is shared through a Cargo dependency.
@@ -726,7 +725,6 @@ cargo test -p svmvisor-card-loader --features card-load-only
 cargo test -p svmvisor-card-loader --features card-returning-loader
 cargo test -p svmvisor-card-loader --features card-resident-dev-loader
 cargo test -p svmvisor-card-loader --features card-resident-loader
-cargo test --manifest-path crates/firmware-handoff/Cargo.toml
 cargo build-card-loader --features card-resident-dev-loader
 cargo xtask resident --output target/native-resident/<fresh-dir> --low-runtime
 ```
@@ -754,8 +752,8 @@ Notes:
 A file move or rename must update, in the same commit, every place that
 names the path: `#[path]` mounts (`card-loader/src/main.rs`,
 `card-loader/tests/*.rs`, `launcher/src/main.rs`,
-`launcher/src/native/resident/activation/mod.rs`, `launcher/tests/*.rs`,
-`firmware-handoff/tests/ownership.rs`), the `.S` table in
+`launcher/src/native/resident/activation/mod.rs`, `launcher/tests/*.rs`),
+the `.S` table in
 `launcher/build.rs`, and the source paths in `xtask/src/resident.rs`.
 
 ---

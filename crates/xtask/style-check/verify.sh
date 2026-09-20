@@ -50,7 +50,6 @@ step() {
 }
 
 step "fmt workspace"            cargo fmt --all -- --check
-step "fmt firmware-handoff"     cargo fmt --manifest-path crates/firmware-handoff/Cargo.toml -- --check
 step "fmt resident-payload"     cargo fmt --manifest-path crates/resident-payload/Cargo.toml -- --check
 step "test workspace"           cargo test --workspace
 # The resident-runtime features only link with --lib: the integration tests
@@ -63,7 +62,6 @@ done
 for feature in card-load-only card-returning-loader card-resident-dev-loader card-resident-loader; do
     step "test card-loader $feature" cargo test -p svmvisor-card-loader --features "$feature"
 done
-step "test firmware-handoff"    cargo test --manifest-path crates/firmware-handoff/Cargo.toml
 
 if [ "$MODE" = "full" ]; then
     step "build-card-loader card-resident-dev-loader" cargo build-card-loader --features card-resident-dev-loader

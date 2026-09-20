@@ -17,13 +17,12 @@ use crate::{audit, json::Value, relocations};
 /// Files and directories whose exact bytes define a resident build.
 const SOURCE_FILES: [&str; 4] =
     ["Cargo.toml", "Cargo.lock", ".cargo/config.toml", "rust-toolchain.toml"];
-const SOURCE_DIRECTORIES: [&str; 7] = [
+const SOURCE_DIRECTORIES: [&str; 6] = [
     "crates/card-abi",
     "crates/hypervisor",
     "crates/launcher",
     "crates/memory-attributes",
     "crates/resident-payload",
-    "crates/firmware-handoff",
     "crates/xtask",
 ];
 const SKIPPED_DIRECTORIES: [&str; 2] = ["target", "__pycache__"];
