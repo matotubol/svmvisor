@@ -684,7 +684,7 @@ mod native {
     // complete-operation stability, mode/cache and image contracts.
     // Every actual source operand passes full-page RAM bounds and the guarded
     // assembly load; no successful MAP query is used as the bootstrap premise.
-    unsafe impl super::firmware::QualifiedTableReader for NativeProbe<'_> {
+    unsafe impl crate::memory_attributes::firmware::QualifiedTableReader for NativeProbe<'_> {
         fn config(&self) -> svmvisor_memory_attributes::Config {
             svmvisor_memory_attributes::Config {
                 root: self.profile.root,
