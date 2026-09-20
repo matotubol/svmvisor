@@ -12,7 +12,6 @@ use std::{
 use sha2::{Digest, Sha256};
 use svmvisor_card_abi::{
     boot_options::ResidentBootOptions, endpoint::TerminalEndpoint, envelope::SLOT_BYTES,
-    native_result::NativeResult,
 };
 use svmvisor_card_loader::delivery::child_image::{self, Pin, State};
 use uefi_raw::{
@@ -111,12 +110,13 @@ fn w64(b: &mut [u8], o: usize, v: u64) {
     b[o..o + 8].copy_from_slice(&v.to_le_bytes());
 }
 
-fn fixture() -> Vec<u8> {
+/// A valid SVMBPE01 resident slot: header + 1024-byte child + 0xff padding.
+fn resident_slot() -> Vec<u8> {
     let mut pe = vec![0; 1024];
     pe[..2].copy_from_slice(b"MZ");
     w32(&mut pe, 0x3c, 64);
     pe[64..68].copy_from_slice(b"PE\0\0");
-    for (o, v) in [(68, 0x8664), (70, 1), (84, 240), (86, 2), (88, 0x20b), (156, 11)] {
+    for (o, v) in [(68, 0x8664), (70, 1), (84, 240), (86, 2), (88, 0x20b), (156, 12)] {
         w16(&mut pe, o, v);
     }
     for (o, v) in [
@@ -137,16 +137,16 @@ fn fixture() -> Vec<u8> {
     pe[512] = 0xc3;
     let mut slot = vec![0xff; SLOT_BYTES];
     slot[..128].fill(0);
-    slot[..8].copy_from_slice(b"SVMPE001");
+    slot[..8].copy_from_slice(b"SVMBPE01");
     for (o, v) in
         [(8, 1), (12, 128), (88, 4096), (92, 8192), (96, 512), (100, 4096), (104, 512), (108, 1)]
     {
         w32(&mut slot, o, v);
     }
-    for (o, v) in [(16, 1024), (24, 0x100000), (32, 128), (40, 2)] {
+    for (o, v) in [(16, 1024), (24, 0x100000), (32, 128), (40, 4)] {
         w64(&mut slot, o, v);
     }
-    for (o, v) in [(80, 0x8664), (82, 11), (84, 0x20b)] {
+    for (o, v) in [(80, 0x8664), (82, 12), (84, 0x20b)] {
         w16(&mut slot, o, v);
     }
     slot[48..80].copy_from_slice(&Sha256::digest(&pe));
@@ -156,12 +156,9 @@ fn fixture() -> Vec<u8> {
 
 unsafe extern "efiapi" fn alloc(ty: MemoryType, n: usize, out: *mut *mut u8) -> Status {
     let mut f = FIX.lock().unwrap();
-    assert_eq!(
-        ty,
-        if f.mode >= 20 { MemoryType::RUNTIME_SERVICES_DATA } else { MemoryType::LOADER_DATA }
-    );
+    assert_eq!(ty, MemoryType::RUNTIME_SERVICES_DATA);
     f.events.push("allocate");
-    if f.mode == 7 || f.mode == ALLOCATE_FAILS {
+    if f.mode == ALLOCATE_FAILS {
         return Status::OUT_OF_RESOURCES;
     }
     if f.mode == ALLOCATE_RETURNS_NULL {
@@ -190,7 +187,7 @@ unsafe extern "efiapi" fn free(p: *mut u8) -> Status {
     }
     assert_eq!(p as usize, f.pool);
     f.events.push("free-pool");
-    if f.mode == 5 || f.mode == FREE_POOL_FAILS {
+    if f.mode == FREE_POOL_FAILS {
         return Status::DEVICE_ERROR;
     }
     assert_eq!(f.loaded, 0, "mailbox must outlive resident child");
@@ -229,11 +226,7 @@ unsafe extern "efiapi" fn open(
             return Status::ACCESS_DENIED;
         }
         unsafe {
-            *out = if f.mode == 11 || f.mode == CHILD_IS_NULL {
-                ptr::null_mut()
-            } else {
-                f.loaded as *mut c_void
-            };
+            *out = if f.mode == CHILD_IS_NULL { ptr::null_mut() } else { f.loaded as *mut c_void };
         }
     }
     Status::SUCCESS
@@ -260,9 +253,6 @@ unsafe extern "efiapi" fn close(
     let mut f = FIX.lock().unwrap();
     if unsafe { *guid } == DevicePathProtocol::GUID {
         f.events.push("close-path");
-        if f.mode == 15 {
-            return Status::DEVICE_ERROR;
-        }
     } else {
         f.events.push("close-child");
     }
@@ -286,7 +276,7 @@ unsafe extern "efiapi" fn load(
     assert_eq!(&p[58..62], &[0x7f, 0xff, 4, 0]);
     let mut f = FIX.lock().unwrap();
     f.events.push("load");
-    if f.mode == 12 || f.mode == LOAD_ERROR {
+    if f.mode == LOAD_ERROR {
         return Status::LOAD_ERROR;
     }
     if f.mode == LOAD_RETURNS_NULL {
@@ -302,17 +292,9 @@ unsafe extern "efiapi" fn load(
         load_options_size: 0,
         load_options: ptr::null(),
         image_base: 0x100000 as *const c_void,
-        image_size: if f.mode == 14 { 4096 } else { 8192 },
-        image_code_type: if f.mode >= 20 {
-            MemoryType::RUNTIME_SERVICES_CODE
-        } else {
-            MemoryType::BOOT_SERVICES_CODE
-        },
-        image_data_type: if f.mode >= 20 {
-            MemoryType::RUNTIME_SERVICES_DATA
-        } else {
-            MemoryType::BOOT_SERVICES_DATA
-        },
+        image_size: 8192,
+        image_code_type: MemoryType::RUNTIME_SERVICES_CODE,
+        image_data_type: MemoryType::RUNTIME_SERVICES_DATA,
         unload: None,
     });
     match f.mode {
@@ -327,7 +309,7 @@ unsafe extern "efiapi" fn load(
     }
     f.loaded = Box::into_raw(l) as usize;
     unsafe { *out = child() };
-    if matches!(f.mode, 2 | 6 | LOAD_SECURITY_VIOLATION | LOAD_SECURITY_VIOLATION_UNLOAD_FAILS) {
+    if matches!(f.mode, LOAD_SECURITY_VIOLATION | LOAD_SECURITY_VIOLATION_UNLOAD_FAILS) {
         Status::SECURITY_VIOLATION
     } else {
         Status::SUCCESS
@@ -338,109 +320,65 @@ unsafe extern "efiapi" fn start(handle: Handle, _: *mut usize, exit: *mut *mut C
     assert_eq!(handle, child());
     let mut f = FIX.lock().unwrap();
     f.events.push("start");
-    if f.mode == 3 {
-        return Status::SECURITY_VIOLATION;
-    }
-    if f.mode == 16 {
-        return Status::INVALID_PARAMETER;
-    }
     let l = unsafe { &*(f.loaded as *const LoadedImageProtocol) };
     assert_eq!(l.load_options_size, 128);
-    if f.mode >= 20 {
-        let m = unsafe { &mut *l.load_options.cast_mut().cast::<ResidentBootOptions>() };
-        assert_eq!(*m, resident_options(f.mode));
-        if f.mode == 25 {
-            return Status::SECURITY_VIOLATION;
-        }
-        if f.mode == START_REFUSES_PARAMETER {
-            return Status::INVALID_PARAMETER;
-        }
-        if f.mode == START_FAILS_BEFORE_ENTRY {
-            auto_unload(&mut f);
-            return Status::ABORTED;
-        }
-        m.rust_entered = 1;
-        if matches!(f.mode, START_ERROR_WITH_EXIT_DATA | FREE_EXIT_DATA_FAILS) {
-            m.failure = 17;
-            return_exit_data(&mut f, exit);
-            auto_unload(&mut f);
-            return Status::ABORTED;
-        }
-        if f.mode == START_SUCCESS_WITH_EXIT_DATA {
-            return_exit_data(&mut f, exit);
-        }
-        if f.mode == 28 {
-            m.failure = Status::OUT_OF_RESOURCES.0 as u64;
-            m.preparation_stage = 6;
-            m.preparation_reason = 2;
-            m.preparation_address = 0x123456789abc;
-            unsafe {
-                drop(Box::from_raw(f.loaded as *mut LoadedImageProtocol));
-            }
-            f.loaded = 0;
-            f.events.push("auto-unload");
-            return Status::OUT_OF_RESOURCES;
-        }
-        if matches!(f.mode, 24 | 26 | FREE_POOL_FAILS) {
-            m.failure = 17;
-            unsafe {
-                drop(Box::from_raw(f.loaded as *mut LoadedImageProtocol));
-            }
-            f.loaded = 0;
-            f.events.push("auto-unload");
-            return if f.mode == 26 { Status::INVALID_PARAMETER } else { Status::UNSUPPORTED };
-        }
-        if f.mode != 21 {
-            m.armed = 1;
-        }
-        if f.mode == 22 {
-            m.magic[0] ^= 1;
-        }
-        if f.mode == 27 {
-            m.journal_base += 4096;
-        }
-        // These mutations remain valid headers, so only exact comparison with
-        // the original immutable parent inputs can reject the acknowledgement.
-        if f.mode == 29 {
-            m.version = 1;
-        }
-        if f.mode == 31 {
-            m.reserved[2] ^= 2;
-        }
-        if f.mode == 32 {
-            m.version = 2;
-            m.reserved = [0; 7];
-        }
-        return if f.mode == 23 { Status::WARN_UNKNOWN_GLYPH } else { Status::SUCCESS };
+    let m = unsafe { &mut *l.load_options.cast_mut().cast::<ResidentBootOptions>() };
+    assert_eq!(*m, resident_options(f.mode));
+    if f.mode == 25 {
+        return Status::SECURITY_VIOLATION;
     }
-    let m = unsafe { &mut *l.load_options.cast_mut().cast::<NativeResult>() };
-    assert_eq!(*m, NativeResult::new());
-    if matches!(f.mode, 1 | 4) {
-        m.rust_entered = 1;
-        m.rust_completed = 1;
-        m.outcome = 2;
-        m.attempted_entries = 1;
-        m.completed_exits = 1;
-        m.restoration_complete = 1;
-        m.cleanup_complete = 1;
+    if f.mode == START_REFUSES_PARAMETER {
+        return Status::INVALID_PARAMETER;
     }
-    if f.mode == 4 {
-        return Status::SUCCESS;
+    if f.mode == START_FAILS_BEFORE_ENTRY {
+        auto_unload(&mut f);
+        return Status::ABORTED;
     }
-    if f.mode == 13 {
-        let p = Box::into_raw(Box::new([0u8; 4]));
-        f.exit = p as usize;
-        unsafe {
-            *exit = p.cast();
-        }
+    m.rust_entered = 1;
+    if matches!(f.mode, START_ERROR_WITH_EXIT_DATA | FREE_EXIT_DATA_FAILS) {
+        m.failure = 17;
+        return_exit_data(&mut f, exit);
+        auto_unload(&mut f);
+        return Status::ABORTED;
     }
-    // Documented driver error return: firmware has freed the child already.
-    unsafe {
-        drop(Box::from_raw(f.loaded as *mut LoadedImageProtocol));
+    if f.mode == START_SUCCESS_WITH_EXIT_DATA {
+        return_exit_data(&mut f, exit);
     }
-    f.loaded = 0;
-    f.events.push("auto-unload");
-    Status::UNSUPPORTED
+    if f.mode == 28 {
+        m.failure = Status::OUT_OF_RESOURCES.0 as u64;
+        m.preparation_stage = 6;
+        m.preparation_reason = 2;
+        m.preparation_address = 0x123456789abc;
+        auto_unload(&mut f);
+        return Status::OUT_OF_RESOURCES;
+    }
+    if matches!(f.mode, 24 | 26 | FREE_POOL_FAILS) {
+        m.failure = 17;
+        auto_unload(&mut f);
+        return if f.mode == 26 { Status::INVALID_PARAMETER } else { Status::UNSUPPORTED };
+    }
+    if f.mode != 21 {
+        m.armed = 1;
+    }
+    if f.mode == 22 {
+        m.magic[0] ^= 1;
+    }
+    if f.mode == 27 {
+        m.journal_base += 4096;
+    }
+    // These mutations remain valid headers, so only exact comparison with
+    // the original immutable parent inputs can reject the acknowledgement.
+    if f.mode == 29 {
+        m.version = 1;
+    }
+    if f.mode == 31 {
+        m.reserved[2] ^= 2;
+    }
+    if f.mode == 32 {
+        m.version = 2;
+        m.reserved = [0; 7];
+    }
+    if f.mode == 23 { Status::WARN_UNKNOWN_GLYPH } else { Status::SUCCESS }
 }
 
 /// Documented driver error return: firmware has freed the child already.
@@ -465,7 +403,7 @@ unsafe extern "efiapi" fn unload(handle: Handle) -> Status {
     let mut f = FIX.lock().unwrap();
     f.events.push("unload");
     assert_ne!(f.loaded, 0, "stale child handle used");
-    if f.mode == 6 || f.mode == LOAD_SECURITY_VIOLATION_UNLOAD_FAILS {
+    if f.mode == LOAD_SECURITY_VIOLATION_UNLOAD_FAILS {
         return Status::DEVICE_ERROR;
     }
     unsafe {
@@ -575,18 +513,6 @@ fn resident_options(mode: u8) -> ResidentBootOptions {
         .unwrap()
 }
 
-/// A valid SVMBPE01 resident slot: header + 1024-byte child + 0xff padding.
-fn resident_slot() -> Vec<u8> {
-    let mut slot = fixture();
-    slot[..8].copy_from_slice(b"SVMBPE01");
-    w64(&mut slot, 40, 4);
-    w16(&mut slot, 82, 12);
-    w16(&mut slot, 128 + 156, 12);
-    let digest = Sha256::digest(&slot[128..1152]);
-    slot[48..80].copy_from_slice(&digest);
-    slot
-}
-
 fn word(slot: &[u8], offset: u64) -> Result<u32, Status> {
     assert_eq!(offset & 3, 0);
     Ok(u32::from_le_bytes(slot[offset as usize..offset as usize + 4].try_into().unwrap()))
@@ -619,13 +545,7 @@ fn resident_lifetime_requires_ack_and_retains_all_nonerror_returns() {
     for mode in 20..=32 {
         *FIX.lock().unwrap() =
             Fixture { mode, pool: 0, bytes: 0, exit: 0, loaded: 0, events: Vec::new() };
-        let mut slot = fixture();
-        slot[..8].copy_from_slice(b"SVMBPE01");
-        w64(&mut slot, 40, 4);
-        w16(&mut slot, 82, 12);
-        w16(&mut slot, 128 + 156, 12);
-        let digest = Sha256::digest(&slot[128..1152]);
-        slot[48..80].copy_from_slice(&digest);
+        let slot = resident_slot();
         let pin = Pin::parse_resident(&slot[..128]).unwrap();
         let mut state = State::new();
         let report = unsafe {
@@ -1170,7 +1090,18 @@ fn dev_loader_refuses_every_corruption_class_with_the_pinned_status() {
     type Corrupt = fn(&mut Vec<u8>);
     let classes: [(&str, Corrupt, u32); 12] = [
         ("magic", |s| s[0] ^= 1, 0),
-        ("wrong kind: fully valid returning slot", |s| *s = fixture(), 0),
+        (
+            "package-payload.py without --resident: the retired returning kind",
+            |s| {
+                s[..8].copy_from_slice(b"SVMPE001");
+                w64(s, 40, 2);
+                w16(s, 82, 11);
+                w16(s, 128 + 156, 11);
+                let digest = Sha256::digest(&s[128..1152]);
+                s[48..80].copy_from_slice(&digest);
+            },
+            0,
+        ),
         ("version", |s| w32(s, 8, 2), 0),
         ("header size", |s| w32(s, 12, 132), 0),
         ("payload bytes beyond slot", |s| w64(s, 16, (SLOT_BYTES - 127) as u64), 0),

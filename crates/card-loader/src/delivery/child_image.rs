@@ -6,8 +6,7 @@ use core::{ptr, slice};
 use sha2::{Digest, Sha256};
 use svmvisor_card_abi::{
     boot_options::ResidentBootOptions,
-    envelope::{Envelope, EnvelopeError, HEADER_BYTES, ImageKind, PeMetadata, parse_pe_kind},
-    native_result::NativeResult,
+    envelope::{Envelope, EnvelopeError, HEADER_BYTES, PeMetadata, parse_pe},
 };
 use uefi_raw::{
     Handle, Status,
@@ -23,7 +22,6 @@ const _: () = assert!(PATH_TRAILER <= 64);
 #[derive(Clone, Copy)]
 pub struct Pin {
     header: [u8; HEADER_BYTES],
-    kind: ImageKind,
     pub payload_bytes: usize,
     pub metadata: PeMetadata,
     digest: [u8; 32],
@@ -31,18 +29,13 @@ pub struct Pin {
 
 impl Pin {
     pub fn parse_resident(header: &[u8]) -> Result<Self, Status> {
-        Self::parse_kind(header, ImageKind::ResidentBoot)
-    }
-
-    fn parse_kind(header: &[u8], kind: ImageKind) -> Result<Self, Status> {
-        let envelope = Envelope::parse(header, kind).map_err(envelope_status)?;
+        let envelope = Envelope::parse(header).map_err(envelope_status)?;
         let mut saved = [0; HEADER_BYTES];
         for (d, s) in saved.iter_mut().zip(header) {
             *d = *s;
         }
         Ok(Self {
             header: saved,
-            kind,
             payload_bytes: envelope.payload_bytes,
             metadata: envelope.metadata,
             digest: envelope.digest,
@@ -53,7 +46,7 @@ impl Pin {
         if pe.len() != self.payload_bytes || Sha256::digest(pe).as_slice() != self.digest {
             return Err(bad());
         }
-        if parse_pe_kind(pe, self.kind).map_err(envelope_status)? != self.metadata {
+        if parse_pe(pe).map_err(envelope_status)? != self.metadata {
             return Err(bad());
         }
         Ok(())
@@ -138,7 +131,6 @@ pub struct Delivery {
     pub stage: u32,
     pub load_status: Option<Status>,
     pub start_status: Option<Status>,
-    pub inner: NativeResult,
     pub operation_status: Status,
     pub cleanup_status: Status,
 }
@@ -172,7 +164,7 @@ pub unsafe fn execute_resident(
     options: ResidentBootOptions,
     read: impl FnMut(u64) -> Result<u32, Status>,
 ) -> Delivery {
-    unsafe { execute_inner(state, boot_services, parent, controller, pin, Some(options), read) }
+    unsafe { execute_inner(state, boot_services, parent, controller, pin, options, read) }
 }
 
 /// Development delivery (`card-resident-dev-loader`): no header is compiled
@@ -199,14 +191,13 @@ pub unsafe fn execute_resident_dev(
     };
     match pin {
         Ok(pin) => unsafe {
-            execute_inner(state, boot_services, parent, controller, &pin, Some(options), read)
+            execute_inner(state, boot_services, parent, controller, &pin, options, read)
         },
         // Same stage-0 report a pinned parent gives for a header mismatch.
         Err(error) => Delivery {
             stage: 0,
             load_status: None,
             start_status: None,
-            inner: NativeResult::new(),
             operation_status: error,
             cleanup_status: Status::SUCCESS,
         },
@@ -219,14 +210,13 @@ unsafe fn execute_inner(
     parent: Handle,
     controller: Handle,
     pin: &Pin,
-    options: Option<ResidentBootOptions>,
+    options: ResidentBootOptions,
     mut read: impl FnMut(u64) -> Result<u32, Status>,
 ) -> Delivery {
     let mut report = Delivery {
         stage: 0,
         load_status: None,
         start_status: None,
-        inner: NativeResult::new(),
         operation_status: Status::SUCCESS,
         cleanup_status: Status::SUCCESS,
     };
@@ -235,10 +225,10 @@ unsafe fn execute_inner(
         return report;
     }
     let operation = (|| -> Result<(), Status> {
-        if (pin.kind == ImageKind::ResidentBoot) != options.is_some()
-            || options.is_some_and(|o| {
-                !o.is_valid_header() || o.rust_entered != 0 || o.armed != 0 || o.failure != 0
-            })
+        if !options.is_valid_header()
+            || options.rust_entered != 0
+            || options.armed != 0
+            || options.failure != 0
         {
             return Err(Status::INVALID_PARAMETER);
         }
@@ -251,24 +241,16 @@ unsafe fn execute_inner(
         }
         report.stage = 1;
         let rounded = (pin.payload_bytes + 7) & !7;
-        let result_offset = rounded + MAX_PATH + 64;
-        let total = result_offset + core::mem::size_of::<NativeResult>();
+        let options_offset = rounded + MAX_PATH + 64;
+        let total = options_offset + core::mem::size_of::<ResidentBootOptions>();
         status(unsafe {
-            (boot_services.allocate_pool)(
-                if options.is_some() {
-                    MemoryType::RUNTIME_SERVICES_DATA
-                } else {
-                    MemoryType::LOADER_DATA
-                },
-                total,
-                &mut state.pool,
-            )
+            (boot_services.allocate_pool)(MemoryType::RUNTIME_SERVICES_DATA, total, &mut state.pool)
         })?;
         if state.pool.is_null() {
             return Err(Status::DEVICE_ERROR);
         }
         // The pool owns all rounded reads, the bounded copied device path, and
-        // the aligned result. No external byte pointer is executed directly.
+        // the aligned options. No external byte pointer is executed directly.
         let buffer = unsafe { slice::from_raw_parts_mut(state.pool, (pin.payload_bytes + 3) & !3) };
         for (i, chunk) in buffer.chunks_exact_mut(4).enumerate() {
             for (d, s) in chunk.iter_mut().zip(read((HEADER_BYTES + i * 4) as u64)?.to_le_bytes()) {
@@ -279,15 +261,9 @@ unsafe fn execute_inner(
         pin.verify(pe)?;
         report.stage = 2;
         let path = unsafe { state.pool.add(rounded) };
-        unsafe { copy_path(boot_services, parent, controller, path, &pin.digest, pin.kind) }?;
-        let mailbox = unsafe { state.pool.add(result_offset).cast::<NativeResult>() };
-        unsafe {
-            if let Some(options) = options {
-                mailbox.cast::<ResidentBootOptions>().write(options);
-            } else {
-                mailbox.write(NativeResult::new());
-            }
-        };
+        unsafe { copy_path(boot_services, parent, controller, path, &pin.digest) }?;
+        let mailbox = unsafe { state.pool.add(options_offset).cast::<ResidentBootOptions>() };
+        unsafe { mailbox.write(options) };
         let loaded = unsafe {
             (boot_services.load_image)(
                 false.into(),
@@ -307,14 +283,7 @@ unsafe fn execute_inner(
             return Err(Status::DEVICE_ERROR);
         }
         unsafe {
-            set_options(
-                boot_services,
-                parent,
-                state.child,
-                mailbox,
-                pin.metadata.image_bytes,
-                pin.kind,
-            )
+            set_options(boot_services, parent, state.child, mailbox, pin.metadata.image_bytes)
         }?;
         let mut exit_size = 0;
         let mut exit_data = ptr::null_mut();
@@ -323,53 +292,32 @@ unsafe fn execute_inner(
         state.exit_data = exit_data.cast();
         report.start_status = Some(started);
         report.stage = 4;
-        if let Some(original) = options {
-            let observed = unsafe { mailbox.cast::<ResidentBootOptions>().read() };
-            state.resident_options = Some(observed);
-            if !started.is_error() {
-                state.retained = true;
-                // The pool and any ExitData remain retained on this path; no
-                // fallible cleanup can revoke a possibly installed EBS hook.
-                if started != Status::SUCCESS
-                    || !observed.is_armed()
-                    || observed.version != original.version
-                    || observed.reserved != original.reserved
-                    || observed.journal_base != original.journal_base
-                    || observed.boot_id != original.boot_id
-                {
-                    return Err(Status::PROTOCOL_ERROR);
-                }
-                return Ok(());
-            }
-            // The exact child sets entered before its own errors, distinguishing
-            // firmware pre-entry denial from auto-unloaded driver errors.
-            if started.is_error()
-                && !(observed.rust_entered == 0
-                    && matches!(started, Status::SECURITY_VIOLATION | Status::INVALID_PARAMETER))
+        let observed = unsafe { mailbox.read() };
+        state.resident_options = Some(observed);
+        if !started.is_error() {
+            state.retained = true;
+            // The pool and any ExitData remain retained on this path; no
+            // fallible cleanup can revoke a possibly installed EBS hook.
+            if started != Status::SUCCESS
+                || !observed.is_armed()
+                || observed.version != options.version
+                || observed.reserved != options.reserved
+                || observed.journal_base != options.journal_base
+                || observed.boot_id != options.boot_id
             {
-                state.child = ptr::null_mut();
+                return Err(Status::PROTOCOL_ERROR);
             }
-            return Err(started);
+            return Ok(());
         }
-        report.inner = unsafe { mailbox.read() };
-        // Drivers returning an error are automatically unloaded by firmware.
-        // The two documented pre-entry failures leave the fresh image loaded.
-        // The pinned child never returns either code on an ordinary path.
+        // The exact child sets entered before its own errors, distinguishing
+        // firmware pre-entry denial from auto-unloaded driver errors.
         if started.is_error()
-            && !(report.inner.rust_entered == 0
-                && (started == Status::SECURITY_VIOLATION || started == Status::INVALID_PARAMETER))
+            && !(observed.rust_entered == 0
+                && matches!(started, Status::SECURITY_VIOLATION | Status::INVALID_PARAMETER))
         {
             state.child = ptr::null_mut();
         }
-        if !report.inner.is_valid_header() {
-            return Err(bad());
-        }
-        if started != Status::UNSUPPORTED {
-            return Err(if started == Status::SUCCESS { Status::PROTOCOL_ERROR } else { started });
-        }
-        // Unsupported with no Rust marker is an ordinary assembly refusal, not
-        // evidence that the child performed a probe or completed restoration.
-        Ok(())
+        Err(started)
     })();
     if let Err(error) = operation {
         report.operation_status = error;
@@ -398,9 +346,8 @@ unsafe fn set_options(
     boot_services: &BootServices,
     parent: Handle,
     child: Handle,
-    result: *mut NativeResult,
+    options: *mut ResidentBootOptions,
     image_bytes: u32,
-    kind: ImageKind,
 ) -> Result<(), Status> {
     let mut raw = ptr::null_mut();
     status(unsafe {
@@ -419,36 +366,20 @@ unsafe fn set_options(
         if loaded.parent_handle != parent
             || loaded.image_base.is_null()
             || loaded.image_size != u64::from(image_bytes)
-            || loaded.image_code_type
-                != if kind == ImageKind::Returning {
-                    MemoryType::BOOT_SERVICES_CODE
-                } else {
-                    MemoryType::RUNTIME_SERVICES_CODE
-                }
-            || loaded.image_data_type
-                != if kind == ImageKind::Returning {
-                    MemoryType::BOOT_SERVICES_DATA
-                } else {
-                    MemoryType::RUNTIME_SERVICES_DATA
-                }
+            || loaded.image_code_type != MemoryType::RUNTIME_SERVICES_CODE
+            || loaded.image_data_type != MemoryType::RUNTIME_SERVICES_DATA
             || loaded.load_options_size != 0
             || !loaded.load_options.is_null()
         {
             return Err(bad());
         }
-        loaded.load_options_size = core::mem::size_of::<NativeResult>() as u32;
-        loaded.load_options = result.cast();
+        loaded.load_options_size = core::mem::size_of::<ResidentBootOptions>() as u32;
+        loaded.load_options = options.cast();
         Ok(())
     })();
     // UEFI 2.11 §7.3.9: GET_PROTOCOL needs no CloseProtocol. The resident
-    // policy retains no interface borrow; preserve the historical returning path.
-    if kind == ImageKind::ResidentBoot {
-        return operation;
-    }
-    let closed = status(unsafe {
-        (boot_services.close_protocol)(child, &LoadedImageProtocol::GUID, parent, ptr::null_mut())
-    });
-    closed.and(operation)
+    // policy retains no interface borrow.
+    operation
 }
 
 unsafe fn copy_path(
@@ -457,7 +388,6 @@ unsafe fn copy_path(
     controller: Handle,
     dest: *mut u8,
     digest: &[u8; 32],
-    kind: ImageKind,
 ) -> Result<(), Status> {
     let mut raw = ptr::null_mut();
     status(unsafe {
@@ -510,19 +440,8 @@ unsafe fn copy_path(
         Ok(())
     })();
     // UEFI 2.11 §7.3.9: GET_PROTOCOL needs no CloseProtocol. The resident
-    // policy retains no interface borrow; preserve the historical returning path.
-    if kind == ImageKind::ResidentBoot {
-        return operation;
-    }
-    let closed = status(unsafe {
-        (boot_services.close_protocol)(
-            controller,
-            &DevicePathProtocol::GUID,
-            parent,
-            ptr::null_mut(),
-        )
-    });
-    closed.and(operation)
+    // policy retains no interface borrow.
+    operation
 }
 
 fn status(s: Status) -> Result<(), Status> {

@@ -61,7 +61,7 @@ fast iteration loop in `firmware/card/README.md`. Both share the internal
 
 The resident loaders start whatever image the payload slot holds, as long as it
 meets the policy in `svmvisor_card_abi::envelope` (`Envelope::parse` for the
-header, `parse_pe_kind` for the image; `delivery/child_image.rs` binds the two
+header, `parse_pe` for the image; `delivery/child_image.rs` binds the two
 with the SHA-256). Nothing in that policy is specific to the hypervisor. A
 child must be:
 

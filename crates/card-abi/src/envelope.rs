@@ -1,32 +1,28 @@
 //! The card image envelope: the 128-byte header at the start of the card's 1 MiB payload slot.
 //!
-//! Two envelope kinds share bytes `0x000..0x050`. All integers are little-endian.
+//! All integers are little-endian.
 //!
 //! | Offset | Width | Field |
 //! | --- | --- | --- |
-//! | `0x000` | 8 | magic: `SVMPE001` or `SVMBPE01` |
+//! | `0x000` | 8 | magic: `SVMBPE01` |
 //! | `0x008` | 4 | envelope version, 1 |
 //! | `0x00c` | 4 | header bytes, 128 |
 //! | `0x010` | 8 | payload bytes |
 //! | `0x018` | 8 | slot bytes, 0x10_0000 |
 //! | `0x020` | 8 | payload offset within the slot, 128 |
-//! | `0x028` | 8 | flags: exactly the one bit of the envelope kind |
+//! | `0x028` | 8 | flags: exactly `1 << 2` |
 //! | `0x030` | 32 | SHA-256 of the payload bytes |
 //!
-//! | Magic | Flags | Payload |
-//! | --- | --- | --- |
-//! | `SVMPE001` | `1 << 1` | a PE32+ child that returns, subsystem 11 (boot service driver) |
-//! | `SVMBPE01` | `1 << 2` | a PE32+ child that stays resident, subsystem 12 (runtime driver) |
+//! The payload is a PE32+ child that stays resident, subsystem 12 (runtime driver). Flag `1 << 0`
+//! belonged to the retired `SVMCRD01` package envelope, flag `1 << 1` and the magic `SVMPE001` to
+//! the retired envelope of a child that returned.
 //!
-//! Flag `1 << 0` belonged to the retired `SVMCRD01` package envelope. The card loader builds only
-//! resident images; the returning kind is still parsed.
-//!
-//! Both kinds continue with metadata that must equal the payload's own PE headers:
+//! The header continues with metadata that must equal the payload's own PE headers:
 //!
 //! | Offset | Width | Field |
 //! | --- | --- | --- |
 //! | `0x050` | 2 | COFF machine, 0x8664 |
-//! | `0x052` | 2 | PE subsystem, 11 or 12 |
+//! | `0x052` | 2 | PE subsystem, 12 |
 //! | `0x054` | 2 | optional header magic, 0x020b |
 //! | `0x056` | 2 | reserved, zero |
 //! | `0x058` | 4 | entry point RVA |
@@ -39,25 +35,23 @@
 //!
 //! The payload follows the header; the rest of the slot is erased flash (`0xff`).
 //!
-//! The PE envelopes are written by `firmware/card/package-payload.py` (Python, `struct` format
-//! `<8sII4Q32s4H6I16s`). The `svmvisor-card-loader` test
+//! The envelope is written by `firmware/card/package-payload.py --resident` (Python, `struct`
+//! format `<8sII4Q32s4H6I16s`). The `svmvisor-card-loader` test
 //! `optional_python_actual_slot_matches_rust_parser` cross-checks a slot that script produced
 //! against this parser.
 //!
-//! `Envelope::parse` accepts a PE envelope header, `parse_pe_kind` applies the same narrow policy
-//! to the payload's own PE headers; a loader or packager compares the two `PeMetadata` values and
+//! `Envelope::parse` accepts the header, `parse_pe` applies the same narrow policy to the
+//! payload's own PE headers; a loader or packager compares the two `PeMetadata` values and
 //! the SHA-256.
 
 pub const HEADER_BYTES: usize = 128;
 pub const SLOT_BYTES: usize = 0x10_0000;
 pub const DIGEST_BYTES: usize = 32;
 
-pub const RETURNING_MAGIC: [u8; 8] = *b"SVMPE001";
 pub const RESIDENT_BOOT_MAGIC: [u8; 8] = *b"SVMBPE01";
 
 pub const VERSION: u32 = 1;
 
-pub const FLAGS_RETURNING: u64 = 1 << 1;
 pub const FLAGS_RESIDENT_BOOT: u64 = 1 << 2;
 
 pub const VERSION_OFFSET: usize = 0x008;
@@ -81,7 +75,6 @@ pub const RESERVED_OFFSET: usize = 0x070;
 
 pub const MACHINE_AMD64: u16 = 0x8664;
 pub const OPTIONAL_MAGIC_PE32_PLUS: u16 = 0x020b;
-pub const SUBSYSTEM_BOOT_SERVICE_DRIVER: u16 = 11;
 pub const SUBSYSTEM_RUNTIME_DRIVER: u16 = 12;
 
 // The narrow PE policy a payload has to meet before firmware ever sees it.
@@ -101,24 +94,23 @@ const _: () = {
 /// matches it: the digest and the PE metadata still have to be compared with the payload bytes.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Envelope {
-    pub kind: ImageKind,
     pub payload_bytes: usize,
     pub digest: [u8; DIGEST_BYTES],
     pub metadata: PeMetadata,
 }
 
 impl Envelope {
-    /// Accept exactly the 128-byte `SVMPE001` or `SVMBPE01` header of `kind`.
-    pub fn parse(header: &[u8], kind: ImageKind) -> Result<Self, EnvelopeError> {
+    /// Accept exactly the 128-byte `SVMBPE01` header.
+    pub fn parse(header: &[u8]) -> Result<Self, EnvelopeError> {
         if header.len() != HEADER_BYTES
-            || header.get(..8) != Some(kind.magic())
+            || header.get(..8) != Some(&RESIDENT_BOOT_MAGIC)
             || read_u32(header, VERSION_OFFSET)? != VERSION
             || read_u32(header, HEADER_BYTES_OFFSET)? != HEADER_BYTES as u32
             || read_u64(header, SLOT_BYTES_OFFSET)? != SLOT_BYTES as u64
             || read_u64(header, PAYLOAD_OFFSET_OFFSET)? != HEADER_BYTES as u64
-            || read_u64(header, FLAGS_OFFSET)? != kind.flags()
+            || read_u64(header, FLAGS_OFFSET)? != FLAGS_RESIDENT_BOOT
             || read_u16(header, MACHINE_OFFSET)? != MACHINE_AMD64
-            || read_u16(header, SUBSYSTEM_OFFSET)? != kind.subsystem()
+            || read_u16(header, SUBSYSTEM_OFFSET)? != SUBSYSTEM_RUNTIME_DRIVER
             || read_u16(header, OPTIONAL_MAGIC_OFFSET)? != OPTIONAL_MAGIC_PE32_PLUS
             || read_u16(header, RESERVED_WORD_OFFSET)? != 0
             || header.get(RESERVED_OFFSET..).ok_or(EnvelopeError::Header)?.iter().any(|b| *b != 0)
@@ -144,7 +136,7 @@ impl Envelope {
             sections: read_u32(header, SECTIONS_OFFSET)?,
         };
         metadata.validate(bytes as usize)?;
-        Ok(Self { kind, payload_bytes: bytes as usize, digest, metadata })
+        Ok(Self { payload_bytes: bytes as usize, digest, metadata })
     }
 }
 
@@ -180,31 +172,7 @@ impl PeMetadata {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum ImageKind {
-    Returning,
-    ResidentBoot,
-}
-
-impl ImageKind {
-    fn subsystem(self) -> u16 {
-        if self == Self::Returning {
-            SUBSYSTEM_BOOT_SERVICE_DRIVER
-        } else {
-            SUBSYSTEM_RUNTIME_DRIVER
-        }
-    }
-
-    fn magic(self) -> &'static [u8; 8] {
-        if self == Self::Returning { &RETURNING_MAGIC } else { &RESIDENT_BOOT_MAGIC }
-    }
-
-    fn flags(self) -> u64 {
-        if self == Self::Returning { FLAGS_RETURNING } else { FLAGS_RESIDENT_BOOT }
-    }
-}
-
-/// What `Envelope::parse` or `parse_pe_kind` found wrong, precise enough for a packager.
+/// What `Envelope::parse` or `parse_pe` found wrong, precise enough for a packager.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum EnvelopeError {
     /// Length, magic, version, header bytes, slot bytes, payload offset, flags, machine,
@@ -239,10 +207,6 @@ pub enum EnvelopeError {
 /// Deliberately narrow AMD64 PE32+ policy. Firmware performs final PE/COFF and
 /// security validation; digest binding covers every file byte including overlays.
 pub fn parse_pe(pe: &[u8]) -> Result<PeMetadata, EnvelopeError> {
-    parse_pe_kind(pe, ImageKind::Returning)
-}
-
-pub fn parse_pe_kind(pe: &[u8], kind: ImageKind) -> Result<PeMetadata, EnvelopeError> {
     if pe.len() < MIN_PE_BYTES || pe.len() > SLOT_BYTES - HEADER_BYTES || read_u16(pe, 0)? != 0x5a4d
     {
         return Err(EnvelopeError::PeDosHeader);
@@ -259,7 +223,7 @@ pub fn parse_pe_kind(pe: &[u8], kind: ImageKind) -> Result<PeMetadata, EnvelopeE
     }
     let opt = base + 24;
     if read_u16(pe, opt)? != OPTIONAL_MAGIC_PE32_PLUS
-        || read_u16(pe, opt + 68)? != kind.subsystem()
+        || read_u16(pe, opt + 68)? != SUBSYSTEM_RUNTIME_DRIVER
         || read_u32(pe, opt + 108)? != 16
     {
         return Err(EnvelopeError::PeOptionalHeader);
@@ -277,8 +241,8 @@ pub fn parse_pe_kind(pe: &[u8], kind: ImageKind) -> Result<PeMetadata, EnvelopeE
     if table + meta.sections as usize * 40 > meta.headers_bytes as usize {
         return Err(EnvelopeError::PeSectionTable);
     }
-    // No imports, TLS callbacks, delay imports or CLR initialization in this
-    // one-shot child. A position-independent image may have no base fixups;
+    // No imports, TLS callbacks, delay imports or CLR initialization in the
+    // child. A position-independent image may have no base fixups;
     // if a directory is present it must be wholly backed by initialized data.
     for directory in [1, 9, 13, 14] {
         if read_u64(pe, opt + 112 + directory * 8)? != 0 {

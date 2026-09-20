@@ -18,7 +18,7 @@ use std::{
 };
 
 use sha2::{Digest, Sha256};
-use svmvisor_card_abi::envelope::{Envelope, HEADER_BYTES, ImageKind};
+use svmvisor_card_abi::envelope::{Envelope, HEADER_BYTES};
 
 use crate::{json::Value, resident};
 
@@ -331,7 +331,7 @@ fn utc_stamp(seconds: u64) -> String {
 /// parser the loader uses (`svmvisor_card_abi::envelope`); `flash-card.ps1` keeps its own
 /// policy. This only refuses to describe something else.
 fn parse_header(header: &[u8]) -> Result<Header, String> {
-    let envelope = Envelope::parse(header, ImageKind::ResidentBoot)
+    let envelope = Envelope::parse(header)
         .map_err(|error| format!("pe-header.bin is not a resident SVMBPE01 envelope: {error:?}"))?;
     Ok(Header {
         payload_bytes: envelope.payload_bytes as u64,

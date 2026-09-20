@@ -562,7 +562,7 @@ instead of restating it.
 | VMCB offsets | `hypervisor::svm::vmcb`, `pub(crate)`; other modules use `Vmcb` accessors, not offsets |
 | exit codes | `hypervisor::svm::exit` |
 | resident bridge ABI | `hypervisor::host::resident` |
-| card loader<->child contract (boot options, native result, journal record, terminal endpoint) | `card-abi` |
+| card loader<->child contract (boot options, journal record, terminal endpoint) | `card-abi` |
 | card image format (the 128-byte envelope: sizes, magics, flags, field offsets, PE policy limits, and the parser) | `card-abi::envelope` |
 | `SVMRELO1` relocatable package (arena size, handoff offset, parser and relocator) | `card-abi::package` |
 

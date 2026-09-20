@@ -1,6 +1,4 @@
-use svmvisor_card_abi::envelope::{
-    Envelope, EnvelopeError, ImageKind, PeMetadata, parse_pe, parse_pe_kind,
-};
+use svmvisor_card_abi::envelope::{Envelope, EnvelopeError, PeMetadata, parse_pe};
 
 const METADATA: PeMetadata = PeMetadata {
     entry_rva: 4096,
@@ -23,13 +21,13 @@ fn w64(bytes: &mut [u8], offset: usize, value: u64) {
     bytes[offset..offset + 8].copy_from_slice(&value.to_le_bytes());
 }
 
-/// A 1024-byte boot service driver: one 512-byte code section at RVA 4096.
+/// A 1024-byte runtime driver: one 512-byte code section at RVA 4096.
 fn pe() -> Vec<u8> {
     let mut pe = vec![0; 1024];
     pe[..2].copy_from_slice(b"MZ");
     w32(&mut pe, 0x3c, 64);
     pe[64..68].copy_from_slice(b"PE\0\0");
-    for (offset, value) in [(68, 0x8664), (70, 1), (84, 240), (86, 2), (88, 0x20b), (156, 11)] {
+    for (offset, value) in [(68, 0x8664), (70, 1), (84, 240), (86, 2), (88, 0x20b), (156, 12)] {
         w16(&mut pe, offset, value);
     }
     for (offset, value) in [
@@ -51,60 +49,30 @@ fn pe() -> Vec<u8> {
     pe
 }
 
-/// The `SVMPE001` header `package-payload.py` writes for `pe()`, digest left as 0xab.
+/// The `SVMBPE01` header `package-payload.py --resident` writes for `pe()`, digest left as 0xab.
 fn header() -> [u8; 128] {
     let mut header = [0; 128];
-    header[..8].copy_from_slice(b"SVMPE001");
+    header[..8].copy_from_slice(b"SVMBPE01");
     for (offset, value) in
         [(8, 1), (12, 128), (88, 4096), (92, 8192), (96, 512), (100, 4096), (104, 512), (108, 1)]
     {
         w32(&mut header, offset, value);
     }
-    for (offset, value) in [(16, 1024), (24, 0x100000), (32, 128), (40, 2)] {
+    for (offset, value) in [(16, 1024), (24, 0x100000), (32, 128), (40, 4)] {
         w64(&mut header, offset, value);
     }
-    for (offset, value) in [(80, 0x8664), (82, 11), (84, 0x20b)] {
+    for (offset, value) in [(80, 0x8664), (82, 12), (84, 0x20b)] {
         w16(&mut header, offset, value);
     }
     header[48..80].fill(0xab);
     header
 }
 
-fn resident(mut header: [u8; 128]) -> [u8; 128] {
-    header[..8].copy_from_slice(b"SVMBPE01");
-    w64(&mut header, 40, 4);
-    w16(&mut header, 82, 12);
-    header
-}
-
 #[test]
 fn header_and_pe_agree_on_the_metadata() {
-    let expected = Envelope {
-        kind: ImageKind::Returning,
-        payload_bytes: 1024,
-        digest: [0xab; 32],
-        metadata: METADATA,
-    };
-    assert_eq!(Envelope::parse(&header(), ImageKind::Returning), Ok(expected));
+    let expected = Envelope { payload_bytes: 1024, digest: [0xab; 32], metadata: METADATA };
+    assert_eq!(Envelope::parse(&header()), Ok(expected));
     assert_eq!(parse_pe(&pe()), Ok(METADATA));
-    assert_eq!(parse_pe_kind(&pe(), ImageKind::Returning), Ok(METADATA));
-}
-
-#[test]
-fn each_kind_refuses_the_other() {
-    let returning = header();
-    let resident = resident(header());
-    assert_eq!(
-        Envelope::parse(&resident, ImageKind::ResidentBoot).map(|envelope| envelope.kind),
-        Ok(ImageKind::ResidentBoot)
-    );
-    assert_eq!(Envelope::parse(&resident, ImageKind::Returning), Err(EnvelopeError::Header));
-    assert_eq!(Envelope::parse(&returning, ImageKind::ResidentBoot), Err(EnvelopeError::Header));
-    assert_eq!(parse_pe_kind(&pe(), ImageKind::ResidentBoot), Err(EnvelopeError::PeOptionalHeader));
-    let mut runtime = pe();
-    w16(&mut runtime, 156, 12);
-    assert_eq!(parse_pe_kind(&runtime, ImageKind::ResidentBoot), Ok(METADATA));
-    assert_eq!(parse_pe(&runtime), Err(EnvelopeError::PeOptionalHeader));
 }
 
 #[test]
@@ -116,10 +84,10 @@ fn every_fixed_header_field_is_checked() {
         ("header bytes", |h| w32(h, 12, 132)),
         ("slot bytes", |h| w64(h, 24, 0x200000)),
         ("payload offset", |h| w64(h, 32, 132)),
-        ("flags", |h| w64(h, 40, 4)),
+        ("flags", |h| w64(h, 40, 2)),
         ("flags: two bits", |h| w64(h, 40, 6)),
         ("machine", |h| w16(h, 80, 0x14c)),
-        ("subsystem", |h| w16(h, 82, 12)),
+        ("subsystem", |h| w16(h, 82, 11)),
         ("optional header magic", |h| w16(h, 84, 0x10b)),
         ("reserved word", |h| w16(h, 86, 1)),
         ("reserved tail", |h| h[127] = 1),
@@ -127,13 +95,13 @@ fn every_fixed_header_field_is_checked() {
     for (name, corrupt) in classes {
         let mut header = header();
         corrupt(&mut header);
-        let actual = Envelope::parse(&header, ImageKind::Returning);
+        let actual = Envelope::parse(&header);
         assert_eq!(actual, Err(EnvelopeError::Header), "{name}");
     }
-    assert_eq!(Envelope::parse(&header()[..127], ImageKind::Returning), Err(EnvelopeError::Header));
+    assert_eq!(Envelope::parse(&header()[..127]), Err(EnvelopeError::Header));
     let mut long = header().to_vec();
     long.push(0);
-    assert_eq!(Envelope::parse(&long, ImageKind::Returning), Err(EnvelopeError::Header));
+    assert_eq!(Envelope::parse(&long), Err(EnvelopeError::Header));
 }
 
 #[test]
@@ -147,8 +115,7 @@ fn payload_bytes_stay_inside_the_slot() {
     ] {
         let mut header = header();
         w64(&mut header, 16, bytes);
-        let actual =
-            Envelope::parse(&header, ImageKind::Returning).map(|envelope| envelope.payload_bytes);
+        let actual = Envelope::parse(&header).map(|envelope| envelope.payload_bytes);
         assert_eq!(actual, expected, "{bytes}");
     }
 }
@@ -170,7 +137,7 @@ fn header_metadata_meets_the_pe_policy() {
     for (name, corrupt) in classes {
         let mut header = header();
         corrupt(&mut header);
-        let actual = Envelope::parse(&header, ImageKind::Returning);
+        let actual = Envelope::parse(&header);
         assert_eq!(actual, Err(EnvelopeError::PeGeometry), "{name}");
     }
 }
@@ -178,7 +145,7 @@ fn header_metadata_meets_the_pe_policy() {
 #[test]
 fn every_pe_refusal_names_its_cause() {
     type Corrupt = fn(&mut Vec<u8>);
-    let classes: [(&str, Corrupt, EnvelopeError); 17] = [
+    let classes: [(&str, Corrupt, EnvelopeError); 18] = [
         ("shorter than 512 bytes", |pe| pe.truncate(511), EnvelopeError::PeDosHeader),
         ("no MZ", |pe| pe[0] = b'N', EnvelopeError::PeDosHeader),
         ("e_lfanew inside the DOS header", |pe| w32(pe, 0x3c, 60), EnvelopeError::PeFileHeader),
@@ -187,6 +154,7 @@ fn every_pe_refusal_names_its_cause() {
         ("optional header size", |pe| w16(pe, 84, 224), EnvelopeError::PeFileHeader),
         ("relocations stripped", |pe| w16(pe, 86, 3), EnvelopeError::PeFileHeader),
         ("PE32 magic", |pe| w16(pe, 88, 0x10b), EnvelopeError::PeOptionalHeader),
+        ("boot service driver subsystem", |pe| w16(pe, 156, 11), EnvelopeError::PeOptionalHeader),
         ("fifteen directories", |pe| w32(pe, 196, 15), EnvelopeError::PeOptionalHeader),
         ("file alignment", |pe| w32(pe, 124, 4096), EnvelopeError::PeGeometry),
         (
