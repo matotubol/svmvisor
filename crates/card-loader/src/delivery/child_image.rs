@@ -164,7 +164,7 @@ pub unsafe fn execute_resident(
     options: ResidentBootOptions,
     read: impl FnMut(u64) -> Result<u32, Status>,
 ) -> Delivery {
-    unsafe { execute_inner(state, boot_services, parent, controller, pin, options, read) }
+    unsafe { deliver_pinned(state, boot_services, parent, controller, pin, options, read) }
 }
 
 /// Development delivery (`card-resident-dev-loader`): no header is compiled
@@ -191,7 +191,7 @@ pub unsafe fn execute_resident_dev(
     };
     match pin {
         Ok(pin) => unsafe {
-            execute_inner(state, boot_services, parent, controller, &pin, options, read)
+            deliver_pinned(state, boot_services, parent, controller, &pin, options, read)
         },
         // Same stage-0 report a pinned parent gives for a header mismatch.
         Err(error) => Delivery {
@@ -204,7 +204,7 @@ pub unsafe fn execute_resident_dev(
     }
 }
 
-unsafe fn execute_inner(
+unsafe fn deliver_pinned(
     state: &mut State,
     boot_services: &BootServices,
     parent: Handle,
