@@ -20,7 +20,7 @@ const SOURCE_FILES: [&str; 4] =
 const SOURCE_DIRECTORIES: [&str; 7] = [
     "crates/card-abi",
     "crates/hypervisor",
-    "crates/dxe",
+    "crates/launcher",
     "crates/memory-attributes",
     "crates/resident-payload",
     "crates/firmware-handoff",
@@ -96,7 +96,7 @@ pub fn build(out: &Path, low_runtime: bool) -> Result<(), String> {
     let path = |relative: &str| root.join(relative).into_os_string();
     let artifact = |name: &str| out.join(name).into_os_string();
     let target = root.join("target/native-resident-cargo");
-    let resident = "crates/dxe/src/native/resident";
+    let resident = "crates/launcher/src/native/resident";
 
     let payload_manifest = path("crates/resident-payload/Cargo.toml");
     build.command(

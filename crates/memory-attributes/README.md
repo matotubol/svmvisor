@@ -1,7 +1,7 @@
 # Memory Attribute Protocol component
 
 This `no_std` crate implements Get, Set and Clear protection semantics over an
-independently qualified backend. `crates/dxe/src/memory_attributes.rs` exposes the
+independently qualified backend. `crates/launcher/src/memory_attributes.rs` exposes the
 standard EFI function table through the default-off `memory-attribute-provider`
 feature. No protocol is installed automatically and no native admission rule is
 changed.

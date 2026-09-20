@@ -2,7 +2,7 @@
 
 This `no_std` crate owns the wire contract between the card option-ROM loader
 in [`../card-loader`](../card-loader/README.md), the EFI child image it starts
-(today [`../dxe`](../dxe/README.md)), and the resident runtime in
+(today [`../launcher`](../launcher/README.md)), and the resident runtime in
 [`../hypervisor`](../hypervisor/README.md). It has no dependencies and knows
 nothing about UEFI or SVM, so any child payload can use it without pulling in
 the hypervisor.

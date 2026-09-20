@@ -5,7 +5,7 @@ function, reads the payload slot through BAR0, starts the EFI child image found
 there through the firmware's own image services, and journals what happened. It
 knows nothing about SVM: it depends on [`../card-abi`](../card-abi/README.md)
 and `uefi-raw` (plus `sha2` for the delivery images). The child it starts
-today is the native resident launcher in [`../dxe`](../dxe/README.md).
+today is the native resident launcher in [`../launcher`](../launcher/README.md).
 
 ## Where to work
 

@@ -752,10 +752,10 @@ Notes:
 
 A file move or rename must update, in the same commit, every place that
 names the path: `#[path]` mounts (`card-loader/src/main.rs`,
-`card-loader/tests/*.rs`, `dxe/src/main.rs`,
-`dxe/src/native/resident/activation/mod.rs`, `dxe/tests/*.rs`,
-`firmware-handoff/tests/ownership.rs`), the `.S` table in `dxe/build.rs`, and
-the source paths in `xtask/src/resident.rs`.
+`card-loader/tests/*.rs`, `launcher/src/main.rs`,
+`launcher/src/native/resident/activation/mod.rs`, `launcher/tests/*.rs`,
+`firmware-handoff/tests/ownership.rs`), the `.S` table in
+`launcher/build.rs`, and the source paths in `xtask/src/resident.rs`.
 
 ---
 

@@ -14,7 +14,7 @@ boot or device-delivery correctness.
 
 `svmvisor-hypervisor` is the `no_std`, UEFI-independent core. It owns CPU and
 memory models, validation, AMD SVM structures, and bounded VM-exit handling.
-`crates/dxe` owns firmware allocation, protocols, lifecycle events, and the
+`crates/launcher` owns firmware allocation, protocols, lifecycle events, and the
 current native transition adapter. Keep firmware calls out of this crate.
 
 ## Code navigation
@@ -58,6 +58,6 @@ reasons (`X2AvicStop`, `IrqSite`) and the startup service stages
 (`StartupStage`).
 
 The physical assembly loop and firmware adapter currently remain under
-`crates/dxe`. The pure Rust dispatcher models stopped-guest state changes; its
+`crates/launcher`. The pure Rust dispatcher models stopped-guest state changes; its
 success alone is not evidence of native entry or safe firmware return. Preserve
 that distinction when adding a resident runtime.
