@@ -1,91 +1,9 @@
-//! Exception reflection and interrupted-delivery reinjection through EVENTINJ.
+//! EVENTINJ clearing after an exit and interrupted-delivery reinjection.
 
-use crate::svm::{
-    events::{self, DeliveryOutcome, GuestShutdown, ReflectedException, ReflectionError},
-    vmcb::{V_IRQ, Vmcb},
-};
+use crate::svm::{events::ReflectionError, vmcb::Vmcb};
 
 // Exception reflection and reinjection.
 impl Vmcb {
-    /// Queue a supported fault from this stopped VMCB's actual exit fields.
-    ///
-    /// The caller owns stop/entry synchronization and must establish that these
-    /// fields describe a completed exit. Refusal preserves every byte. Success
-    /// preserves RIP and writes only EVENTINJ, clean bits, and CR2 for #PF.
-    /// No guest entry, nested-delivery resolution, or OS readiness is implied.
-    /// AMD APM vol.2 rev.3.44 sections 15.7, 15.12.15, 15.20, Appendix B.
-    pub fn reflect_exception(&mut self) -> Result<ReflectedException, ReflectionError> {
-        if self.read_u64::<0x070>() == 0x7f {
-            return Err(ReflectionError::GuestShutdown);
-        }
-        if self.virtual_interrupt_control() & V_IRQ != 0 {
-            return Err(ReflectionError::PendingVirtualInterrupt);
-        }
-        let reflected = events::prepare(
-            self.read_u64::<0x070>(),
-            self.read_u64::<0x078>(),
-            self.read_u64::<0x080>(),
-            self.read_u64::<0x088>(),
-            self.event_injection(),
-        )?;
-        if let ReflectedException::PageFault { address, .. } = reflected {
-            // An intercepted #PF has not updated CR2 (APM 15.12.15).
-            self.write_u64::<0x640>(address);
-        }
-        self.write_u64::<0x0a8>(reflected.encoding());
-        self.invalidate_all();
-        Ok(reflected)
-    }
-
-    /// Resolve a fault intercepted DURING IDT exception delivery after a real exit.
-    ///
-    /// The caller exclusively owns the stopped VMCB and establishes that any
-    /// retained EVENTINJ belongs to the immediately preceding entry, not a newly
-    /// queued event. Call before clearing that request, and do not settle an APIC
-    /// flight from this interrupted exit. Only type-3 #UD/#GP/#PF/#DF interrupted
-    /// by #NP/#SS/#GP/#PF is admitted. No fault repair or original-event replay.
-    /// A still-valid prior request must match EXITINTINFO; a cleared V is ignored.
-    ///
-    /// Success replaces EVENTINJ and updates CR2 for an intercepted #PF, including
-    /// one combined into #DF. RIP, RSP, flags and EXITINTINFO evidence are retained.
-    /// #DF's saved RIP is undefined and cannot authorize restart or IRETQ retry.
-    /// Shutdown is terminal and preserves EVERY byte; intercepted shutdown does
-    /// not interpret any saved state. Refusal likewise preserves every byte.
-    /// The next actual exit must precede any retirement of the new request.
-    /// APM2 rev3.44 8.2.9/Table8-3, 15.7.2–3, 15.12.15, 15.14.3, 15.20, App.B/C.
-    pub fn resolve_exception_delivery_after_exit(
-        &mut self,
-    ) -> Result<DeliveryOutcome, ReflectionError> {
-        let code = self.read_u64::<0x070>();
-        if code == 0x7f {
-            return Ok(DeliveryOutcome::Shutdown(GuestShutdown::Intercepted));
-        }
-        if code == u64::MAX {
-            return Err(ReflectionError::InvalidEntry);
-        }
-        self.validate_virtual_interrupt_controls().map_err(ReflectionError::Control)?;
-        if self.virtual_interrupt_control() & V_IRQ != 0 {
-            return Err(ReflectionError::PendingVirtualInterrupt);
-        }
-        let outcome = events::prepare_interrupted_delivery(
-            code,
-            self.read_u64::<0x078>(),
-            self.read_u64::<0x080>(),
-            self.read_u64::<0x088>(),
-            self.event_injection(),
-        )?;
-        if let DeliveryOutcome::Injected(event) = outcome {
-            if code == 0x4e {
-                // APM15.12.15: interception did not write CR2. Reflection must,
-                // even when this #PF contributes to an injected double fault.
-                self.write_u64::<0x640>(self.read_u64::<0x080>());
-            }
-            self.write_u64::<0x0a8>(event.encoding());
-            self.invalidate_all();
-        }
-        Ok(outcome)
-    }
-
     /// Clear the previous entry's injection request after a completed exit.
     ///
     /// EVENTINJ is an input request (APM 15.20), not a delivery acknowledgement.

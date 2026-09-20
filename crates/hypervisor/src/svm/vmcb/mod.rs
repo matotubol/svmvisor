@@ -94,10 +94,6 @@ impl Vmcb {
         self.read_u64::<GUEST_CR3>()
     }
 
-    pub fn guest_cr2(&self) -> u64 {
-        self.read_u64::<0x640>()
-    }
-
     pub(crate) fn guest_rflags(&self) -> u64 {
         self.read_u64::<GUEST_RFLAGS>()
     }
@@ -116,12 +112,6 @@ impl Vmcb {
     /// APM vol.2 rev.3.44 Appendix B: EFER.LMA and saved CS attribute L.
     pub(crate) fn guest_in_64_bit_code(&self) -> bool {
         self.read_u64::<GUEST_EFER>() & (1 << 10) != 0 && self.bytes[0x413] & 2 != 0
-    }
-
-    /// Retained interrupt-shadow state; not a GIF observation. Ordinary VMRUN
-    /// sets GIF; this bounded path rejects virtual-GIF and encrypted state.
-    pub fn interrupt_shadow(&self) -> bool {
-        self.read_u64::<0x068>() & 1 != 0
     }
 
     /// Conservatively declare all cached fields dirty. No clean-bit setter is
@@ -331,20 +321,6 @@ impl Vmcb {
 
 // #GP(0) queueing for instruction owners.
 impl Vmcb {
-    /// Queue #GP(0) only after the MSR policy requires that architectural fault.
-    /// Caller establishes a real stopped MSR exit and immutable instruction bytes
-    /// from the same guest. This validates the faulting instruction, not a resume
-    /// address: RIP, GPRs and CR2 remain unchanged. EVENTINJ is a request, not
-    /// delivery proof; observe actual exit before clearing it. Nested recovery
-    /// and competing injection/V_IRQ are deliberately refused.
-    /// AMD APM vol.2 rev.3.44 sections 15.11, 15.20 and Appendix B.
-    pub fn queue_msr_general_protection(
-        &mut self,
-        instruction: &[u8],
-    ) -> Result<(), events::MsrFaultError> {
-        self.queue_validated_msr_general_protection(super::exit::MsrInstruction::Bytes(instruction))
-    }
-
     pub(crate) fn queue_validated_msr_general_protection(
         &mut self,
         instruction: super::exit::MsrInstruction<'_>,

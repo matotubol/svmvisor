@@ -2,7 +2,6 @@
 
 pub mod apic;
 pub mod capabilities;
-pub mod clock;
 pub mod descriptors;
 pub mod encryption;
 pub mod msr;

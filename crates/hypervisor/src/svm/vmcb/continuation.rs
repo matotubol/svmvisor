@@ -1,8 +1,7 @@
 //! Guest continuation state and committed instruction outcomes.
 
 use crate::{
-    arch::x86_64::descriptors::{SegmentState, ValidatedGuestDescriptors},
-    guest::state::ValidatedGuestState,
+    arch::x86_64::descriptors::SegmentState,
     svm::{
         exit::ResumeCandidate,
         vmcb::{
@@ -17,37 +16,6 @@ impl Vmcb {
     /// RAX is uninterpreted register data.
     pub fn set_guest_rax(&mut self, rax: u64) {
         self.write_u64::<GUEST_RAX>(rax);
-        self.invalidate_all();
-    }
-
-    /// Write only the validated synthetic register tuple. Segment/descriptor
-    /// state, page contents, NPT translation and launch readiness remain absent.
-    pub fn set_synthetic_state(&mut self, state: &ValidatedGuestState) {
-        self.write_u64::<GUEST_EFER>(state.efer());
-        self.write_u64::<GUEST_CR4>(state.cr4());
-        self.write_u64::<GUEST_CR3>(state.cr3());
-        self.write_u64::<GUEST_CR0>(state.cr0());
-        self.write_u64::<GUEST_RFLAGS>(state.rflags());
-        self.write_u64::<GUEST_RIP>(state.rip());
-        self.write_u64::<GUEST_RSP>(state.rsp());
-        self.write_u64::<GUEST_RAX>(state.rax());
-        self.request_full_tlb_flush();
-    }
-
-    /// Install the fixed synthetic segment state from validated guest images.
-    /// GDT/TSS bytes must separately be copied and mapped at their guest VAs.
-    /// No IDT, auxiliary state capture or hardware loading is performed here.
-    pub fn set_guest_descriptors(&mut self, descriptors: &ValidatedGuestDescriptors) {
-        self.write_segment::<0x400>(descriptors.data());
-        self.write_segment::<0x420>(descriptors.data());
-        self.write_segment::<0x430>(descriptors.data());
-        self.write_segment::<0x440>(descriptors.data());
-        self.write_segment::<0x450>(descriptors.data());
-        self.write_segment::<0x410>(descriptors.cs());
-        self.write_segment::<0x460>(descriptors.gdtr());
-        self.write_segment::<0x470>(SegmentState { selector: 0, attributes: 0, limit: 0, base: 0 });
-        self.write_segment::<0x490>(descriptors.tr());
-        self.bytes[0x4cb] = 0; // CPL, independent of descriptor DPL.
         self.invalidate_all();
     }
 

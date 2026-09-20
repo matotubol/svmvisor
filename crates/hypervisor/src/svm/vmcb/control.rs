@@ -15,10 +15,6 @@ use crate::{
 
 // TLB, ASID, permission-map and intercept configuration.
 impl Vmcb {
-    pub fn tsc_offset(&self) -> u64 {
-        self.read_u64::<TSC_OFFSET>()
-    }
-
     pub fn guest_asid(&self) -> u32 {
         self.read_u32::<GUEST_ASID>()
     }
@@ -43,13 +39,6 @@ impl Vmcb {
 
     pub fn event_intercept(&self, intercept: EventIntercept) -> bool {
         self.read_u32::<INTERCEPT_MISC1>() & intercept.mask() != 0
-    }
-
-    /// Bounded identity clock profile; APM vol.2 rev.3.44 Appendix B offset50h.
-    /// Caller must separately own the optional global ratio and AUX MSRs.
-    pub fn set_tsc_offset_zero(&mut self) {
-        self.write_u64::<TSC_OFFSET>(0);
-        self.invalidate_all();
     }
 
     pub fn set_guest_asid(

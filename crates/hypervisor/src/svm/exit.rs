@@ -81,16 +81,6 @@ impl ExitSnapshot {
         Ok(ResumeCandidate { address: self.info2, instruction_bytes: length as u8 })
     }
 
-    /// Exact XSETBV completion for an opt-in stopped xstate owner. APM2 15.7
-    /// and APM3 XSETBV: validate architectural operands and pending events
-    /// separately before committing either XCR0 or this continuation.
-    pub fn xsetbv_continuation(self, instruction: &[u8]) -> Result<ResumeCandidate, ResumeError> {
-        if self.code != 0x8d {
-            return Err(ResumeError::ExitDoesNotPermitCandidate);
-        }
-        self.checked_instruction(instruction, &[0x0f, 0x01, 0xd1])
-    }
-
     /// Derive continuation from exactly one unprefixed CPUID or VMMCALL.
     /// The caller must fetch these bytes from this stopped guest's RIP using
     /// its owned mapping and preserve their identity through resumption. This

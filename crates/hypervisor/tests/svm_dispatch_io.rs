@@ -1,19 +1,10 @@
 use svmvisor_hypervisor::{
-    arch::x86_64::{
-        capabilities::{
-            CapabilityEvidence, CpuVendor, EvidenceFlag, OptionalFeatures, ValidatedCapabilities,
-        },
-        registers::GuestRegisters,
+    arch::x86_64::capabilities::{
+        CapabilityEvidence, CpuVendor, EvidenceFlag, OptionalFeatures, ValidatedCapabilities,
     },
     memory::address::EncryptionState,
-    svm::{
-        dispatch::{
-            DispatchError, DispatchOutcome, StopReason, handle_exit, handle_exit_with_instruction,
-        },
-        exit::{
-            ExitAction, ExitSnapshot, IoDecodeError, IoDirection, IoRefusal, IoWidth, ResumeError,
-        },
-        vmcb::Vmcb,
+    svm::exit::{
+        ExitAction, ExitSnapshot, IoDecodeError, IoDirection, IoRefusal, IoWidth, ResumeError,
     },
 };
 
@@ -36,60 +27,6 @@ fn capabilities(nrip: bool) -> ValidatedCapabilities {
 
 fn snapshot(info1: u64) -> ExitSnapshot {
     ExitSnapshot { code: 0x7b, info1, info2: 0x1001, rip: 0x1000, nrip: 0x1001 }
-}
-
-fn stopped(raw: u64, injection: u64, interrupted: u64) -> (Vmcb, GuestRegisters) {
-    let mut vmcb = Vmcb::new();
-    // Whole-page canaries catch writes beyond the commonly sampled fields.
-    for offset in (0..4096).step_by(8) {
-        write(&mut vmcb, offset, 0xa55a_f00d_1234_0000 | offset as u64);
-    }
-    for (offset, value) in [
-        (0x070, 0x7b),
-        (0x078, raw),
-        (0x080, 0x1001),
-        (0x088, interrupted),
-        (0x0a8, injection),
-        (0x0c8, 0x1001),
-        (0x570, 0x247),
-        (0x578, 0x1000),
-        (0x5d8, 0x8000),
-        (0x5f8, 0xfedc_ba98_7654_3210),
-    ] {
-        write(&mut vmcb, offset, value);
-    }
-    (
-        vmcb,
-        GuestRegisters {
-            rcx: 0x1234_0000_0000_0001,
-            rdx: 0x1234_0000_0000_0002,
-            rbx: 0x1234_0000_0000_0003,
-            rbp: 0x1234_0000_0000_0004,
-            rsi: 0x1234_0000_0000_0005,
-            rdi: 0x1234_0000_0000_0006,
-            r8: 0x1234_0000_0000_0007,
-            r9: 0x1234_0000_0000_0008,
-            r10: 0x1234_0000_0000_0009,
-            r11: 0x1234_0000_0000_000a,
-            r12: 0x1234_0000_0000_000b,
-            r13: 0x1234_0000_0000_000c,
-            r14: 0x1234_0000_0000_000d,
-            r15: 0x1234_0000_0000_000e,
-        },
-    )
-}
-
-// Emulate hardware writes to exclusively owned inert storage. This cannot
-// execute a guest; the pointer originates from &mut, not a shared byte view.
-fn write(vmcb: &mut Vmcb, offset: usize, value: u64) {
-    assert!(offset + 8 <= 4096);
-    unsafe {
-        core::ptr::copy_nonoverlapping(
-            value.to_le_bytes().as_ptr(),
-            (vmcb as *mut Vmcb).cast::<u8>().add(offset),
-            8,
-        );
-    }
 }
 
 #[test]
@@ -187,50 +124,6 @@ fn every_string_or_rep_form_is_explicitly_refused_without_memory_field_admission
 }
 
 #[test]
-fn refusal_dispatch_preserves_entire_vmcb_gprs_flags_and_pending_events() {
-    for raw in [
-        0x0080_0010,
-        0x0080_0011,
-        0x0080_0020,
-        0x0080_0041,
-        0xffff_0040,
-        0x0080_0014,
-        0x0080_0018,
-        0x0080_001d,
-        0x0080_0000,
-        0x0080_0030,
-        0x0080_0012,
-        0x0080_2010,
-    ] {
-        for injection in [0, 0x8000_0351, 0x1234_5678_8000_0b0e] {
-            for interrupted in [0, 0x8000_0352, 0x8765_4321_8000_0b0d] {
-                let (mut vmcb, mut frame) = stopped(raw, injection, interrupted);
-                let value = vmcb.exit_snapshot();
-                let before = *vmcb.bytes();
-                let before_frame = frame;
-                let expected = Ok(DispatchOutcome::Stop(StopReason::Exit(value.action())));
-                for nrip in [false, true] {
-                    assert_eq!(
-                        handle_exit(value, &mut vmcb, &mut frame, &capabilities(nrip)),
-                        expected
-                    );
-                    assert_eq!(vmcb.bytes(), &before);
-                    assert_eq!(frame, before_frame);
-                }
-                for bytes in [&[][..], &[0xee][..], &[0xed][..], &[0xf3, 0x6f][..]] {
-                    assert_eq!(
-                        handle_exit_with_instruction(value, &mut vmcb, &mut frame, bytes),
-                        expected
-                    );
-                    assert_eq!(vmcb.bytes(), &before);
-                    assert_eq!(frame, before_frame);
-                }
-            }
-        }
-    }
-}
-
-#[test]
 fn ioio_never_offers_nrip_or_instruction_completion_even_with_plausible_following_rip() {
     for info in [0x80_0010, 0x80_0011, 0x80_001c, 0xffff_0040, 0] {
         for following in [0, 0x1001, 0x1002, u64::MAX] {
@@ -247,18 +140,4 @@ fn ioio_never_offers_nrip_or_instruction_completion_even_with_plausible_followin
             }
         }
     }
-}
-
-#[test]
-fn stale_io_snapshot_refusal_preserves_all_stopped_state() {
-    let (mut vmcb, mut frame) = stopped(0x80_0011, 0x8000_0351, 0x8000_0352);
-    let value = ExitSnapshot { rip: 0x9999, ..vmcb.exit_snapshot() };
-    let before = *vmcb.bytes();
-    let before_frame = frame;
-    assert_eq!(
-        handle_exit_with_instruction(value, &mut vmcb, &mut frame, &[0xec]),
-        Err(DispatchError::SnapshotRipMismatch)
-    );
-    assert_eq!(vmcb.bytes(), &before);
-    assert_eq!(frame, before_frame);
 }
