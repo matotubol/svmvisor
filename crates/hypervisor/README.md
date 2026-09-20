@@ -22,7 +22,7 @@ current native transition adapter. Keep firmware calls out of this crate.
 | Namespace | Responsibility | Starting points |
 | --- | --- | --- |
 | `arch::x86_64` | CPU capability evidence, MSR indices and fields, local APIC register space, physical x2APIC access and the AVIC doorbell, register and descriptor formats, extended state | `apic`, `capabilities`, `msr`, `registers`, `descriptors`, `xstate` |
-| `boot` | Supplied firmware observations, admission policies, and handoff contracts | `preflight`, `probe`, `handoff`, `memory`, `descriptors`, `xstate` |
+| `boot` | Supplied firmware observations and admission policies | `preflight`, `memory`, `descriptors` |
 | `guest` | Constrained guest register state and page ownership | `state`, `pages` |
 | `host` | Host descriptor and paging contracts; the resident runtime ABI and its bounded fetch/terminal owners | `descriptors`, `paging`, `resident` |
 | `memory` | Validated addresses, reserved layout, nested page tables, MTRR decoding | `address`, `layout`, `npt`, `mtrrs` |
