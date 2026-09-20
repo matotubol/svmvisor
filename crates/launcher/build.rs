@@ -14,14 +14,11 @@ fn main() {
         }
     }
 
-    // The Rust UEFI target defaults to EFI_APPLICATION. The resident native child
-    // is an EFI runtime driver; every other native image is a boot service
-    // driver. Other UEFI packages keep their own subsystem.
+    // The Rust UEFI target defaults to EFI_APPLICATION. The native child is an
+    // EFI runtime driver, and main.rs refuses a UEFI build without
+    // native-resident. Other UEFI packages keep their own subsystem.
     if std::env::var("CARGO_CFG_TARGET_OS").as_deref() == Ok("uefi") {
-        println!(
-            "cargo:rustc-link-arg=/subsystem:{}",
-            if resident { "efi_runtime_driver" } else { "efi_boot_service_driver" }
-        );
+        println!("cargo:rustc-link-arg=/subsystem:efi_runtime_driver");
         // Keep constants read-only alongside code to conserve the ROM aperture.
         // Writable binding state remains in its own non-executable .data section.
         println!("cargo:rustc-link-arg=/merge:.rdata=.text");
