@@ -40,7 +40,9 @@
 //! The payload follows the header; the rest of the slot is erased flash (`0xff`).
 //!
 //! The PE envelopes are written by `firmware/card/package-payload.py` (Python, `struct` format
-//! `<8sII4Q32s4H6I16s`).
+//! `<8sII4Q32s4H6I16s`). The `svmvisor-card-loader` test
+//! `optional_python_actual_slot_matches_rust_parser` cross-checks a slot that script produced
+//! against this parser.
 //!
 //! `Envelope::parse` accepts a PE envelope header, `parse_pe_kind` applies the same narrow policy
 //! to the payload's own PE headers; a loader or packager compares the two `PeMetadata` values and

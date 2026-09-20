@@ -77,7 +77,9 @@ child must be:
   what it parses. `firmware/card/package-payload.py --resident` writes it;
   `svmvisor_card_abi::envelope` documents the layout field by field and owns
   its constants and parser, so a Rust packager can check its output with the
-  code the loader runs.
+  code the loader runs. The loader test
+  `optional_python_actual_slot_matches_rust_parser` does that for the script:
+  set `SVMVISOR_CARD_PE_TEST_SLOT` to a `payload-slot.bin` it wrote.
 - At most 1 MiB minus the header (`SLOT_BYTES - HEADER_BYTES`), at least 512
   bytes.
 
