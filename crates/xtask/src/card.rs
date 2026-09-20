@@ -220,7 +220,7 @@ pub fn loader_dev() -> Result<(), String> {
             "--package".as_ref(),
             "svmvisor-card-loader".as_ref(),
             "--profile".as_ref(),
-            "dxe".as_ref(),
+            "rom".as_ref(),
             "--features".as_ref(),
             "card-resident-dev-loader".as_ref(),
             "--target".as_ref(),
@@ -232,7 +232,7 @@ pub fn loader_dev() -> Result<(), String> {
     )?;
     let (efi, rom, memory) =
         (out.join("svmvisor-dxe.efi"), out.join("svmvisor-dxe.rom"), out.join("svmvisor-dxe.mem"));
-    let built = loader_target.join("x86_64-unknown-uefi/dxe/svmvisor-card-loader.efi");
+    let built = loader_target.join("x86_64-unknown-uefi/rom/svmvisor-card-loader.efi");
     io(fs::copy(&built, &efi).map(drop), "copy", &built)?;
     run(
         &root,

@@ -25,8 +25,8 @@ part of the library merely because they share a directory with public modules.
 
 ## Images
 
-One package builds five images, selected by feature (`cargo build-dxe
-[--features <feature>]`, profile `dxe`):
+One package builds five images, selected by feature (`cargo build-card-loader
+[--features <feature>]`, profile `rom`):
 
 | Feature | Image |
 | --- | --- |

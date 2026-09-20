@@ -76,7 +76,7 @@ cargo xtask card-loader-dev
   target/card-snapshots/<utc>-<id> --summary`, and updates
   `target/card-snapshots/latest`. `--live` reads the card over JTAG.
 * `card-loader-dev` builds the development loader (`--package
-  svmvisor-card-loader --profile dxe --features card-resident-dev-loader
+  svmvisor-card-loader --profile rom --features card-resident-dev-loader
   --target x86_64-unknown-uefi`) and packs the 32 KiB
   option ROM with `crates/rompack` using the same arguments as
   `firmware/card/build-card.ps1`, into `target/card-dev/loader/<utc>-<id>/`.

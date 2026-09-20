@@ -727,7 +727,7 @@ cargo test -p svmvisor-card-loader --features card-returning-loader
 cargo test -p svmvisor-card-loader --features card-resident-dev-loader
 cargo test -p svmvisor-card-loader --features card-resident-loader
 cargo test --manifest-path crates/firmware-handoff/Cargo.toml
-cargo build-dxe --features card-resident-dev-loader
+cargo build-card-loader --features card-resident-dev-loader
 cargo xtask resident --output target/native-resident/<fresh-dir> --low-runtime
 ```
 

@@ -82,5 +82,5 @@ fn panic(_: &core::panic::PanicInfo) -> ! {
 
 #[cfg(not(target_os = "uefi"))]
 fn main() {
-    eprintln!("svmvisor-card-loader is a UEFI-only driver; use cargo build-dxe");
+    eprintln!("svmvisor-card-loader is a UEFI-only driver; use cargo build-card-loader");
 }

@@ -77,9 +77,9 @@ try {
     # The dev loader compiles in no header; make sure a stale variable cannot matter.
     if ($DevLoader) { Remove-Item Env:SVMVISOR_CARD_PE_HEADER -ErrorAction SilentlyContinue }
     else { $env:SVMVISOR_CARD_PE_HEADER=Join-Path $session 'payload/pe-header.bin' }
-    & cargo build --locked --manifest-path (Join-Path $root 'Cargo.toml') --package svmvisor-card-loader --profile dxe --features $feature --target x86_64-unknown-uefi --target-dir (Join-Path $session 'loader-cargo')
+    & cargo build --locked --manifest-path (Join-Path $root 'Cargo.toml') --package svmvisor-card-loader --profile rom --features $feature --target x86_64-unknown-uefi --target-dir (Join-Path $session 'loader-cargo')
     Check-Exit 'Loader build'
-    Copy-Item -LiteralPath (Join-Path $session 'loader-cargo/x86_64-unknown-uefi/dxe/svmvisor-card-loader.efi') -Destination (Join-Path $session 'svmvisor-dxe.efi')
+    Copy-Item -LiteralPath (Join-Path $session 'loader-cargo/x86_64-unknown-uefi/rom/svmvisor-card-loader.efi') -Destination (Join-Path $session 'svmvisor-dxe.efi')
     & cargo run --locked --quiet --release --manifest-path (Join-Path $root 'Cargo.toml') --package svmvisor-rompack --target-dir (Join-Path $session 'rompack-cargo') -- --input (Join-Path $session 'svmvisor-dxe.efi') --output (Join-Path $session 'svmvisor-dxe.rom') --memory-output (Join-Path $session 'svmvisor-dxe.mem') --memory-size 32768 --vendor 0x10ee --device 0x0666 --class 0xff0000
     Check-Exit '32 KiB ROM packaging'
     Copy-Item -LiteralPath (Join-Path $session 'svmvisor-dxe.mem') -Destination (Join-Path $session 'svmvisor-dxe.mem.source')

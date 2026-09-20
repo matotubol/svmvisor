@@ -66,7 +66,7 @@ done
 step "test firmware-handoff"    cargo test --manifest-path crates/firmware-handoff/Cargo.toml
 
 if [ "$MODE" = "full" ]; then
-    step "build-dxe card-resident-dev-loader" cargo build-dxe --features card-resident-dev-loader
+    step "build-card-loader card-resident-dev-loader" cargo build-card-loader --features card-resident-dev-loader
     OUT="target/native-resident/verify-$$-$(date +%s)"
     step "xtask resident" cargo xtask resident --output "$OUT" --low-runtime
     if [ ! -f "$BASE_LOG" ]; then
