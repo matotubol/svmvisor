@@ -14,7 +14,7 @@ use svmvisor_card_abi::{
     boot_options::ResidentBootOptions, endpoint::TerminalEndpoint, envelope::SLOT_BYTES,
     native_result::NativeResult,
 };
-use svmvisor_card_loader::delivery::child_image::{self as card_returning, Pin, State};
+use svmvisor_card_loader::delivery::child_image::{self, Pin, State};
 use uefi_raw::{
     Boolean, Char16, Handle, Status,
     protocol::{device_path::DevicePathProtocol, loaded_image::LoadedImageProtocol},
@@ -444,7 +444,7 @@ fn resident_lifetime_requires_ack_and_retains_all_nonerror_returns() {
         let pin = Pin::parse_resident(&slot[..128]).unwrap();
         let mut state = State::new();
         let report = unsafe {
-            card_returning::execute_resident(
+            child_image::execute_resident(
                 &mut state,
                 &bs,
                 parent(),
@@ -506,7 +506,7 @@ fn dev_loader_adopts_a_valid_slot_header_and_matches_the_pinned_result() {
     let pin = Pin::parse_resident(&slot[..128]).unwrap();
     let mut pinned_state = State::new();
     let pinned = unsafe {
-        card_returning::execute_resident(
+        child_image::execute_resident(
             &mut pinned_state,
             &bs,
             parent(),
@@ -522,7 +522,7 @@ fn dev_loader_adopts_a_valid_slot_header_and_matches_the_pinned_result() {
     reset_fixture(20);
     let mut state = State::new();
     let report = unsafe {
-        card_returning::execute_resident_dev(
+        child_image::execute_resident_dev(
             &mut state,
             &bs,
             parent(),
@@ -544,7 +544,7 @@ fn dev_loader_adopts_a_valid_slot_header_and_matches_the_pinned_result() {
     reset_fixture(24);
     let mut state = State::new();
     let report = unsafe {
-        card_returning::execute_resident_dev(
+        child_image::execute_resident_dev(
             &mut state,
             &bs,
             parent(),
@@ -586,7 +586,7 @@ fn dev_loader_refuses_every_corruption_class_with_the_pinned_status() {
         reset_fixture(20);
         let mut state = State::new();
         let report = unsafe {
-            card_returning::execute_resident_dev(
+            child_image::execute_resident_dev(
                 &mut state,
                 &bs,
                 parent(),
@@ -605,7 +605,7 @@ fn dev_loader_refuses_every_corruption_class_with_the_pinned_status() {
         reset_fixture(20);
         let mut pinned_state = State::new();
         let pinned = unsafe {
-            card_returning::execute_resident(
+            child_image::execute_resident(
                 &mut pinned_state,
                 &bs,
                 parent(),
@@ -627,7 +627,7 @@ fn dev_loader_refuses_every_corruption_class_with_the_pinned_status() {
     reset_fixture(20);
     let mut state = State::new();
     let report = unsafe {
-        card_returning::execute_resident_dev(
+        child_image::execute_resident_dev(
             &mut state,
             &bs,
             parent(),
@@ -642,7 +642,7 @@ fn dev_loader_refuses_every_corruption_class_with_the_pinned_status() {
     reset_fixture(20);
     let mut state = State::new();
     let report = unsafe {
-        card_returning::execute_resident_dev(
+        child_image::execute_resident_dev(
             &mut state,
             &bs,
             parent(),
@@ -657,7 +657,7 @@ fn dev_loader_refuses_every_corruption_class_with_the_pinned_status() {
     let mut state = State::new();
     let mut header_reads = 0;
     let report = unsafe {
-        card_returning::execute_resident_dev(
+        child_image::execute_resident_dev(
             &mut state,
             &bs,
             parent(),
@@ -689,7 +689,7 @@ fn dev_loader_reads_no_more_of_the_slot_than_the_pinned_parent() {
     reset_fixture(24);
     let (mut state, mut highest, mut reads) = (State::new(), 0u64, 0usize);
     let report = unsafe {
-        card_returning::execute_resident_dev(
+        child_image::execute_resident_dev(
             &mut state,
             &bs,
             parent(),

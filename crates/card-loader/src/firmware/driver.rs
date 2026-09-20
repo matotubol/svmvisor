@@ -129,7 +129,7 @@ unsafe extern "efiapi" fn supported(
         Err(e) => return e,
     };
     #[cfg(feature = "card-resident")]
-    if crate::card_returning_adapter::has_attempted() {
+    if crate::adapter::has_attempted() {
         return Status::UNSUPPORTED;
     }
     let pci = match open(controller) {
@@ -159,7 +159,7 @@ unsafe extern "efiapi" fn start(
         return Status::ALREADY_STARTED;
     }
     #[cfg(feature = "card-resident")]
-    if crate::card_returning_adapter::has_attempted() {
+    if crate::adapter::has_attempted() {
         return Status::UNSUPPORTED;
     }
     let pci = match open(controller) {
@@ -188,7 +188,7 @@ unsafe extern "efiapi" fn start(
         {
             // No fallible registration follows successful resident StartImage.
             lifecycle::register(services(), mapping, boot_id)?;
-            crate::card_returning_adapter::execute_resident(
+            crate::adapter::execute_resident(
                 &mut io,
                 services(),
                 unsafe { BINDING.image_handle },
@@ -282,7 +282,7 @@ fn open(controller: Handle) -> Result<*const PciIo, Status> {
 
 fn cleanup(controller: Handle, io: &mut Bar0) -> Status {
     #[cfg(feature = "card-resident")]
-    if let Err(error) = crate::card_returning_adapter::cleanup(services()) {
+    if let Err(error) = crate::adapter::cleanup(services()) {
         return error;
     }
     let events = lifecycle::unregister(services());

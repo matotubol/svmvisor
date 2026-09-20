@@ -16,7 +16,7 @@ use uefi_raw::{Handle, Status, table::system::SystemTable};
 
 #[cfg(all(target_os = "uefi", feature = "card-resident"))]
 #[path = "delivery/adapter.rs"]
-mod card_returning_adapter;
+mod adapter;
 
 // Resident option-ROM driver binding and firmware lifecycle observation.
 #[cfg(target_os = "uefi")]

@@ -105,7 +105,7 @@ unsafe extern "efiapi" fn notify(_: Event, context: *mut c_void) {
         _ => return,
     };
     #[cfg(feature = "card-resident")]
-    if crate::card_returning_adapter::journal_owned_by_child() {
+    if crate::adapter::journal_owned_by_child() {
         return;
     }
     let (tsc, cpu) = cpu::sample();

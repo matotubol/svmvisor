@@ -13,16 +13,16 @@ fn main() {
         if std::env::var("CARGO_CFG_TARGET_OS").as_deref() == Ok("uefi") {
             let pin = std::fs::canonicalize(
                 std::env::var_os("SVMVISOR_CARD_PE_HEADER")
-                    .expect("card-returning-loader requires SVMVISOR_CARD_PE_HEADER"),
+                    .expect("card-resident-loader requires SVMVISOR_CARD_PE_HEADER"),
             )
-            .expect("returning PE pin must exist");
-            let bytes = std::fs::read(&pin).expect("read returning PE pin");
+            .expect("resident PE pin must exist");
+            let bytes = std::fs::read(&pin).expect("read resident PE pin");
             assert!(
                 bytes.len() == HEADER_BYTES && bytes[..8] == RESIDENT_BOOT_MAGIC,
-                "returning PE pin must be the 128-byte SVMPE001 envelope"
+                "resident PE pin must be the 128-byte SVMBPE01 envelope"
             );
             let out = std::path::PathBuf::from(std::env::var_os("OUT_DIR").unwrap());
-            std::fs::write(out.join("card-pe-header.bin"), bytes).expect("copy returning PE pin");
+            std::fs::write(out.join("card-pe-header.bin"), bytes).expect("copy resident PE pin");
             println!("cargo:rerun-if-changed={}", pin.display());
         }
     }

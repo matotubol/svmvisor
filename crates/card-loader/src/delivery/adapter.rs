@@ -8,7 +8,7 @@ use svmvisor_card_abi::envelope::HEADER_BYTES;
 #[cfg(not(feature = "card-resident-dev-loader"))]
 use svmvisor_card_loader::delivery::child_image::Pin;
 use svmvisor_card_loader::{
-    delivery::child_image::{self as card_returning, State},
+    delivery::child_image::{self, State},
     diagnostics::journal::{self, JournalIo},
 };
 use uefi_raw::{Handle, Status, table::boot::BootServices};
@@ -60,7 +60,7 @@ pub(crate) fn execute_resident(
     DELIVERY_ACTIVE.store(true, core::sync::atomic::Ordering::Release);
     #[cfg(not(feature = "card-resident-dev-loader"))]
     let report = unsafe {
-        card_returning::execute_resident(
+        child_image::execute_resident(
             &mut *ptr::addr_of_mut!(STATE),
             services,
             parent,
@@ -73,7 +73,7 @@ pub(crate) fn execute_resident(
     // Dev loader: the slot's own header is validated and adopted as the pin.
     #[cfg(feature = "card-resident-dev-loader")]
     let report = unsafe {
-        card_returning::execute_resident_dev(
+        child_image::execute_resident_dev(
             &mut *ptr::addr_of_mut!(STATE),
             services,
             parent,
