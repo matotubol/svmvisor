@@ -28,7 +28,7 @@ pub struct Pin {
 }
 
 impl Pin {
-    pub fn parse_resident(header: &[u8]) -> Result<Self, Status> {
+    pub fn parse(header: &[u8]) -> Result<Self, Status> {
         let envelope = Envelope::parse(header).map_err(envelope_status)?;
         let mut saved = [0; HEADER_BYTES];
         for (d, s) in saved.iter_mut().zip(header) {
@@ -169,7 +169,7 @@ pub unsafe fn execute_resident(
 
 /// Development delivery (`card-resident-dev-loader`): no header is compiled
 /// into the parent. The 128 bytes at the start of the slot become the pin after
-/// the unchanged `Pin::parse_resident` structural policy accepts them; the
+/// the unchanged `Pin::parse` structural policy accepts them; the
 /// shared path then re-reads the header, requires it to be identical, and binds
 /// the child to its SHA-256 and PE metadata exactly like the pinned parent.
 /// What is given up: the ROM no longer names one exact payload.
@@ -185,7 +185,7 @@ pub unsafe fn execute_resident_dev(
     mut read: impl FnMut(u64) -> Result<u32, Status>,
 ) -> Delivery {
     let pin = if state.is_clean() {
-        read_header(&mut read).and_then(|header| Pin::parse_resident(&header))
+        read_header(&mut read).and_then(|header| Pin::parse(&header))
     } else {
         Err(Status::NOT_READY)
     };

@@ -464,7 +464,7 @@ fn execute(
 ) -> child_image::Delivery {
     match entry {
         Entry::Pinned => {
-            let pin = Pin::parse_resident(&resident_slot()[..128]).unwrap();
+            let pin = Pin::parse(&resident_slot()[..128]).unwrap();
             unsafe {
                 child_image::execute_resident(state, bs, parent, controller, &pin, options, read)
             }
@@ -546,7 +546,7 @@ fn resident_lifetime_requires_ack_and_retains_all_nonerror_returns() {
         *FIX.lock().unwrap() =
             Fixture { mode, pool: 0, bytes: 0, exit: 0, loaded: 0, events: Vec::new() };
         let slot = resident_slot();
-        let pin = Pin::parse_resident(&slot[..128]).unwrap();
+        let pin = Pin::parse(&slot[..128]).unwrap();
         let mut state = State::new();
         let report = unsafe {
             child_image::execute_resident(
@@ -681,7 +681,7 @@ fn slot_that_differs_from_the_pin_is_refused_before_load() {
     // not describe that child.
     let mut slot = good.clone();
     w32(&mut slot, 88, 4096 + 1); // header entry RVA
-    let pin = Pin::parse_resident(&slot[..128]).unwrap();
+    let pin = Pin::parse(&slot[..128]).unwrap();
     reset_fixture(20);
     let mut state = State::new();
     let report = unsafe {
@@ -1014,7 +1014,7 @@ fn optional_python_actual_slot_matches_rust_parser() {
     };
     let slot = std::fs::read(path).unwrap();
     assert_eq!(slot.len(), SLOT_BYTES);
-    let pin = Pin::parse_resident(&slot[..128]).unwrap();
+    let pin = Pin::parse(&slot[..128]).unwrap();
     pin.verify(&slot[128..128 + pin.payload_bytes]).unwrap();
 }
 
@@ -1026,7 +1026,7 @@ fn dev_loader_adopts_a_valid_slot_header_and_matches_the_pinned_result() {
     let slot = resident_slot();
     // Pinned reference on the same slot.
     reset_fixture(20);
-    let pin = Pin::parse_resident(&slot[..128]).unwrap();
+    let pin = Pin::parse(&slot[..128]).unwrap();
     let mut pinned_state = State::new();
     let pinned = unsafe {
         child_image::execute_resident(
@@ -1086,7 +1086,7 @@ fn dev_loader_refuses_every_corruption_class_with_the_pinned_status() {
     let _guard = TEST_LOCK.lock().unwrap();
     let bs = services();
     let good = resident_slot();
-    let good_pin = Pin::parse_resident(&good[..128]).unwrap();
+    let good_pin = Pin::parse(&good[..128]).unwrap();
     type Corrupt = fn(&mut Vec<u8>);
     let classes: [(&str, Corrupt, u32); 12] = [
         ("magic", |s| s[0] ^= 1, 0),

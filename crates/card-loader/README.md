@@ -53,7 +53,7 @@ main.rs: efi_main
 The resident loader has two mutually exclusive builds: `card-resident-loader`
 compiles in the exact 128-byte payload header (`SVMVISOR_CARD_PE_HEADER`);
 `card-resident-dev-loader` adopts the header found in the card's payload slot
-after the same `Pin::parse_resident` policy (`execute_resident_dev`), for the
+after the same `Pin::parse` policy (`execute_resident_dev`), for the
 fast iteration loop in `firmware/card/README.md`. Both share the internal
 `card-resident` feature; the child stays bound to the header's SHA-256.
 
@@ -70,7 +70,7 @@ child must be:
   services code and data. It has a 240-byte optional header with 16 data
   directories, keeps its relocations, uses 4096-byte section and 512-byte file
   alignment, has 1 to 16 sections and an image size of at most 16 MiB.
-- Wrapped in the 128-byte `SVMBPE01` header (`Pin::parse_resident`): version 1,
+- Wrapped in the 128-byte `SVMBPE01` header (`Pin::parse`): version 1,
   header and payload offset 128, the PE's byte length, the 1 MiB slot size,
   flags 4, the SHA-256 of every PE file byte, and the PE metadata (entry RVA,
   image, header and alignment sizes, section count) the loader compares with

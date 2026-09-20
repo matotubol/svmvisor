@@ -48,11 +48,11 @@ pub const HEADER_BYTES: usize = 128;
 pub const SLOT_BYTES: usize = 0x10_0000;
 pub const DIGEST_BYTES: usize = 32;
 
-pub const RESIDENT_BOOT_MAGIC: [u8; 8] = *b"SVMBPE01";
+pub const MAGIC: [u8; 8] = *b"SVMBPE01";
 
 pub const VERSION: u32 = 1;
 
-pub const FLAGS_RESIDENT_BOOT: u64 = 1 << 2;
+pub const FLAGS: u64 = 1 << 2;
 
 pub const VERSION_OFFSET: usize = 0x008;
 pub const HEADER_BYTES_OFFSET: usize = 0x00c;
@@ -103,12 +103,12 @@ impl Envelope {
     /// Accept exactly the 128-byte `SVMBPE01` header.
     pub fn parse(header: &[u8]) -> Result<Self, EnvelopeError> {
         if header.len() != HEADER_BYTES
-            || header.get(..8) != Some(&RESIDENT_BOOT_MAGIC)
+            || header.get(..8) != Some(&MAGIC)
             || read_u32(header, VERSION_OFFSET)? != VERSION
             || read_u32(header, HEADER_BYTES_OFFSET)? != HEADER_BYTES as u32
             || read_u64(header, SLOT_BYTES_OFFSET)? != SLOT_BYTES as u64
             || read_u64(header, PAYLOAD_OFFSET_OFFSET)? != HEADER_BYTES as u64
-            || read_u64(header, FLAGS_OFFSET)? != FLAGS_RESIDENT_BOOT
+            || read_u64(header, FLAGS_OFFSET)? != FLAGS
             || read_u16(header, MACHINE_OFFSET)? != MACHINE_AMD64
             || read_u16(header, SUBSYSTEM_OFFSET)? != SUBSYSTEM_RUNTIME_DRIVER
             || read_u16(header, OPTIONAL_MAGIC_OFFSET)? != OPTIONAL_MAGIC_PE32_PLUS

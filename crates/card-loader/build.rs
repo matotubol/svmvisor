@@ -1,4 +1,4 @@
-use svmvisor_card_abi::envelope::{HEADER_BYTES, RESIDENT_BOOT_MAGIC};
+use svmvisor_card_abi::envelope::{HEADER_BYTES, MAGIC};
 
 fn main() {
     let pinned_resident = std::env::var_os("CARGO_FEATURE_CARD_RESIDENT_LOADER").is_some();
@@ -18,7 +18,7 @@ fn main() {
             .expect("resident PE pin must exist");
             let bytes = std::fs::read(&pin).expect("read resident PE pin");
             assert!(
-                bytes.len() == HEADER_BYTES && bytes[..8] == RESIDENT_BOOT_MAGIC,
+                bytes.len() == HEADER_BYTES && bytes[..8] == MAGIC,
                 "resident PE pin must be the 128-byte SVMBPE01 envelope"
             );
             let out = std::path::PathBuf::from(std::env::var_os("OUT_DIR").unwrap());

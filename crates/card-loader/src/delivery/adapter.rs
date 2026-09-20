@@ -48,7 +48,7 @@ pub(crate) fn execute_resident(
         ATTEMPTED = true;
     }
     #[cfg(not(feature = "card-resident-dev-loader"))]
-    let pin = Pin::parse_resident(PIN)?;
+    let pin = Pin::parse(PIN)?;
     // Unsupported PCI/configuration provenance disables this optional terminal
     // observer. It does not change native boot admission or firmware decoding.
     let mut options = ResidentBootOptions::new(journal_base, boot_id);
