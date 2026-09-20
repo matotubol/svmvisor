@@ -8,7 +8,5 @@
 #![forbid(unsafe_op_in_unsafe_fn)]
 
 pub mod diagnostics;
-#[cfg(feature = "memory-attribute-provider")]
-pub mod memory_attributes;
 #[cfg(feature = "native-preflight")]
 pub mod native;

@@ -56,9 +56,7 @@ step "test workspace"           cargo test --workspace
 # cannot resolve the runtime's assembly symbols.
 step "test hypervisor resident-runtime (lib)"      cargo test -p svmvisor-hypervisor --lib --features resident-runtime
 step "test hypervisor resident-runtime-test (lib)" cargo test -p svmvisor-hypervisor --lib --features resident-runtime-test
-for feature in native-resident-boot memory-attribute-probe; do
-    step "test launcher $feature" cargo test -p svmvisor-launcher --features "$feature"
-done
+step "test launcher native-resident-boot" cargo test -p svmvisor-launcher --features native-resident-boot
 for feature in card-resident-dev-loader card-resident-loader; do
     step "test card-loader $feature" cargo test -p svmvisor-card-loader --features "$feature"
 done

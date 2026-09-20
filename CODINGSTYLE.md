@@ -718,7 +718,6 @@ cargo test --workspace
 cargo test -p svmvisor-hypervisor --lib --features resident-runtime
 cargo test -p svmvisor-hypervisor --lib --features resident-runtime-test
 cargo test -p svmvisor-launcher --features native-resident-boot
-cargo test -p svmvisor-launcher --features memory-attribute-probe
 cargo test -p svmvisor-card-loader --features card-resident-dev-loader
 cargo test -p svmvisor-card-loader --features card-resident-loader
 cargo build-card-loader --features card-resident-dev-loader
