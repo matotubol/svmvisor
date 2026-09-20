@@ -3,8 +3,6 @@
 use uefi_raw::Status;
 
 use crate::diagnostics::journal::{JournalIo, commit};
-#[cfg(feature = "card-returning-loader")]
-use crate::diagnostics::returning_detail::{self as returning_diagnostics, ReturningDiagnostics};
 
 pub const TRACE_DETAIL: u32 = 4;
 pub const MAX_CALLBACK_RECORDS: u8 = 16;
@@ -18,51 +16,11 @@ pub struct Trace {
     anomalies: u32,
     attempts: u8,
     failed: bool,
-    #[cfg(feature = "card-returning-loader")]
-    returning_result: u32,
-    #[cfg(feature = "card-returning-loader")]
-    returning_diagnostics: Option<ReturningDiagnostics>,
 }
 
 impl Trace {
     pub const fn new(boot_id: u32) -> Self {
-        Self {
-            boot_id,
-            ready: 0,
-            after: 0,
-            exits: 0,
-            anomalies: 0,
-            attempts: 0,
-            failed: false,
-            #[cfg(feature = "card-returning-loader")]
-            returning_result: 0,
-            #[cfg(feature = "card-returning-loader")]
-            returning_diagnostics: None,
-        }
-    }
-
-    /// Returning PE delivery detail: bit13 completed, bit14 refused, bit15
-    /// failed. Only a single recognized result is retained.
-    #[cfg(feature = "card-returning-loader")]
-    pub const fn new_returning_result(boot_id: u32, result: u32) -> Self {
-        let mut trace = Self::new(boot_id);
-        trace.returning_result = match result {
-            0x2000 | 0x4000 | 0x8000 => result,
-            _ => 0x8000,
-        };
-        trace
-    }
-
-    /// Detail 7 retains a copy of the same bounded evidence as the immediate
-    /// record. The legacy result-only constructor retains its detail 6 layout.
-    #[cfg(feature = "card-returning-loader")]
-    pub const fn new_returning_diagnostics(
-        boot_id: u32,
-        diagnostics: ReturningDiagnostics,
-    ) -> Self {
-        let mut trace = Self::new_returning_result(boot_id, diagnostics.result_bits());
-        trace.returning_diagnostics = Some(diagnostics);
-        trace
+        Self { boot_id, ready: 0, after: 0, exits: 0, anomalies: 0, attempts: 0, failed: false }
     }
 
     pub fn has_exited(&self) -> bool {
@@ -121,24 +79,7 @@ impl Trace {
             self.anomalies |= 1 << 10;
         }
         let detail = TRACE_DETAIL | self.anomalies | (self.failed as u32) << 9;
-        #[cfg(feature = "card-returning-loader")]
-        let detail = if self.returning_result == 0 {
-            detail
-        } else {
-            (detail & !255)
-                | if self.returning_diagnostics.is_some() {
-                    returning_diagnostics::DETAIL
-                } else {
-                    6
-                }
-                | self.returning_result
-        };
         let words = [self.ready | (self.after << 16), self.exits, cpu];
-        #[cfg(feature = "card-returning-loader")]
-        let words = match self.returning_diagnostics {
-            Some(diagnostics) => diagnostics.journal_words([self.ready, self.after, self.exits]),
-            None => words,
-        };
         let result = (|| {
             if io.read(0)? != 0x4a4d5653 || io.read(4)? & !0x00020000 != 0x00010001 {
                 return Err(Status::DEVICE_ERROR);

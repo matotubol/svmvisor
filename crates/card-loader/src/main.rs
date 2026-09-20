@@ -7,9 +7,6 @@
 #![cfg_attr(target_os = "uefi", no_std)]
 #![forbid(unsafe_op_in_unsafe_fn)]
 
-#[cfg(all(feature = "card-resident", feature = "card-returning-loader"))]
-compile_error!("resident PE delivery is a separate parent image");
-
 #[cfg(target_os = "uefi")]
 use uefi_raw::{Handle, Status, table::system::SystemTable};
 
@@ -17,7 +14,7 @@ use uefi_raw::{Handle, Status, table::system::SystemTable};
 // firmware ownership without changing the reviewed call graph or compiling
 // these image-specific modules into the host-testable library.
 
-#[cfg(all(target_os = "uefi", any(feature = "card-returning-loader", feature = "card-resident")))]
+#[cfg(all(target_os = "uefi", feature = "card-resident"))]
 #[path = "delivery/adapter.rs"]
 mod card_returning_adapter;
 

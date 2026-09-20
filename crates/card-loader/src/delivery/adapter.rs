@@ -7,8 +7,6 @@ use svmvisor_card_abi::boot_options::ResidentBootOptions;
 use svmvisor_card_abi::envelope::HEADER_BYTES;
 #[cfg(not(feature = "card-resident-dev-loader"))]
 use svmvisor_card_loader::delivery::child_image::Pin;
-#[cfg(feature = "card-returning-loader")]
-use svmvisor_card_loader::diagnostics::returning_detail::ReturningDiagnostics;
 use svmvisor_card_loader::{
     delivery::child_image::{self as card_returning, State},
     diagnostics::journal::{self, JournalIo},
@@ -22,14 +20,8 @@ use crate::pci_io::Bar0;
 const PIN: &[u8; HEADER_BYTES] = include_bytes!(concat!(env!("OUT_DIR"), "/card-pe-header.bin"));
 
 static mut STATE: State = State::new();
-#[cfg(feature = "card-returning-loader")]
-static mut RESULT_BITS: u32 = 0;
-#[cfg(feature = "card-returning-loader")]
-static mut DIAGNOSTICS: Option<ReturningDiagnostics> = None;
 static mut ATTEMPTED: bool = false;
-#[cfg(feature = "card-resident")]
 static RETAINED: core::sync::atomic::AtomicBool = core::sync::atomic::AtomicBool::new(false);
-#[cfg(feature = "card-resident")]
 static DELIVERY_ACTIVE: core::sync::atomic::AtomicBool = core::sync::atomic::AtomicBool::new(false);
 
 /// Called only inside the driver's non-reentrant callback guard.
@@ -37,68 +29,10 @@ pub(crate) fn cleanup(services: &BootServices) -> Result<(), Status> {
     unsafe { (&mut *ptr::addr_of_mut!(STATE)).cleanup(services) }
 }
 
-#[cfg(feature = "card-returning-loader")]
-pub(crate) fn result_bits() -> u32 {
-    // Copied before lifecycle callbacks are armed; no borrow crosses a service.
-    unsafe { RESULT_BITS }
-}
-
-#[cfg(feature = "card-returning-loader")]
-pub(crate) fn diagnostics() -> Option<ReturningDiagnostics> {
-    // A value copy only; no child-owned memory or borrow crosses a service.
-    unsafe { DIAGNOSTICS }
-}
-
-#[cfg(feature = "card-returning-loader")]
-pub(crate) fn execute(
-    io: &mut Bar0,
-    services: &BootServices,
-    parent: Handle,
-    controller: Handle,
-    boot_id: u32,
-    tsc: u64,
-) -> Result<(), Status> {
-    if has_attempted() {
-        return Err(Status::UNSUPPORTED);
-    }
-    // One attempt for this loaded parent image, including refused/failed Start.
-    // Stop only releases ownership; it never rearms the returning experiment.
-    unsafe { ATTEMPTED = true };
-    let pin = Pin::parse(PIN)?;
-    let report = unsafe {
-        card_returning::execute(
-            &mut *ptr::addr_of_mut!(STATE),
-            services,
-            parent,
-            controller,
-            &pin,
-            |offset| io.card_word(offset),
-        )
-    };
-    let diagnostics = ReturningDiagnostics::capture(&report);
-    let bits = diagnostics.result_bits();
-    unsafe {
-        RESULT_BITS = bits;
-        DIAGNOSTICS = Some(diagnostics);
-    }
-    let sequence = io.read(0x02c)?.wrapping_add(1);
-    // Detail 7 has the same diagnostic layout here and in every lifecycle
-    // notification. Capture precedes publication, without another child attempt.
-    journal::commit(io, diagnostics.immediate_record(sequence, boot_id, tsc))?;
-    if report.status() != Status::SUCCESS {
-        return Err(report.status());
-    }
-    // A restored returning refusal still permits ordinary firmware boot. A
-    // malformed/incomplete inner result remains a delivery failure.
-    if bits == 1 << 15 { Err(Status::PROTOCOL_ERROR) } else { Ok(()) }
-}
-
-#[cfg(feature = "card-resident")]
 pub(crate) fn journal_owned_by_child() -> bool {
     DELIVERY_ACTIVE.load(core::sync::atomic::Ordering::Acquire) || is_retained()
 }
 
-#[cfg(feature = "card-resident")]
 pub(crate) fn execute_resident(
     io: &mut Bar0,
     services: &BootServices,
@@ -215,7 +149,6 @@ pub(crate) fn has_attempted() -> bool {
     unsafe { ATTEMPTED }
 }
 
-#[cfg(feature = "card-resident")]
 pub(crate) fn is_retained() -> bool {
     RETAINED.load(core::sync::atomic::Ordering::Acquire)
 }

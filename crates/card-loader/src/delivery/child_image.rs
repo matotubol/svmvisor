@@ -30,12 +30,6 @@ pub struct Pin {
 }
 
 impl Pin {
-    /// All 128 bytes are compiled into the parent. No card-supplied metadata is
-    /// trusted before exact comparison with this immutable build input.
-    pub fn parse(header: &[u8]) -> Result<Self, Status> {
-        Self::parse_kind(header, ImageKind::Returning)
-    }
-
     pub fn parse_resident(header: &[u8]) -> Result<Self, Status> {
         Self::parse_kind(header, ImageKind::ResidentBoot)
     }
@@ -160,29 +154,14 @@ impl Delivery {
 }
 
 /// The parent must serialize invocation, own its controller and keep memory
-/// decoding enabled. Native child contract: normal inner completion/refusal and
-/// early assembly refusal return EFI_UNSUPPORTED. It installs no persistent
-/// interfaces. The mailbox markers only describe Rust inner execution.
-/// # Safety
-/// All handles/protocols belong to this live firmware, TPL_APPLICATION, BSP.
-/// No reference to `state` may be formed by reentrant callbacks during this call.
-pub unsafe fn execute(
-    state: &mut State,
-    boot_services: &BootServices,
-    parent: Handle,
-    controller: Handle,
-    pin: &Pin,
-    read: impl FnMut(u64) -> Result<u32, Status>,
-) -> Delivery {
-    unsafe { execute_inner(state, boot_services, parent, controller, pin, None, read) }
-}
-
-/// Same firmware ownership requirements as execute. The numeric journal range
+/// decoding enabled. The numeric journal range
 /// was obtained and checked through the owned controller's BAR0 descriptor.
 /// Any child SUCCESS permanently retains image/input/controller ownership;
 /// report SUCCESS additionally requires its explicit armed acknowledgement.
 /// # Safety
-/// See execute; serialize state, and keep memory decoding through reset after
+/// All handles/protocols belong to this live firmware, TPL_APPLICATION, BSP.
+/// No reference to `state` may be formed by reentrant callbacks during this call.
+/// Serialize state, and keep memory decoding through reset after
 /// is_retained becomes true. No cleanup/unload may revoke the installed hook.
 pub unsafe fn execute_resident(
     state: &mut State,

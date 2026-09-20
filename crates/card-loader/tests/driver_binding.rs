@@ -3,7 +3,7 @@
 
 // This record-only fixture does not provide payload-loader hooks.
 // Returning delivery/lifecycle have their own fixtures and image build checks.
-#![cfg(not(any(feature = "card-returning-loader", feature = "card-resident")))]
+#![cfg(not(feature = "card-resident"))]
 
 #[path = "../src/firmware/cpu.rs"]
 mod cpu;

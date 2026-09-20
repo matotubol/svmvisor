@@ -152,23 +152,3 @@ fn record_budget_reserves_after_and_exit_slots_without_extra_bus_access() {
     assert_eq!(io.reads, reads);
     assert_eq!(io.writes, MAX_CALLBACK_RECORDS as usize * 9);
 }
-
-#[cfg(feature = "card-returning-loader")]
-#[test]
-fn returning_outcome_survives_lifecycle_without_hiding_order_anomalies() {
-    for bits in [0x2000, 0x4000, 0x8000, 0, 0x6000] {
-        let mut trace = Trace::new_returning_result(77, bits);
-        let mut io = Journal::new();
-        // Deliberate missing Ready remains visible beside the probe result.
-        for event in [AfterReadyToBoot, ExitBootServices] {
-            trace.record(&mut io, event, 1, 0).unwrap();
-            let detail = io.last[7] >> 16;
-            assert_eq!(
-                detail & 0xe000,
-                if matches!(bits, 0x2000 | 0x4000 | 0x8000) { bits } else { 0x8000 }
-            );
-            assert_eq!(detail & 0xff, 6);
-            assert_ne!(detail & 0x100, 0);
-        }
-    }
-}

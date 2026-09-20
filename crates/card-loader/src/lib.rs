@@ -19,6 +19,6 @@ compile_error!(
     "card-resident is internal; select card-resident-loader or card-resident-dev-loader"
 );
 
-#[cfg(any(feature = "card-returning-loader", feature = "card-resident"))]
+#[cfg(feature = "card-resident")]
 pub mod delivery;
 pub mod diagnostics;

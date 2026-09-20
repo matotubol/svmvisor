@@ -1,4 +1,4 @@
-use svmvisor_card_abi::envelope::{HEADER_BYTES, RESIDENT_BOOT_MAGIC, RETURNING_MAGIC};
+use svmvisor_card_abi::envelope::{HEADER_BYTES, RESIDENT_BOOT_MAGIC};
 
 fn main() {
     let pinned_resident = std::env::var_os("CARGO_FEATURE_CARD_RESIDENT_LOADER").is_some();
@@ -7,12 +7,8 @@ fn main() {
         !(pinned_resident && dev_resident),
         "card-resident-loader (compiled-in header pin) and card-resident-dev-loader (header trusted from the flash slot) are mutually exclusive; enable exactly one"
     );
-    assert!(
-        !(dev_resident && std::env::var_os("CARGO_FEATURE_CARD_RETURNING_LOADER").is_some()),
-        "card-resident-dev-loader cannot combine with card-returning-loader"
-    );
     // The dev loader has no compiled-in header: it needs no SVMVISOR_CARD_PE_HEADER.
-    if std::env::var_os("CARGO_FEATURE_CARD_RETURNING_LOADER").is_some() || pinned_resident {
+    if pinned_resident {
         println!("cargo:rerun-if-env-changed=SVMVISOR_CARD_PE_HEADER");
         if std::env::var("CARGO_CFG_TARGET_OS").as_deref() == Ok("uefi") {
             let pin = std::fs::canonicalize(
@@ -22,9 +18,7 @@ fn main() {
             .expect("returning PE pin must exist");
             let bytes = std::fs::read(&pin).expect("read returning PE pin");
             assert!(
-                bytes.len() == HEADER_BYTES
-                    && bytes[..8]
-                        == if pinned_resident { RESIDENT_BOOT_MAGIC } else { RETURNING_MAGIC },
+                bytes.len() == HEADER_BYTES && bytes[..8] == RESIDENT_BOOT_MAGIC,
                 "returning PE pin must be the 128-byte SVMPE001 envelope"
             );
             let out = std::path::PathBuf::from(std::env::var_os("OUT_DIR").unwrap());

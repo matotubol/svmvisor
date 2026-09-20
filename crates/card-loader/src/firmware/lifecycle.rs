@@ -34,16 +34,6 @@ pub(crate) fn register(
         EXITED.store(false, Ordering::Release);
         MAPPING = Some(mapping);
         TRACE = Trace::new(boot_id);
-        #[cfg(feature = "card-returning-loader")]
-        {
-            TRACE = match crate::card_returning_adapter::diagnostics() {
-                Some(diagnostics) => Trace::new_returning_diagnostics(boot_id, diagnostics),
-                None => Trace::new_returning_result(
-                    boot_id,
-                    crate::card_returning_adapter::result_bits(),
-                ),
-            };
-        }
     }
     let groups = [
         guid!("7ce88fb3-4bd7-4679-87a8-a8d8dee50d2b"),

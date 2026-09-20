@@ -1,9 +1,6 @@
 //! Exact production PE loader with real owned allocations and a fake firmware ABI.
 
-#![cfg(all(
-    any(feature = "card-returning-loader", feature = "card-resident"),
-    target_os = "windows"
-))]
+#![cfg(all(feature = "card-resident", target_os = "windows"))]
 
 use std::{
     ffi::c_void,
@@ -62,7 +59,7 @@ fn w64(b: &mut [u8], o: usize, v: u64) {
     b[o..o + 8].copy_from_slice(&v.to_le_bytes());
 }
 
-fn fixture() -> (Pin, Vec<u8>) {
+fn fixture() -> Vec<u8> {
     let mut pe = vec![0; 1024];
     pe[..2].copy_from_slice(b"MZ");
     w32(&mut pe, 0x3c, 64);
@@ -102,7 +99,7 @@ fn fixture() -> (Pin, Vec<u8>) {
     }
     slot[48..80].copy_from_slice(&Sha256::digest(&pe));
     slot[128..1152].copy_from_slice(&pe);
-    (Pin::parse(&slot[..128]).unwrap(), slot)
+    slot
 }
 
 unsafe extern "efiapi" fn alloc(ty: MemoryType, n: usize, out: *mut *mut u8) -> Status {
@@ -396,7 +393,7 @@ fn resident_options(mode: u8) -> ResidentBootOptions {
 /// A valid SVMBPE01 resident slot: header + 1024-byte child + 0xff padding.
 #[cfg(feature = "card-resident-dev-loader")]
 fn resident_slot() -> Vec<u8> {
-    let (_, mut slot) = fixture();
+    let mut slot = fixture();
     slot[..8].copy_from_slice(b"SVMBPE01");
     w64(&mut slot, 40, 4);
     w16(&mut slot, 82, 12);
@@ -431,114 +428,19 @@ fn reset_fixture(mode: u8) {
 }
 
 #[test]
-fn actual_adapter_covers_return_security_transport_and_retry_ownership() {
-    let _guard = TEST_LOCK.lock().unwrap();
-    let bs = services();
-    for mode in 0..=16 {
-        *FIX.lock().unwrap() =
-            Fixture { mode, pool: 0, bytes: 0, exit: 0, loaded: 0, events: Vec::new() };
-        let (pin, mut slot) = fixture();
-        if mode == 8 {
-            slot[16] ^= 1;
-        }
-        if mode == 9 {
-            slot[128 + 512] ^= 1;
-        }
-        let mut state = State::new();
-        let mut reads = 0usize;
-        let report = unsafe {
-            card_returning::execute(&mut state, &bs, parent(), controller(), &pin, |offset| {
-                assert_eq!(offset & 3, 0);
-                assert!(offset + 4 <= SLOT_BYTES as u64);
-                reads += 1;
-                if mode == 10 && offset >= 128 {
-                    return Err(Status::DEVICE_ERROR);
-                }
-                Ok(u32::from_le_bytes(
-                    slot[offset as usize..offset as usize + 4].try_into().unwrap(),
-                ))
-            })
-        };
-        let expected = match mode {
-            0 | 1 | 13 => Status::SUCCESS,
-            2 | 3 | 6 => Status::SECURITY_VIOLATION,
-            4 => Status::PROTOCOL_ERROR,
-            7 => Status::OUT_OF_RESOURCES,
-            8 | 9 | 14 => Status::COMPROMISED_DATA,
-            10 | 11 | 15 => Status::DEVICE_ERROR,
-            12 => Status::LOAD_ERROR,
-            16 => Status::INVALID_PARAMETER,
-            5 => Status::SUCCESS,
-            _ => unreachable!(),
-        };
-        assert_eq!(report.operation_status, expected, "mode{mode}");
-        let f = FIX.lock().unwrap();
-        if matches!(mode, 0 | 1 | 5 | 13) {
-            assert!(!f.events.contains(&"unload"));
-            assert!(f.events.contains(&"auto-unload"));
-        }
-        if matches!(mode, 2 | 6 | 11 | 14) {
-            assert!(!f.events.contains(&"start"));
-            assert!(f.events.contains(&"unload"));
-        }
-        if matches!(mode, 7 | 8 | 9 | 10 | 15) {
-            assert!(!f.events.contains(&"load"));
-        }
-        if mode == 13 {
-            assert!(
-                f.events.iter().position(|e| *e == "free-exit")
-                    < f.events.iter().position(|e| *e == "free-pool")
-            );
-        }
-        if mode == 1 {
-            assert_eq!(report.inner.rust_completed, 1);
-        } else if mode != 4 {
-            assert_eq!(report.inner.rust_completed, 0);
-        }
-        drop(f);
-        if matches!(mode, 5 | 6) {
-            assert_eq!(report.cleanup_status, Status::DEVICE_ERROR);
-            assert!(!state.is_clean());
-            FIX.lock().unwrap().mode = 0;
-            unsafe {
-                state.cleanup(&bs).unwrap();
-            }
-        } else {
-            assert_eq!(report.cleanup_status, Status::SUCCESS);
-        }
-        assert!(state.is_clean(), "mode{mode}");
-        assert_eq!(FIX.lock().unwrap().pool, 0);
-        assert_eq!(FIX.lock().unwrap().exit, 0);
-        assert!(reads <= 32 + 256);
-    }
-}
-
-#[test]
-fn optional_python_actual_slot_matches_rust_parser() {
-    let Ok(path) = std::env::var("SVMVISOR_CARD_PE_TEST_SLOT") else {
-        return;
-    };
-    let slot = std::fs::read(path).unwrap();
-    assert_eq!(slot.len(), SLOT_BYTES);
-    let pin = Pin::parse(&slot[..128]).unwrap();
-    pin.verify(&slot[128..128 + pin.payload_bytes]).unwrap();
-}
-
-#[test]
 fn resident_lifetime_requires_ack_and_retains_all_nonerror_returns() {
     let _guard = TEST_LOCK.lock().unwrap();
     let bs = services();
     for mode in 20..=32 {
         *FIX.lock().unwrap() =
             Fixture { mode, pool: 0, bytes: 0, exit: 0, loaded: 0, events: Vec::new() };
-        let (_, mut slot) = fixture();
+        let mut slot = fixture();
         slot[..8].copy_from_slice(b"SVMBPE01");
         w64(&mut slot, 40, 4);
         w16(&mut slot, 82, 12);
         w16(&mut slot, 128 + 156, 12);
         let digest = Sha256::digest(&slot[128..1152]);
         slot[48..80].copy_from_slice(&digest);
-        assert!(Pin::parse(&slot[..128]).is_err());
         let pin = Pin::parse_resident(&slot[..128]).unwrap();
         let mut state = State::new();
         let report = unsafe {
@@ -665,7 +567,7 @@ fn dev_loader_refuses_every_corruption_class_with_the_pinned_status() {
     type Corrupt = fn(&mut Vec<u8>);
     let classes: [(&str, Corrupt, u32); 12] = [
         ("magic", |s| s[0] ^= 1, 0),
-        ("wrong kind: fully valid returning slot", |s| *s = fixture().1, 0),
+        ("wrong kind: fully valid returning slot", |s| *s = fixture(), 0),
         ("version", |s| w32(s, 8, 2), 0),
         ("header size", |s| w32(s, 12, 132), 0),
         ("payload bytes beyond slot", |s| w64(s, 16, (SLOT_BYTES - 127) as u64), 0),
