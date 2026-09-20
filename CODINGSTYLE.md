@@ -737,8 +737,8 @@ Notes:
   function and every git worktree.
 - That comparison covers the resident payload only; `card-loader` and
   `launcher` code is not in it. For a change to either, build the affected UEFI feature
-  sets with `--emit=asm` before and after and compare per-function bodies the
-  same way.
+  sets with `--emit=asm` before and after and compare per-function bodies with
+  `crates/xtask/style-check/sdiff.py`.
 
 A file move or rename must update, in the same commit, every place that
 names the path: `#[path]` mounts (`card-loader/src/main.rs`,
