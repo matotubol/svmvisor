@@ -24,7 +24,7 @@ impl<'a> Package<'a> {
             return Err(PackageError::Header);
         }
         let size = |offset| usize::try_from(word(bytes, offset)).map_err(|_| PackageError::Bounds);
-        let payload = Self {
+        let package = Self {
             bytes,
             linked_base: word(bytes, 8),
             image_bytes: size(24)?,
@@ -32,41 +32,41 @@ impl<'a> Package<'a> {
             entry_offset: size(40)?,
             relocation_count: size(48)?,
         };
-        if payload.linked_base != 0x100000
-            || payload.image_bytes == 0
-            || payload.image_bytes > payload.memory_bytes
-            || payload.memory_bytes > HANDOFF_OFFSET
+        if package.linked_base != 0x100000
+            || package.image_bytes == 0
+            || package.image_bytes > package.memory_bytes
+            || package.memory_bytes > HANDOFF_OFFSET
         {
             return Err(PackageError::Bounds);
         }
-        if payload.entry_offset != entry_offset || entry_offset >= payload.image_bytes {
+        if package.entry_offset != entry_offset || entry_offset >= package.image_bytes {
             return Err(PackageError::Entry);
         }
-        let total = payload
+        let total = package
             .relocation_count
             .checked_mul(16)
             .and_then(|n| n.checked_add(HEADER_BYTES))
-            .and_then(|n| n.checked_add(payload.image_bytes))
+            .and_then(|n| n.checked_add(package.image_bytes))
             .ok_or(PackageError::Bounds)?;
         if total != bytes.len() {
             return Err(PackageError::Bounds);
         }
         let mut previous_end = 0;
-        for i in 0..payload.relocation_count {
-            let (offset, width) = payload.relocation(i)?;
+        for i in 0..package.relocation_count {
+            let (offset, width) = package.relocation(i)?;
             let end = offset.checked_add(width).ok_or(PackageError::Relocation)?;
-            if offset < previous_end || end > payload.image_bytes {
+            if offset < previous_end || end > package.image_bytes {
                 return Err(PackageError::Relocation);
             }
             previous_end = end;
-            let value = payload.value(offset, width);
-            if value < payload.linked_base
-                || value > payload.linked_base + payload.memory_bytes as u64
+            let value = package.value(offset, width);
+            if value < package.linked_base
+                || value > package.linked_base + package.memory_bytes as u64
             {
                 return Err(PackageError::Relocation);
             }
         }
-        Ok(payload)
+        Ok(package)
     }
 
     /// Initialize only the caller's exact owned arena. Validation precedes all

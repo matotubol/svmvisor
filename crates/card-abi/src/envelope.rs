@@ -346,23 +346,26 @@ pub fn parse_pe_kind(pe: &[u8], kind: ImageKind) -> Result<PeMetadata, EnvelopeE
     Ok(meta)
 }
 
-fn read_u16(b: &[u8], o: usize) -> Result<u16, EnvelopeError> {
-    let Some(&[a, b]) = b.get(o..o.checked_add(2).ok_or(EnvelopeError::FieldBounds)?) else {
+fn read_u16(bytes: &[u8], offset: usize) -> Result<u16, EnvelopeError> {
+    let Some(&[a, b]) = bytes.get(offset..offset.checked_add(2).ok_or(EnvelopeError::FieldBounds)?)
+    else {
         return Err(EnvelopeError::FieldBounds);
     };
     Ok(u16::from_le_bytes([a, b]))
 }
 
-fn read_u32(b: &[u8], o: usize) -> Result<u32, EnvelopeError> {
-    let Some(&[a, b, c, d]) = b.get(o..o.checked_add(4).ok_or(EnvelopeError::FieldBounds)?) else {
+fn read_u32(bytes: &[u8], offset: usize) -> Result<u32, EnvelopeError> {
+    let Some(&[a, b, c, d]) =
+        bytes.get(offset..offset.checked_add(4).ok_or(EnvelopeError::FieldBounds)?)
+    else {
         return Err(EnvelopeError::FieldBounds);
     };
     Ok(u32::from_le_bytes([a, b, c, d]))
 }
 
-fn read_u64(b: &[u8], o: usize) -> Result<u64, EnvelopeError> {
+fn read_u64(bytes: &[u8], offset: usize) -> Result<u64, EnvelopeError> {
     let Some(&[a, b, c, d, e, f, g, h]) =
-        b.get(o..o.checked_add(8).ok_or(EnvelopeError::FieldBounds)?)
+        bytes.get(offset..offset.checked_add(8).ok_or(EnvelopeError::FieldBounds)?)
     else {
         return Err(EnvelopeError::FieldBounds);
     };
