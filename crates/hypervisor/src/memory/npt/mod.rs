@@ -1,6 +1,6 @@
-//! Bounded, inert four-level nested page tables: the strict synthetic `Npt`
-//! (explicit W^X leaves), the resident `IdentityNpt` (RWX identity with one
-//! excluded pool) and its stopped-CPU low-memory copy `LowMemoryNptStorage`.
+//! Bounded, inert four-level nested page tables: the resident `IdentityNpt`
+//! (RWX identity with one excluded pool) and its stopped-CPU low-memory copy
+//! `LowMemoryNptStorage`.
 //!
 //! AMD APM vol. 2 rev. 3.44 sections 5.3.5, 5.4 and 15.25: every present
 //! entry has U/S=1 (15.25.5 treats every nested access as a user access),
@@ -22,10 +22,8 @@ pub use crate::memory::npt::{
         IdentityNpt, IdentityNptError, IdentityTranslation, LowMemoryNptStorage,
         identity_protection_range, restore_identity_write_range,
     },
-    synthetic::{Npt, NptError, PagePermissions, Translation},
     table::{NptEvidence, TABLE_COUNT, TableStorage, TableView},
 };
 
 mod identity;
-mod synthetic;
 mod table;

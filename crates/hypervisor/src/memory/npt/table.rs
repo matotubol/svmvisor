@@ -1,10 +1,8 @@
-//! Table storage, entry bits and caller evidence shared by both nested page-table builders.
+//! Table storage, entry bits and caller evidence of the nested page-table builder.
 
 use crate::{arch::x86_64::capabilities::EvidenceFlag, memory::address::PAGE_BYTES};
 
-/// Storage pages of both the synthetic `Npt` and the resident `IdentityNpt`.
-/// The native returning guest reserves exactly this many pages in its fixed
-/// arena (dxe `native/resources/guest.rs`); a larger value moves that layout.
+/// Storage pages of the resident `IdentityNpt`.
 pub const TABLE_COUNT: usize = 8;
 
 /// Caller-owned backing storage. Its virtual address does not establish its

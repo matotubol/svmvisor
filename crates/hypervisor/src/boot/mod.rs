@@ -5,4 +5,3 @@
 
 pub mod descriptors;
 pub mod memory;
-pub mod preflight;

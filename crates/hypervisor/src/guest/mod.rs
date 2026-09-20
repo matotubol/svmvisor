@@ -1,5 +1,4 @@
-//! Constrained guest CPU state and page ownership models.
+//! Constrained guest CPU state.
 
 pub mod continuation;
-pub mod pages;
 pub mod state;

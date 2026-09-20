@@ -13,7 +13,6 @@ use crate::{
 
 /// Separate trusted native-boot profile. It intentionally retains RWX identity
 /// access to the admitted physical domain except the monitor's reserved span.
-/// It does not weaken the strict, explicitly mapped W^X `Npt` policy above.
 /// This is not a RAM/device inventory, DMA boundary or analysis containment.
 pub struct IdentityNpt<'a> {
     storage: &'a mut TableStorage,

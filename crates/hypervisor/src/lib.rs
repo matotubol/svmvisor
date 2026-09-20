@@ -2,7 +2,7 @@
 //!
 //! Architecture primitives, boot contracts, guest and host state, memory, and
 //! SVM exit handling live in separate namespaces, for example `svm::dispatch`,
-//! `guest::state`, `memory::address` or `boot::preflight`. This crate stays
+//! `guest::state`, `memory::address` or `boot::memory`. This crate stays
 //! independent of UEFI; firmware allocation, protocols, and lifecycle belong
 //! to `dxe`.
 
