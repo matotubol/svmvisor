@@ -28,10 +28,11 @@ learning project for one machine, not a product.
 
 ```text
 crates/
+  card-abi/            no_std wire contract: boot options, journal, image envelope, package
+  card-loader/         card option-ROM loader: verifies and starts any EFI child
   hypervisor/          no_std core: VMCB, exits, x2AVIC, nested paging, resident runtime
-  dxe/                 UEFI DXE driver: admission checks, allocation, activation
+  launcher/            the EFI child: admission checks, allocation, activation
   resident-payload/    resident image staticlib and linker script
-  firmware-handoff/    relocation loader and handoff layout
   memory-attributes/   UEFI Memory Attribute Protocol
   rompack/             PCI option ROM packager
   xtask/               cargo xtask: build, audit, package, flash, snapshot

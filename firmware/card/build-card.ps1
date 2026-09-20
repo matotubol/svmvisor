@@ -43,8 +43,8 @@ function Save-Input([string]$Relative) {
 function Get-ReturningSourceInputs([string]$SourceRoot) {
     $inputFiles=@('Cargo.toml','Cargo.lock','rust-toolchain.toml','.cargo/config.toml','firmware/card/build-card.ps1','firmware/card/package-payload.py','firmware/card/verify-resident-build.py','firmware/card/tests/test_returning_payload_package.py','firmware/card/tests/test_resident_build_evidence.py','firmware/card/config.psd1')
     # Capture the complete local dependency source checkpoint. In particular,
-    # the F7 Get reader's shared memory-attributes engine and the hypervisor are
-    # outside crates/dxe; the excluded firmware-handoff crate is a path dependency.
+    # the loader's card-abi contract is outside crates/card-loader, and the child's
+    # launcher, hypervisor and memory-attributes sources are outside it too.
     $sourceDirectories=@('crates','firmware/card/rtl','firmware/card/vivado')
     foreach ($directory in $sourceDirectories) {
         $inputFiles+=@(Get-ChildItem -LiteralPath (Join-Path $SourceRoot $directory) -File -Recurse | Where-Object {$_.FullName -notmatch '[\\/](target|__pycache__)[\\/]'} | ForEach-Object {$_.FullName.Substring($SourceRoot.Length+1).Replace('\','/')})
