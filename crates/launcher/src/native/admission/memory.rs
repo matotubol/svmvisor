@@ -12,9 +12,6 @@ use uefi_raw::{
 };
 
 const MAX_MAP_BYTES: usize = 1024 * 1024;
-/// Maximum pages touched by any exact pool extent, including unaligned ends.
-pub const MAX_STORAGE_COVERING_PAGES: usize =
-    (MAX_MAP_BYTES + MAX_DESCRIPTORS * size_of::<MemoryDescriptor>() + 8190) / 4096;
 const MAX_ATTEMPTS: usize = 4;
 const _: () = assert!(core::mem::align_of::<MemoryDescriptor>() <= 8);
 
@@ -26,17 +23,12 @@ const _: () = assert!(core::mem::align_of::<MemoryDescriptor>() <= 8);
 pub struct MemoryMapSnapshot<'a> {
     services: &'a BootServices,
     pool: Option<NonNull<u8>>,
-    allocation_bytes: usize,
     record_offset: usize,
     count: usize,
     metadata: MapMetadata,
 }
 
 impl MemoryMapSnapshot<'_> {
-    pub fn storage_range(&self) -> Result<StorageRange, MemoryMapError> {
-        live_storage_range(self.pool, self.allocation_bytes)
-    }
-
     pub fn descriptors(&self) -> &[MemoryDescriptor] {
         let Some(pool) = self.pool else {
             return &[];
@@ -75,13 +67,6 @@ pub struct MapMetadata {
     pub descriptor_size: usize,
     pub descriptor_version: u32,
     pub bytes: usize,
-}
-
-/// Exact AllocatePool extent, retained independently of used map bytes.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct StorageRange {
-    pub base: u64,
-    pub bytes: u64,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -129,7 +114,6 @@ pub unsafe fn collect(services: &BootServices) -> Result<MemoryMapSnapshot<'_>, 
         let mut owned = MemoryMapSnapshot {
             services,
             pool: Some(pool),
-            allocation_bytes: total,
             record_offset: map_capacity,
             count: 0,
             metadata,
@@ -191,14 +175,6 @@ pub unsafe fn collect(services: &BootServices) -> Result<MemoryMapSnapshot<'_>, 
         return Ok(owned);
     }
     Err(MemoryMapError::RetryLimit)
-}
-
-fn live_storage_range(
-    pool: Option<NonNull<u8>>,
-    allocation_bytes: usize,
-) -> Result<StorageRange, MemoryMapError> {
-    let pool = pool.ok_or(MemoryMapError::Released)?;
-    Ok(StorageRange { base: pool.as_ptr() as u64, bytes: allocation_bytes as u64 })
 }
 
 fn capacity(required: usize, stride: usize) -> Result<(usize, usize), MemoryMapError> {
@@ -271,17 +247,6 @@ fn sorting_preserves_full_records_including_duplicate_keys() {
 #[cfg(test)]
 mod tests {
     use super::*;
-    #[test]
-    fn storage_extent_is_exact_and_refuses_absent_released_pool() {
-        let pointer = NonNull::new(0x1003usize as *mut u8);
-        let (_, total) = capacity(481, 48).unwrap();
-        assert_eq!(
-            live_storage_range(pointer, total),
-            Ok(StorageRange { base: 0x1003, bytes: total as u64 })
-        );
-        assert_eq!(live_storage_range(None, total), Err(MemoryMapError::Released));
-        assert_eq!(MAX_STORAGE_COVERING_PAGES, 289);
-    }
     #[test]
     fn wire_descriptor_uses_uefi_offsets_not_rust_layout() {
         let mut bytes = [0xee; 48];
