@@ -11,7 +11,7 @@ what the hypervisor does. Rule IDs (`F2`, `N7`, ...) exist so reviews and
 commits can cite them.
 
 Scope: all Rust under `crates/`. The `no_std` crates (`card-abi`,
-`card-loader`, `hypervisor`, `dxe`, `firmware-handoff`, `resident-payload`,
+`card-loader`, `hypervisor`, `launcher`, `firmware-handoff`, `resident-payload`,
 `memory-attributes`) and the host tools (`xtask`, `rompack`) follow the same
 style; rules marked **[no_std]** bind only the former.
 
@@ -97,11 +97,12 @@ section order, not from ASCII art.
 **C1.** Dependency direction is fixed: `card-abi` is the leaf (it knows
 nothing about UEFI or SVM); `hypervisor` depends on it and knows nothing about
 UEFI; `card-loader` depends on `card-abi` only and knows nothing about SVM;
-`dxe` depends on `card-abi` and `hypervisor`; `firmware-handoff` depends on
+`launcher` depends on `card-abi` and `hypervisor` (and on `memory-attributes`
+under its `memory-attribute-*` features); `firmware-handoff` depends on
 `card-abi` and `hypervisor`; `resident-payload` depends on `hypervisor`;
-`xtask` depends on `card-abi`; `memory-attributes` and `rompack` stand alone. A crate never reaches into another crate's source tree
-with `#[path]` or `include!`. Shared code is shared through a Cargo
-dependency.
+`xtask` depends on `card-abi`; `memory-attributes` and `rompack` stand alone.
+A crate never reaches into another crate's source tree with `#[path]` or
+`include!`. Shared code is shared through a Cargo dependency.
 
 **C2.** `lib.rs` / `main.rs` contain, in this order and nothing else: the
 `//!` crate doc, crate attributes, `compile_error!` feature guards, `use`

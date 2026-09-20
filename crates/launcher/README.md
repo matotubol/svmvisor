@@ -1,10 +1,14 @@
-# DXE native child
+# Native resident launcher
 
-This crate is the SVM-specific EFI child image: admission, resource
-allocation, and the launch of the resident runtime. The CPU and VM-exit runtime
-belongs in [`../hypervisor`](../hypervisor/README.md). The card option-ROM
-driver that binds the card, delivers this image and observes the firmware
-lifecycle is [`../card-loader`](../card-loader/README.md); the records the two
+Two UEFI images take part in a boot, and the words are used strictly. The
+**loader** ([`../card-loader`](../card-loader/README.md)) is the generic
+driver in the card's option ROM: it binds the card, reads the payload slot,
+starts the EFI child image it finds there and observes the firmware
+lifecycle. It knows nothing about SVM. The **launcher** is this crate
+(`svmvisor-launcher`): the SVM-specific EFI child image the loader starts. It
+does admission and resource allocation and launches the resident runtime. The
+CPU and VM-exit runtime itself belongs in
+[`../hypervisor`](../hypervisor/README.md); the records loader and launcher
 exchange live in [`../card-abi`](../card-abi/README.md).
 
 ## Where to work
