@@ -7,6 +7,7 @@ aliases it, so from anywhere in the workspace:
 cargo xtask resident --output target/native-resident/<fresh-name> [--low-runtime]
 cargo xtask sources
 cargo xtask card-dev | card-snapshot | card-loader-dev   # see "Card development loop"
+cargo xtask rompack --input <driver.efi> --output <driver.rom> ...   # see "cargo xtask rompack"
 ```
 
 Std-only apart from `sha2`; nothing here runs on the target. Only
@@ -48,6 +49,25 @@ linked. The output directory must not exist; it keeps every artifact and one
 `cargo xtask sources` prints the current source manifest, the same JSON a
 build records as `source-manifest.json`.
 
+## `cargo xtask rompack`
+
+```powershell
+cargo xtask rompack --input <driver.efi> --output <driver.rom> `
+    --vendor <hex> --device <hex> --class <hex> `
+    [--memory-output <driver.mem> --memory-size <bytes>]
+```
+
+Wraps one uncompressed PE32+ EFI image in a PCI Firmware 3.0 option-ROM image
+(the layout of EDK2 `EfiRom` in its default single-image mode) and, when both
+memory options are given, writes the ROM as a `$readmemh` file of
+little-endian 32-bit words padded with `0xff` to `--memory-size`. The output
+depends only on the input bytes and the three IDs. `--vendor`, `--device` and
+`--class` are hexadecimal with or without `0x`; `--memory-size` is decimal, or
+hexadecimal with `0x`. `firmware/card/build-card.ps1` runs this command for the
+card's 32 KiB ROM (`--memory-size 32768 --vendor 0x10ee --device 0x0666
+--class 0xff0000`). This was the `svmvisor-rompack` crate; the arguments and
+the output bytes are unchanged.
+
 ## Card development loop
 
 For a card running the development loader (`card-resident-dev-loader`, see
@@ -78,8 +98,9 @@ cargo xtask card-loader-dev
 * `card-loader-dev` builds the development loader (`--package
   svmvisor-card-loader --profile rom --features card-resident-dev-loader
   --target x86_64-unknown-uefi`) and packs the 32 KiB
-  option ROM with `crates/rompack` using the same arguments as
-  `firmware/card/build-card.ps1`, into `target/card-dev/loader/<utc>-<id>/`.
+  option ROM in-process (`src/rompack.rs`) with the same values
+  `firmware/card/build-card.ps1` passes to `cargo xtask rompack`, into
+  `target/card-dev/loader/<utc>-<id>/`.
   `build-card.ps1 -DevLoader -BuildFpga` then produces the one bitstream.
 
 Needs `python` and a PowerShell host (`pwsh`, else `powershell`) on `PATH`.
@@ -96,6 +117,6 @@ Needs `python` and a PowerShell host (`pwsh`, else `powershell`) on `PATH`.
 cargo test -p xtask
 ```
 
-covers the card-loop argument, timestamp and header helpers, the relocation packager on synthetic ELF fixtures, every audit on
+covers the card-loop argument, timestamp and header helpers, the option-ROM packager, the relocation packager on synthetic ELF fixtures, every audit on
 passing and mutated disassembly, and the JSON writer against a Python-generated
 reference (`src/expected-json.txt`).

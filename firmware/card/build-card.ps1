@@ -80,7 +80,7 @@ try {
     & cargo build --locked --manifest-path (Join-Path $root 'Cargo.toml') --package svmvisor-card-loader --profile rom --features $feature --target x86_64-unknown-uefi --target-dir (Join-Path $session 'loader-cargo')
     Check-Exit 'Loader build'
     Copy-Item -LiteralPath (Join-Path $session 'loader-cargo/x86_64-unknown-uefi/rom/svmvisor-card-loader.efi') -Destination (Join-Path $session 'svmvisor-dxe.efi')
-    & cargo run --locked --quiet --release --manifest-path (Join-Path $root 'Cargo.toml') --package svmvisor-rompack --target-dir (Join-Path $session 'rompack-cargo') -- --input (Join-Path $session 'svmvisor-dxe.efi') --output (Join-Path $session 'svmvisor-dxe.rom') --memory-output (Join-Path $session 'svmvisor-dxe.mem') --memory-size 32768 --vendor 0x10ee --device 0x0666 --class 0xff0000
+    & cargo run --locked --quiet --release --manifest-path (Join-Path $root 'Cargo.toml') --package xtask --target-dir (Join-Path $session 'rompack-cargo') -- rompack --input (Join-Path $session 'svmvisor-dxe.efi') --output (Join-Path $session 'svmvisor-dxe.rom') --memory-output (Join-Path $session 'svmvisor-dxe.mem') --memory-size 32768 --vendor 0x10ee --device 0x0666 --class 0xff0000
     Check-Exit '32 KiB ROM packaging'
     Copy-Item -LiteralPath (Join-Path $session 'svmvisor-dxe.mem') -Destination (Join-Path $session 'svmvisor-dxe.mem.source')
     foreach ($input in $sources) {

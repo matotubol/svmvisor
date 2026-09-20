@@ -33,8 +33,7 @@ crates/
   hypervisor/          no_std core: VMCB, exits, x2AVIC, nested paging, resident runtime
   launcher/            the EFI child: admission checks, allocation, activation
   resident-payload/    resident image staticlib and linker script
-  rompack/             PCI option ROM packager
-  xtask/               cargo xtask: build, audit, package, flash, snapshot
+  xtask/               cargo xtask: build, audit, package, ROM-pack, flash, snapshot
 firmware/card/         FPGA card RTL, flashing scripts, snapshot decoder
 docs/                  AMD/UEFI/ACPI manuals, indexed for lookup (see docs/README.md)
 ```

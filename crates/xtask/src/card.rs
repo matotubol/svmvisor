@@ -20,7 +20,11 @@ use std::{
 use sha2::{Digest, Sha256};
 use svmvisor_card_abi::envelope::{Envelope, HEADER_BYTES};
 
-use crate::{json::Value, resident};
+use crate::{
+    json::Value,
+    resident,
+    rompack::{self, RomOptions},
+};
 
 const SECTOR_BYTES: u64 = 0x10000;
 const FIRST_SLOT_SECTOR: u64 = 64;
@@ -207,7 +211,7 @@ pub fn loader_dev() -> Result<(), String> {
     let out = base.join(fresh_name());
     io(fs::create_dir_all(&out), "create", &out)?;
     let manifest = root.join("Cargo.toml");
-    let (loader_target, rompack_target) = (out.join("loader-cargo"), out.join("rompack-cargo"));
+    let loader_target = out.join("loader-cargo");
     println!("card-loader-dev: {}", out.display());
     run(
         &root,
@@ -234,38 +238,16 @@ pub fn loader_dev() -> Result<(), String> {
         (out.join("svmvisor-dxe.efi"), out.join("svmvisor-dxe.rom"), out.join("svmvisor-dxe.mem"));
     let built = loader_target.join("x86_64-unknown-uefi/rom/svmvisor-card-loader.efi");
     io(fs::copy(&built, &efi).map(drop), "copy", &built)?;
-    run(
-        &root,
-        "cargo".as_ref(),
-        &[
-            "run".as_ref(),
-            "--locked".as_ref(),
-            "--quiet".as_ref(),
-            "--release".as_ref(),
-            "--manifest-path".as_ref(),
-            manifest.as_os_str(),
-            "--package".as_ref(),
-            "svmvisor-rompack".as_ref(),
-            "--target-dir".as_ref(),
-            rompack_target.as_os_str(),
-            "--".as_ref(),
-            "--input".as_ref(),
-            efi.as_os_str(),
-            "--output".as_ref(),
-            rom.as_os_str(),
-            "--memory-output".as_ref(),
-            memory.as_os_str(),
-            "--memory-size".as_ref(),
-            "32768".as_ref(),
-            "--vendor".as_ref(),
-            "0x10ee".as_ref(),
-            "--device".as_ref(),
-            "0x0666".as_ref(),
-            "--class".as_ref(),
-            "0xff0000".as_ref(),
-        ],
-        "32 KiB ROM packaging",
-    )?;
+    rompack::pack(&RomOptions {
+        input: efi.clone(),
+        output: rom.clone(),
+        memory_output: Some(memory),
+        memory_size: Some(32_768),
+        vendor_id: 0x10ee,
+        device_id: 0x0666,
+        class_code: 0x00ff_0000,
+    })
+    .map_err(|error| format!("32 KiB ROM packaging failed ({error})"))?;
     let (loader_sha, rom_sha) = (resident::sha(&efi)?, resident::sha(&rom)?);
     let record = Value::Map(vec![
         ("schema_version".into(), Value::Int(1)),

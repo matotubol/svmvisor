@@ -8,6 +8,8 @@
 //!   `cargo xtask card-snapshot [read_snapshot.py options]` and
 //!   `cargo xtask card-loader-dev`: the development-loader iteration loop
 //!   (see `card.rs` and firmware/card/README.md).
+//! * `cargo xtask rompack --input <driver.efi> --output <driver.rom> ...` wraps
+//!   a loader image in its PCI option ROM (see `rompack.rs`).
 
 use std::{path::PathBuf, process::ExitCode};
 
@@ -16,11 +18,14 @@ mod card;
 mod json;
 mod relocations;
 mod resident;
+mod rompack;
 
 const USAGE: &str = "usage: cargo xtask resident --output <fresh-dir> [--low-runtime]\n       cargo xtask sources\n       \
 cargo xtask card-dev [--any-runtime] [--flash] [--adapter-khz N]\n       \
 cargo xtask card-snapshot [--input <log>] [--manifest <manifest.json>]\n       \
-cargo xtask card-loader-dev";
+cargo xtask card-loader-dev\n       \
+cargo xtask rompack --input <driver.efi> --output <driver.rom> --vendor <hex> --device <hex> \
+--class <hex> [--memory-output <driver.mem> --memory-size <bytes>]";
 
 fn main() -> ExitCode {
     let args: Vec<String> = std::env::args().skip(1).collect();
@@ -85,6 +90,7 @@ fn run(args: &[String]) -> Result<(), String> {
         }
         Some("card-snapshot") => card::snapshot(&args[1..]),
         Some("card-loader-dev") if args.len() == 1 => card::loader_dev(),
+        Some("rompack") => rompack::command(&args[1..]),
         _ => Err(USAGE.into()),
     }
 }

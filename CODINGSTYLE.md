@@ -12,8 +12,8 @@ commits can cite them.
 
 Scope: all Rust under `crates/`. The `no_std` crates (`card-abi`,
 `card-loader`, `hypervisor`, `launcher`, `resident-payload`) and the host
-tools (`xtask`, `rompack`) follow the same style; rules marked **[no_std]**
-bind only the former.
+tool (`xtask`) follow the same style; rules marked **[no_std]** bind only the
+former.
 
 Where these rules come from: the habits of a very consistent reference
 codebase (BurntSushi's `jiff`), filtered down to what makes sense for a
@@ -97,7 +97,7 @@ section order, not from ASCII art.
 nothing about UEFI or SVM); `hypervisor` depends on it and knows nothing about
 UEFI; `card-loader` depends on `card-abi` only and knows nothing about SVM;
 `launcher` depends on `card-abi` and `hypervisor`; `resident-payload` depends
-on `hypervisor`; `xtask` depends on `card-abi`; `rompack` stands alone.
+on `hypervisor`; `xtask` depends on `card-abi`.
 A crate never reaches into another crate's source tree with `#[path]` or
 `include!`. Shared code is shared through a Cargo dependency.
 
@@ -117,7 +117,7 @@ selects. Mutually exclusive features are rejected by a `compile_error!` in the
 crate root, never silently resolved.
 
 **C5. [no_std]** No `alloc`, no floating point, no `std` behind a feature.
-Anything that needs them belongs in `xtask` or `rompack`.
+Anything that needs them belongs in `xtask`.
 
 ---
 
@@ -566,8 +566,8 @@ instead of restating it.
 | `SVMRELO1` relocatable package (arena size, handoff offset, parser and relocator) | `card-abi::package` |
 
 A crate that depends on `hypervisor` imports these; it never re-declares
-them. A deliberately standalone crate (`card-loader`, `rompack`) may keep its
-own copy, with a comment naming the authoritative one.
+them. A deliberately standalone crate (`card-loader`) may keep its own copy,
+with a comment naming the authoritative one.
 
 Same value is not same concept: `APIC_BASE_ADDRESS` and the AVIC pointer
 masks equal `ADDRESS_MASK` numerically and stay separate. A constant whose only
