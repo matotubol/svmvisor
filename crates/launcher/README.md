@@ -16,13 +16,12 @@ exchange live in [`../card-abi`](../card-abi/README.md).
 | Source directory | Responsibility |
 | --- | --- |
 | `diagnostics/` | Resident launcher failure records. The record exchanged with the loader (`ResidentBootOptions`) lives in [`../card-abi`](../card-abi/README.md). |
-| `native/admission/` | Entry boundary capture (`boundary.S`, `NativeBoundary`), MP Services inventory and the firmware memory map. |
+| `native/admission/` | Entry boundary capture (`boundary.S`, `NativeBoundary`), the MP Services protocol definition and the firmware memory map. |
 | `native/resident/` | Native callback activation, retained raw payload allocation, per-CPU observations/preparation and separately audited resident assembly. |
 
 `lib.rs` exposes only the grouped library namespaces, for example
 `native::admission::cpu`, `native::resident::allocation` or
 `diagnostics::resident_boot`; there are no root compatibility aliases.
-`tests/native_cpu.rs` also compiles `native/admission/cpu.rs` through `#[path]`.
 
 `main.rs` selects the binary-only module `native/resident/activation/` with an
 explicit path and feature gate. It does not become part of the library merely

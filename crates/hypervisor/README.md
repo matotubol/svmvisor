@@ -21,12 +21,12 @@ current native transition adapter. Keep firmware calls out of this crate.
 
 | Namespace | Responsibility | Starting points |
 | --- | --- | --- |
-| `arch::x86_64` | CPU capability evidence, MSR indices and fields, local APIC register space, physical x2APIC access and the AVIC doorbell, register and descriptor formats, extended state | `apic`, `capabilities`, `msr`, `registers`, `descriptors`, `xstate` |
-| `boot` | Supplied firmware observations and admission policies | `preflight`, `memory`, `descriptors` |
-| `guest` | Constrained guest register state and page ownership | `state`, `pages` |
+| `arch::x86_64` | CPU capability evidence, MSR indices and fields, local APIC register space, physical x2APIC access and the AVIC doorbell, register and descriptor formats, the MXCSR mask of a captured extended-state image | `apic`, `capabilities`, `msr`, `registers`, `descriptors`, `xstate` |
+| `boot` | Supplied firmware observations and admission policies | `memory`, `descriptors` |
+| `guest` | The guest entry register tuple and the native continuation | `state`, `continuation` |
 | `host` | Host descriptor and paging contracts; the resident runtime ABI and its bounded fetch/terminal owners | `descriptors`, `paging`, `resident` |
-| `memory` | Validated addresses, reserved layout, nested page tables, MTRR decoding | `address`, `layout`, `npt`, `mtrrs` |
-| `svm` | VMCB and permission maps, exit classification, CPUID and hypercall emulation, native cache/SYSCFG/PAUSE owners, x2AVIC | `vmcb`, `permission_maps`, `exit`, `dispatch`, `emulation`, `native_cache`, `x2avic` |
+| `memory` | Validated addresses, nested page tables, MTRR decoding | `address`, `npt`, `mtrrs` |
+| `svm` | VMCB and permission maps, exit classification, native CPUID/EFER/VM_CR handling and the diagnostic hypercall, native cache/SYSCFG/PAUSE owners, x2AVIC | `vmcb`, `permission_maps`, `exit`, `dispatch`, `cpu_model`, `emulation`, `cache`, `x2avic` |
 | `sync` | Non-blocking lock for state shared between CPUs | `TryLock` |
 
 Each directory has one `mod.rs` registry; implementation files are compiled

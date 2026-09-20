@@ -390,7 +390,7 @@ subject: `ProbeError`, `DispatchOutcome`, `IpiInventory`. (`jiff` uses bare
 subject form wins.)
 
 **N5.** Two different types never share a name across modules of one crate
-(`TableStorage` ×3, `Translation` ×3 today). Give each its subject.
+(`TableStorage` and `Translation` each had three). Give each its subject.
 
 **N6.** Acronyms are words: `Vmcb`, `Npt`, `Msr`, `Apic`, `X2Avic`, `Ipi`,
 `Iopm`, `Msrpm`, `Mtrr`, `Pat`, `Efer`. Never `VMCB` or `NPT` in a type name.
@@ -464,7 +464,7 @@ narrower job it does.
 |---|---|
 | 4 KiB page size | `PAGE_BYTES` |
 | page-table physical-address field | `ADDRESS_MASK` |
-| page-table bits | `PRESENT`, `WRITE`, `USER`, `NX` |
+| page-table bits | `PRESENT`, `WRITE`, `NX` |
 | MSR numbers | the AMD manual's name: `EFER`, `VM_CR`, `SYS_CFG`, `HWCR` |
 | bits within an MSR | `<MSR>_<BIT>`: `VM_CR_SVMDIS`, `SYS_CFG_MTRR_FIX_DRAM_EN` |
 | VMCB field offsets | `<FIELD>_OFFSET`, in `svm::vmcb` |
@@ -558,7 +558,6 @@ instead of restating it.
 | APIC / x2APIC registers | `hypervisor::arch::x86_64::apic` |
 | page size, address mask, page-table bits | `hypervisor::memory::address`. A `u64` view is derived from it (`PAGE_BYTES as u64`), never a second literal |
 | memory-map descriptor bound `MAX_DESCRIPTORS` | `hypervisor::boot::memory` |
-| MP Services status bits | `launcher::native::admission::cpu` |
 | VMCB offsets | `hypervisor::svm::vmcb`, `pub(crate)`; other modules use `Vmcb` accessors, not offsets |
 | exit codes | `hypervisor::svm::exit` |
 | resident bridge ABI | `hypervisor::host::resident` |
@@ -742,10 +741,10 @@ Notes:
 
 A file move or rename must update, in the same commit, every place that
 names the path: `#[path]` mounts (`card-loader/src/main.rs`,
-`card-loader/tests/{driver_binding,mmio}.rs`, `launcher/src/main.rs`,
-`launcher/tests/native_cpu.rs`), the `.S` table in `launcher/build.rs` and the
-`#include` lines of `launcher/src/native/resident/{bridge,boot}.S`, and the
-source paths in `xtask/src/resident.rs`.
+`card-loader/tests/{driver_binding,mmio}.rs`, `launcher/src/main.rs`), the
+`.S` table in `launcher/build.rs` and the `#include` lines of
+`launcher/src/native/resident/{bridge,boot}.S`, and the source paths in
+`xtask/src/resident.rs`.
 
 ---
 
